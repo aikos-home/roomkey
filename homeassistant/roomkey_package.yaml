@@ -1,0 +1,132 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# RoomKey — Home Assistant side of the contract (package).
+#
+# Install: configuration.yaml →  homeassistant: packages: !include_dir_named packages
+#          copy this file to  config/packages/roomkey.yaml, adjust the names below.
+# Then, per RoomKey device: Settings → Devices → ESPHome → (device) → Configure →
+#          ✔ "Allow the device to perform Home Assistant actions".
+#
+# Entities the keys expect (rename in each key's substitutions if yours differ):
+#   light.all_lights                 light group toggled by a short press
+#   alarm_control_panel.house        any alarm panel (manual, Alarmo, …)
+#   binary_sensor.doorbell_button    the door station's button (optional —
+#                                    the door station may also call `ring`)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# 1) The light group the key toggles (skip if you already have one).
+light:
+  - platform: group
+    name: All lights
+    unique_id: roomkey_all_lights
+    entities:
+      - light.living_room      # ← your lights
+      - light.kitchen
+
+# 2) Disarm policy. The key never holds an alarm code; it only *asks*.
+#    Policy here: a room key may disarm HOME/NIGHT modes and a running
+#    entry delay / alarm — but not AWAY/VACATION (nobody should be inside).
+#    Tighten or loosen to taste; every request is logged with its room.
+script:
+  roomkey_disarm:
+    alias: RoomKey disarm request
+    mode: queued
+    fields:
+      room: {description: Room the request came from}
+      entity_id: {description: Alarm panel}
+    sequence:
+      - variables:
+          panel: "{{ entity_id | default('alarm_control_panel.house') }}"
+          allowed: >
+            {{ states(panel) in ['armed_home', 'armed_night', 'armed_custom_bypass',
+                                 'arming', 'pending', 'triggered'] }}
+      - action: logbook.log
+        data:
+          name: RoomKey
+          message: "Disarm requested in {{ room }} ({{ states(panel) }}) → {{ 'allowed' if allowed else 'refused' }}"
+          entity_id: "{{ panel }}"
+      - if: "{{ allowed }}"
+        then:
+          - action: alarm_control_panel.alarm_disarm
+            target:
+              entity_id: "{{ panel }}"
+            # data:
+            #   code: !secret alarm_code    # only if your panel requires a code
+        else:
+          - action: script.roomkey_broadcast
+            data:
+              service_suffix: show_toast
+              data: {message: "Disarm here not allowed"}
+              only_room: "{{ room }}"
+
+  # Call the same ESPHome action on every key (e.g. ring_stop, show_toast).
+  roomkey_broadcast:
+    alias: RoomKey broadcast
+    mode: parallel
+    fields:
+      service_suffix: {description: "ring | ring_stop | call_state | show_toast"}
+      data: {description: Action data}
+      except_node: {description: "node name to skip (e.g. the room that answered)"}
+      only_room: {description: "room name — send to that key only (optional)"}
+    sequence:
+      - repeat:
+          for_each: "{{ roomkey_nodes }}"
+          sequence:
+            - if: "{{ repeat.item.node != except_node and (not only_room or repeat.item.room == only_room) }}"
+              then:
+                - action: "esphome.{{ repeat.item.node | replace('-', '_') }}_{{ service_suffix }}"
+                  data: "{{ data | default({}) }}"
+    variables:
+      # ← one line per RoomKey (node = ESPHome name, room = its room_name)
+      roomkey_nodes:
+        - {node: roomkey-office, room: Office}
+        # - {node: roomkey-bedroom, room: Bedroom}
+
+automation:
+  # 3) Answered in one room → the others stop ringing.
+  - alias: RoomKey · answered → stop ringing elsewhere
+    id: roomkey_answered_stop_others
+    mode: queued
+    triggers:
+      - trigger: event
+        event_type: esphome.roomkey
+        event_data: {type: answer}
+    actions:
+      - action: script.roomkey_broadcast
+        data:
+          service_suffix: ring_stop
+          except_node: "{{ trigger.event.data.node }}"
+
+  # 4) Door station integration points (WIP — wire these to your door station).
+  #    The keys fire: answer · call_door · talk_start · talk_stop · hangup
+  #    Media: RTP/L16/16 kHz to the key's UDP 5004 (see docs/intercom-protocol.md).
+  - alias: RoomKey · forward intercom events to the door station
+    id: roomkey_to_doorstation
+    mode: queued
+    triggers:
+      - trigger: event
+        event_type: esphome.roomkey
+    conditions:
+      - condition: template
+        value_template: "{{ trigger.event.data.type in ['answer', 'call_door', 'hangup', 'talk_start', 'talk_stop'] }}"
+    actions:
+      - action: logbook.log
+        data:
+          name: RoomKey
+          message: "{{ trigger.event.data.room }}: {{ trigger.event.data.type }}"
+      # e.g. start streaming door audio to the key that answered:
+      # - action: esphome.doorstation_start_stream
+      #   data: {target: "{{ trigger.event.data.node }}.local", port: 5004}
+
+  # 5) Door station hung up / timed out → every key leaves the call screen.
+  #    (Replace the trigger with whatever your door station exposes.)
+  - alias: RoomKey · door hung up
+    id: roomkey_door_hangup
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.doorstation_call_active   # ← placeholder
+        to: "off"
+    actions:
+      - action: script.roomkey_broadcast
+        data:
+          service_suffix: call_state
+          data: {state: ended}

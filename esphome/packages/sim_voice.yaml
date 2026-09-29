@@ -1,0 +1,19 @@
+# Simulator only: a synthetic "voice" stands in for the microphone while the
+# key is held, so the intercom path can be tested on the desktop.
+interval:
+  - interval: 10ms
+    then:
+      - lambda: |-
+          static uint32_t last = 0, t = 0;
+          uint32_t now = millis();
+          uint32_t n = last ? (now - last) * 16 : 0;   // 16 samples per ms
+          last = now;
+          if (!roomkey::audio().tx() || n == 0 || n > 800) return;
+          int16_t buf[800];
+          for (uint32_t i = 0; i < n; i++, t++) {
+            float x = t / 16000.0f;
+            float env = 0.55f + 0.45f * sinf(2 * 3.14159f * 3.0f * x);   // syllable-ish envelope
+            float v = sinf(2 * 3.14159f * 440.0f * x) + 0.3f * sinf(2 * 3.14159f * 880.0f * x);
+            buf[i] = (int16_t) (v * env * 9000);
+          }
+          roomkey::audio().push_s16(buf, n);

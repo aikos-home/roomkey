@@ -1,0 +1,29 @@
+# Desktop simulator — same UI + HA contract, SDL window instead of hardware.
+#   esphome compile sim.yaml && .esphome/build/roomkey-sim/.pioenvs/roomkey-sim/program
+#   SPACE = mechanical key · mouse = touch
+substitutions:
+  node_name: roomkey-sim
+  room_name: Office
+  door_name: Front door
+  language: en
+  timezone: Europe/Berlin
+  light_entity: light.all_lights
+  alarm_entity: alarm_control_panel.house
+  doorbell_entity: binary_sensor.doorbell_button
+  disarm_action: script.roomkey_disarm
+
+esphome:
+  name: ${node_name}
+  friendly_name: RoomKey Simulator
+
+packages:
+  board: !include packages/board_sim.yaml
+  core: !include packages/roomkey_core.yaml
+  ha: !include packages/roomkey_ha.yaml
+  intercom: !include packages/roomkey_intercom.yaml
+  voice: !include packages/sim_voice.yaml
+
+logger:
+  level: DEBUG
+  logs:
+    lvgl: INFO

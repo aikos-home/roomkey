@@ -1,0 +1,116 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Board: Waveshare ESP32-C6-LCD-1.47  (NON-touch · the board on the desk)
+#   ESP32-C6FH8 (8 MB, no PSRAM) · ST7789 172×320 IPS · WS2812 RGB LED · TF slot
+#   Identified 2026-09-29 by factory-firmware strings + pull-up fingerprint
+#   (10k pull-ups on IO4–IO7, none on IO1–IO3/IO18/IO19, empty I²C bus).
+#
+#   GPIO6/7  LCD MOSI/SCK (shared w/ TF)   GPIO8  WS2812 status LED
+#   GPIO14   LCD CS    GPIO15 LCD DC       GPIO9  BOOT = mechanical key (parallel)
+#   GPIO21   LCD RST   GPIO22 LCD BL       GPIO4/5 TF CS/MISO (unused)
+#   Header, free: IO1 IO2 IO3 TXD(16) RXD(17)   (IO0 = mic L/R, IO18/19/20/23 = I²S)
+#
+# Board contract (every board package provides): display `lcd`,
+# light `backlight`, binary_sensor `key_raw`, script `rk_led`,
+# substitutions has_touch / lvgl_buffer / i2s_*.
+# ─────────────────────────────────────────────────────────────────────────────
+
+substitutions:
+  has_touch: "false"
+  lvgl_buffer: 25%
+  # I²S audio (WIP — nothing attached yet): one shared bus, half-duplex.
+  i2s_bclk: GPIO18    # → MAX98357A BCLK + INMP441 SCK
+  i2s_lrclk: GPIO19   # → MAX98357A LRC  + INMP441 WS
+  i2s_dout: GPIO20    # → MAX98357A DIN
+  i2s_din: GPIO23     # ← INMP441 SD
+  mic_lr: GPIO0       # → INMP441 L/R, held LOW (= left channel); the header has only one GND
+
+esp32:
+  variant: esp32c6
+  flash_size: 8MB
+  framework:
+    type: esp-idf
+
+spi:
+  id: lcd_spi
+  clk_pin: GPIO7
+  mosi_pin: GPIO6
+
+output:
+  - platform: ledc
+    id: lcd_bl_pwm
+    pin: GPIO22
+    frequency: 20000Hz   # above audible range — no coil whine near the mic
+
+light:
+  - platform: monochromatic
+    id: backlight
+    name: "Backlight"
+    output: lcd_bl_pwm
+    restore_mode: ALWAYS_ON
+    default_transition_length: 300ms
+    gamma_correct: 2.2
+
+  - platform: esp32_rmt_led_strip
+    id: status_led
+    name: "Status LED"
+    pin: GPIO8
+    num_leds: 1
+    chipset: WS2812
+    channel_colors: GRB
+    restore_mode: ALWAYS_OFF
+    default_transition_length: 150ms
+    effects:
+      - pulse:
+          name: pulse
+          transition_length: 700ms
+          update_interval: 700ms
+          min_brightness: 5%
+          max_brightness: 55%
+      - strobe:
+          name: strobe
+          colors:
+            - {state: true, brightness: 100%, red: 100%, green: 12%, blue: 15%, duration: 110ms}
+            - {state: false, duration: 110ms}
+
+display:
+  - platform: mipi_spi
+    id: lcd
+    model: WAVESHARE-ESP32-C6-LCD-1.47   # ST7789V, 172×320, offset 34, inverted
+    spi_id: lcd_spi
+    auto_clear_enabled: false
+    update_interval: never
+
+binary_sensor:
+  # BOOT button == mechanical key switch (wired in parallel, active low).
+  - platform: gpio
+    id: key_raw
+    internal: true
+    pin:
+      number: GPIO9
+      inverted: true
+      ignore_strapping_warning: true
+      mode:
+        input: true
+        pullup: true
+    filters:
+      - delayed_on: 12ms   # debounce for a real MX switch
+      - delayed_off: 12ms
+
+script:
+  - id: rk_led
+    mode: restart
+    parameters:
+      color: int
+      effect: string
+    then:
+      - lambda: |-
+          if (effect == "off") {
+            auto call = id(status_led).turn_off();
+            call.perform();
+            return;
+          }
+          auto call = id(status_led).turn_on();
+          call.set_rgb(((color >> 16) & 0xFF) / 255.0f, ((color >> 8) & 0xFF) / 255.0f, (color & 0xFF) / 255.0f);
+          call.set_brightness(0.45f);
+          call.set_effect(effect == "solid" ? std::string("None") : effect);
+          call.perform();

@@ -1,0 +1,85 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Board: desktop simulator (ESPHome host platform + SDL2)
+#   mouse = touchscreen · SPACE = mechanical key
+#   RK_TOUR=1 RK_SHOTS=dir RK_TOUR_EXIT=1 ./program   → screenshot every state
+# ─────────────────────────────────────────────────────────────────────────────
+
+substitutions:
+  has_touch: "true"
+  lvgl_buffer: 100%
+
+host:
+
+esphome:
+  platformio_options:
+    build_flags:
+      - -DLV_USE_SNAPSHOT=1
+  includes:
+    - src/roomkey_tour.h
+  on_boot:
+    - priority: -200
+      then:
+        - lambda: roomkey::sim::maybe_start_tour();
+
+time:
+  - platform: host
+    id: rk_time
+
+api:
+  actions:
+    - action: snapshot           # simulator only: save the current screen as BMP
+      variables:
+        name: string
+      then:
+        - lambda: |-
+            const char *dir = getenv("RK_SHOTS");
+            roomkey::sim::write_bmp(std::string(dir ? dir : "shots") + "/" + name + ".bmp");
+
+display:
+  - platform: sdl
+    id: lcd
+    dimensions:
+      width: 172
+      height: 320
+    auto_clear_enabled: false
+    update_interval: never
+
+touchscreen:
+  - platform: sdl
+    id: touch
+    sdl_id: lcd
+
+binary_sensor:
+  - platform: sdl
+    id: key_raw
+    sdl_id: lcd
+    key: SDLK_SPACE
+
+output:
+  - platform: template
+    id: sim_bl
+    type: float
+    write_action:
+      - logger.log:
+          level: DEBUG
+          format: "backlight %.0f%%"
+          args: [state * 100]
+
+light:
+  - platform: monochromatic
+    id: backlight
+    name: "Backlight"
+    output: sim_bl
+    restore_mode: ALWAYS_ON
+    default_transition_length: 0s
+
+script:
+  - id: rk_led
+    mode: restart
+    parameters:
+      color: int
+      effect: string
+    then:
+      - logger.log:
+          format: "LED #%06X %s"
+          args: [color, effect.c_str()]

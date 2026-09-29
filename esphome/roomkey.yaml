@@ -1,0 +1,34 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# RoomKey — one per room. Copy this file per room and change the substitutions.
+#   flash:  esphome run roomkey.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+substitutions:
+  node_name: roomkey-office
+  room_name: Office
+  door_name: Front door
+  language: en                      # en | de
+  timezone: Europe/Berlin
+  # Home Assistant entities this key talks to (they may not exist yet — fine).
+  light_entity: light.all_lights
+  alarm_entity: alarm_control_panel.house
+  doorbell_entity: binary_sensor.doorbell_button
+  disarm_action: script.roomkey_disarm
+
+esphome:
+  name: ${node_name}
+  friendly_name: RoomKey ${room_name}
+  project:
+    name: martinkadauke.roomkey
+    version: "0.1.0"
+
+packages:
+  board: !include packages/board_c6_lcd_147.yaml        # ← swap for board_c6_touch_lcd_147.yaml
+  net: !include packages/net_wifi.yaml
+  core: !include packages/roomkey_core.yaml
+  ha: !include packages/roomkey_ha.yaml
+  mic: !include packages/roomkey_mic.yaml         # INMP441 — safe to keep even if not wired
+  intercom: !include packages/roomkey_intercom.yaml   # WIP: RTP audio to/from the door station
+  # speaker: !include packages/roomkey_speaker.yaml  # WIP: enable once a MAX98357A is wired
+
+logger:
+  level: INFO

@@ -1,0 +1,143 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# RoomKey ⇄ Home Assistant contract
+#
+#   Subscribes to   ${light_entity}     → lights on/off on the home screen
+#                   ${alarm_entity}     → armed banner, entry-delay / alarm takeover
+#                   ${doorbell_entity}  → ring (optional; HA can also call `ring`)
+#   Calls           light.toggle ${light_entity}
+#                   ${disarm_action}  (data: room, entity_id) — policy lives in HA
+#   Fires event     esphome.roomkey  {room, node, type: answer|dismiss|hangup|
+#                                     call_door|talk_start|talk_stop}
+#   Offers actions  ring · ring_stop · call_state(state) · show_toast(message)
+#                   simulate_alarm(state) · simulate_lights(lights_on) · simulate_key(hold_ms)
+#
+# Needs "Allow the device to perform Home Assistant actions" enabled on the
+# ESPHome integration entry in HA. See homeassistant/roomkey_package.yaml.
+# ─────────────────────────────────────────────────────────────────────────────
+
+esphome:
+  on_boot:
+    - priority: -150   # after the UI is built (core runs at -100)
+      then:
+        - lambda: |-
+            auto &c = roomkey::ctl();
+            c.set_demo(id(demo_mode).state);
+            c.hooks.toggle_lights = []() { id(ha_toggle_lights).execute(); };
+            c.hooks.disarm = []() { id(ha_disarm).execute(); };
+            c.hooks.answer = []() { id(ha_event).execute(std::string("answer")); };
+            c.hooks.dismiss = []() { id(ha_event).execute(std::string("dismiss")); };
+            c.hooks.call_door = []() { id(ha_event).execute(std::string("call_door")); };
+            c.hooks.hangup = []() { id(ha_event).execute(std::string("hangup")); };
+            auto prev_talk = c.hooks.talk;
+            c.hooks.talk = [prev_talk](bool on) {
+              if (prev_talk) prev_talk(on);
+              if (!roomkey::ctl().cfg.demo) id(ha_event).execute(std::string(on ? "talk_start" : "talk_stop"));
+            };
+
+api:
+  encryption:
+    key: !secret api_key
+  actions:
+    - action: ring
+      then:
+        - lambda: roomkey::ctl().ring_start();
+    - action: ring_stop
+      then:
+        - lambda: roomkey::ctl().ring_stop();
+    - action: call_state
+      variables:
+        state: string
+      then:
+        - lambda: roomkey::ctl().call_state(state);
+    - action: show_toast
+      variables:
+        message: string
+      then:
+        - lambda: roomkey::ctl().toast(message, 2500);
+    - action: simulate_alarm
+      variables:
+        state: string
+      then:
+        - lambda: roomkey::ctl().set_alarm(roomkey::parse_alarm(state));
+    - action: simulate_key          # press (short) or hold the key remotely — for tests
+      variables:
+        hold_ms: int
+      then:
+        - lambda: roomkey::ctl().key(true);
+        - delay: !lambda return hold_ms;
+        - lambda: roomkey::ctl().key(false);
+    - action: simulate_lights
+      variables:
+        lights_on: bool
+      then:
+        - lambda: "roomkey::ctl().set_lights(lights_on ? 1 : 0);"
+
+interval:
+  - interval: 2s
+    then:
+      - lambda: roomkey::ctl().set_online(api::global_api_server->is_connected_with_state_subscription());
+
+switch:
+  - platform: template
+    id: demo_mode
+    name: "Demo mode"
+    icon: mdi:test-tube
+    entity_category: config
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON   # on until the rest of the system exists
+    on_turn_on:
+      - lambda: roomkey::ctl().set_demo(true);
+    on_turn_off:
+      - lambda: |-
+          auto &c = roomkey::ctl();
+          c.set_demo(false);
+          c.set_lights_state(id(ha_light_state).state);
+          c.set_alarm_state(id(ha_alarm_state).state);
+
+text_sensor:
+  - platform: homeassistant
+    id: ha_alarm_state
+    entity_id: ${alarm_entity}
+    internal: true
+    on_value:
+      - lambda: roomkey::ctl().set_alarm_state(x);
+  - platform: homeassistant
+    id: ha_light_state
+    entity_id: ${light_entity}
+    internal: true
+    on_value:
+      - lambda: roomkey::ctl().set_lights_state(x);
+
+binary_sensor:
+  - platform: homeassistant
+    id: ha_doorbell
+    entity_id: ${doorbell_entity}
+    internal: true
+    on_press:
+      - lambda: roomkey::ctl().ring_start();
+
+script:
+  - id: ha_toggle_lights
+    then:
+      - homeassistant.action:
+          action: light.toggle
+          data:
+            entity_id: ${light_entity}
+  - id: ha_disarm
+    then:
+      - homeassistant.action:
+          action: ${disarm_action}
+          data:
+            room: ${room_name}
+            entity_id: ${alarm_entity}
+  - id: ha_event
+    mode: queued
+    parameters:
+      kind: string
+    then:
+      - homeassistant.event:
+          event: esphome.roomkey
+          data:
+            room: ${room_name}
+            node: ${node_name}
+            type: !lambda return kind;

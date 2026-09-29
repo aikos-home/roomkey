@@ -1,0 +1,83 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Microphone: INMP441 I²S MEMS mic (bottom port — the PCB hole faces the room).
+#   INMP441  VDD→3V3  GND→GND  SCK→${i2s_bclk}  WS→${i2s_lrclk}  SD→${i2s_din}
+#            L/R→${mic_lr} (driven LOW = left channel; saves the board's only GND pin)
+# Captures only while "Room info" is open (live dBFS meter) or while talking;
+# while talking the samples also go to the intercom link (roomkey_intercom.yaml).
+# Verified 2026-09-29: 1 kHz test beep 30 dB over the room floor, speech +18 dB.
+# The I²S bus is shared with the speaker amp later (half-duplex by design).
+# ─────────────────────────────────────────────────────────────────────────────
+
+substitutions:
+  mic_gain: "4.0"   # digital gain into the intercom stream (×4 ≈ +12 dB)
+
+esphome:
+  includes:
+    - src/roomkey_dsp.h
+    - src/roomkey_audio.h
+  on_boot:
+    - priority: -160
+      then:
+        - lambda: |-
+            roomkey::ctl().hooks.mic = [](bool on) {
+              if (on) {
+                id(mic).start();
+              } else {
+                id(mic).stop();
+                roomkey::ctl().set_mic_level(-1.0f, -120.0f);
+              }
+            };
+
+switch:
+  - platform: gpio
+    id: mic_lr_select
+    pin: ${mic_lr}
+    internal: true
+    restore_mode: ALWAYS_OFF   # LOW → INMP441 outputs on the left slot
+
+i2s_audio:
+  - id: i2s_bus
+    i2s_lrclk_pin: ${i2s_lrclk}
+    i2s_bclk_pin: ${i2s_bclk}
+
+microphone:
+  - platform: i2s_audio
+    id: mic
+    i2s_audio_id: i2s_bus
+    i2s_din_pin: ${i2s_din}
+    adc_type: external
+    pdm: false
+    channel: left
+    sample_rate: 16000
+    bits_per_sample: 32bit
+    correct_dc_offset: true
+    on_data:
+      - lambda: |-
+          // x = little-endian int32 (Q31) samples. Runs in the mic task: compute, store, return.
+          // 120 Hz high-pass first: kills table knocks / handling rumble (measured +43 dB
+          // below 80 Hz on loose wires) without touching the speech band.
+          static roomkey::Biquad hp = roomkey::Biquad::highpass(120.0f, 16000.0f);
+          const float gain = ${mic_gain};
+          const int32_t *s = reinterpret_cast<const int32_t *>(x.data());
+          size_t n = x.size() / 4;
+          float acc = 0;
+          int16_t out[512];
+          size_t done = 0;
+          while (done < n) {
+            size_t k = n - done < 512 ? n - done : 512;
+            for (size_t i = 0; i < k; i++) {
+              float y = hp.process(s[done + i] * (1.0f / 2147483648.0f));
+              acc += y * y;
+              float v = y * gain * 32768.0f;
+              out[i] = (int16_t) (v > 32767.f ? 32767 : (v < -32768.f ? -32768 : v));
+            }
+            if (roomkey::audio().active()) roomkey::audio().push_s16(out, k);   // no-op unless talking
+            done += k;
+          }
+          if (n == 0) return;
+          float db = 10.0f * log10f(acc / n + 1e-12f);
+          float lvl = (db + 65.0f) / 50.0f;   // −65 dBFS → 0 … −15 dBFS → 1
+          lvl = lvl < 0 ? 0 : (lvl > 1 ? 1 : lvl);
+          static float smooth = 0;
+          smooth = lvl > smooth ? lvl : smooth * 0.88f + lvl * 0.12f;   // fast attack, slow release
+          roomkey::ctl().set_mic_level(smooth, db);

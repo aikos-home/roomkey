@@ -1,0 +1,72 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Intercom media (WIP): RTP / L16 / 16 kHz mono over UDP ${intercom_port}.
+#   • mic → door while the key is held (push-to-talk), door → speaker otherwise
+#   • peer is latched from the first stream that arrives during a call, or set via
+#     the `set_intercom_peer` action (HA / door station)
+#   • outside a call every incoming packet is dropped unheard (no LAN device can play
+#     sound in a bedroom). Still: keep RoomKeys in the IoT VLAN, like the door devices.
+# Signalling stays in HA (events answer / talk_* / hangup, action call_state).
+# See docs/intercom-protocol.md.
+# ─────────────────────────────────────────────────────────────────────────────
+
+substitutions:
+  intercom_port: "5004"
+
+esphome:
+  includes:
+    - src/roomkey_audio.h
+  on_boot:
+    - priority: -170
+      then:
+        - lambda: |-
+            auto &c = roomkey::ctl();
+            auto prev_talk = c.hooks.talk;
+            c.hooks.talk = [prev_talk](bool on) {
+              if (prev_talk) prev_talk(on);
+              roomkey::audio().set_tx(on);
+            };
+            auto prev_hangup = c.hooks.hangup;
+            c.hooks.hangup = [prev_hangup]() {
+              if (prev_hangup) prev_hangup();
+              roomkey::audio().end_session();
+            };
+
+api:
+  actions:
+    - action: set_intercom_peer
+      variables:
+        peer_host: string
+        peer_port: int
+      then:
+        - lambda: roomkey::audio().set_peer(peer_host, peer_port);
+
+interval:
+  - interval: 10ms
+    then:
+      - lambda: |-
+          auto &a = roomkey::audio();
+          if (!a.active()) {
+            if (network::is_connected()) a.begin(${intercom_port});
+            return;
+          }
+          auto &c = roomkey::ctl();
+          a.set_accept(c.in_call());   // audio in only during a call (see roomkey_audio.h)
+          a.loop();
+          if (c.in_call()) c.set_level(a.rx_level);
+          else if (a.tx()) a.end_session();   // call ended elsewhere (door hung up)
+
+sensor:
+  - platform: template
+    name: "Intercom RX packets"
+    id: intercom_rx
+    entity_category: diagnostic
+    accuracy_decimals: 0
+    update_interval: 5s
+    lambda: return roomkey::audio().rx_pkts;
+  - platform: template
+    name: "Intercom TX packets"
+    id: intercom_tx
+    entity_category: diagnostic
+    accuracy_decimals: 0
+    update_interval: 5s
+    lambda: return roomkey::audio().tx_pkts;

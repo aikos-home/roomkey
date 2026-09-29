@@ -1,0 +1,65 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Speaker (WIP · opt-in · untested on hardware): MAX98357A I²S amp + small speaker.
+#   MAX98357A  VIN→5V (VCC_5V pin, louder) or 3V3   GND→GND
+#   Speaker    Waveshare 2030 cavity 8 Ω 2 W (PH1.25 plug: use the two wires that read ~8 Ω)
+#              BCLK→${i2s_bclk}  LRC→${i2s_lrclk}  DIN→${i2s_dout}   SD/GAIN: leave open
+# Shares the I²S clocks with the INMP441 → strictly half-duplex (which is also
+# what push-to-talk wants: no echo from a speaker 1 cm from the mic).
+#   • ringtone: RTTTL "ding-dong", repeats while the ring screen is up
+#   • door audio: plays what the intercom link receives while listening
+# Requires roomkey_mic.yaml (defines the shared i2s bus) and roomkey_intercom.yaml.
+# ─────────────────────────────────────────────────────────────────────────────
+
+substitutions:
+  ringtone: "roomkey:d=4,o=5,b=100:8e6,4c6,8p,8e6,4c6"
+  # The MAX98357A can push ~1.4–1.8 W into 8 Ω. Output cap per speaker:
+  #   Waveshare 2030 cavity, 8 Ω 2 W           → 0.9  (the speaker in use; sealed, 5.5 mm thin)
+  #   eMagTech 20×30 mm, 8 Ω 1 W (open back)  → 0.6  (≈ −4.4 dB, ~0.6 W peak)
+  speaker_max: "0.9"
+
+speaker:
+  - platform: i2s_audio
+    id: spk
+    i2s_audio_id: i2s_bus
+    i2s_dout_pin: ${i2s_dout}
+    dac_type: external
+    channel: mono
+    sample_rate: 16000
+    bits_per_sample: 16bit
+    buffer_duration: 120ms
+    timeout: 400ms          # release the shared bus quickly so push-to-talk can grab it
+
+rtttl:
+  id: ringer
+  speaker: spk
+  gain: 50%
+  on_finished_playback:
+    - if:
+        condition:
+          lambda: return roomkey::ctl().ringing();
+        then:
+          - delay: 700ms
+          - lambda: if (roomkey::ctl().ringing()) id(ringer).play("${ringtone}");
+
+esphome:
+  on_boot:
+    - priority: -180
+      then:
+        - lambda: |-
+            auto &c = roomkey::ctl();
+            c.hooks.ringtone = [](bool on) {
+              if (on) id(ringer).play("${ringtone}");
+              else id(ringer).stop();
+            };
+            roomkey::audio().sink = [](const int16_t *pcm, size_t n) {
+              int16_t buf[(1500 - 12) / 2];
+              const float g = ${speaker_max};
+              if (n > sizeof(buf) / 2) n = sizeof(buf) / 2;
+              for (size_t i = 0; i < n; i++) buf[i] = (int16_t) (pcm[i] * g);   // speaker protection cap
+              id(spk).play(reinterpret_cast<const uint8_t *>(buf), n * 2);
+            };
+            auto prev_talk = c.hooks.talk;
+            c.hooks.talk = [prev_talk](bool on) {
+              if (on) id(spk).stop();   // free the bus for the microphone
+              if (prev_talk) prev_talk(on);
+            };

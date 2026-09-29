@@ -1,0 +1,185 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Board: Waveshare ESP32-C6-Touch-LCD-1.47  (touch variant · recommended for final build)
+#   ESP32-C6FH8 (8 MB, no PSRAM) · JD9853 172×320 IPS · AXS5106L cap. touch (0x63)
+#   QMI8658 IMU (0x6B) · TF slot · LiPo charger · no RGB LED (glow ring added on IO4)
+#
+#   NOT the board currently on the desk — prepared from Waveshare's schematic +
+#   official ESP-IDF BSP and a community-verified touch driver. Compiles; the
+#   JD9853 init sequence is Waveshare's own. Untested on hardware (WIP).
+#
+#   GPIO1/2  LCD+TF SCK/MOSI   GPIO14 LCD CS   GPIO15 LCD DC   GPIO22 LCD RST
+#   GPIO23   LCD BL            GPIO18/19 I²C SDA/SCL (touch + IMU)
+#   GPIO20   TP RST            GPIO21 TP INT   GPIO9  BOOT = mechanical key
+#   Header, used by RoomKey: IO7 IO8 IO16 IO17 (I²S), IO3 (mic L/R), IO4 (glow ring)
+# ─────────────────────────────────────────────────────────────────────────────
+
+substitutions:
+  has_touch: "true"
+  lvgl_buffer: 25%
+  i2s_bclk: GPIO7
+  i2s_lrclk: GPIO8
+  i2s_dout: GPIO16
+  i2s_din: GPIO17
+  mic_lr: GPIO3       # → INMP441 L/R, held LOW (TF slot unused)
+
+esp32:
+  variant: esp32c6
+  flash_size: 8MB
+  framework:
+    type: esp-idf
+
+external_components:
+  - source:
+      type: local
+      path: components
+    components: [axs5106l]
+
+spi:
+  id: lcd_spi
+  clk_pin: GPIO1
+  mosi_pin: GPIO2
+
+i2c:
+  id: bus_i2c
+  sda: GPIO18
+  scl: GPIO19
+  frequency: 400kHz
+
+output:
+  - platform: ledc
+    id: lcd_bl_pwm
+    pin: GPIO23
+    frequency: 20000Hz
+
+light:
+  - platform: monochromatic
+    id: backlight
+    name: "Backlight"
+    output: lcd_bl_pwm
+    restore_mode: ALWAYS_ON
+    default_transition_length: 300ms
+    gamma_correct: 2.2
+
+  # Glow ring around the key base (north star v2). WIP: 4 × SK6812-mini / WS2812-2020 on IO4
+  # (TF-slot CS, free because the TF slot is unused). The board itself has no RGB LED.
+  - platform: esp32_rmt_led_strip
+    id: status_led
+    name: "Glow ring"
+    pin: GPIO4
+    num_leds: 4
+    chipset: WS2812
+    channel_colors: GRB
+    restore_mode: ALWAYS_OFF
+    default_transition_length: 150ms
+    effects:
+      - pulse:
+          name: pulse
+          transition_length: 700ms
+          update_interval: 700ms
+          min_brightness: 5%
+          max_brightness: 55%
+      - strobe:
+          name: strobe
+          colors:
+            - {state: true, brightness: 100%, red: 100%, green: 12%, blue: 15%, duration: 110ms}
+            - {state: false, duration: 110ms}
+
+display:
+  - platform: mipi_spi
+    id: lcd
+    model: CUSTOM
+    spi_id: lcd_spi
+    cs_pin: GPIO14
+    dc_pin:
+      number: GPIO15
+      ignore_strapping_warning: true
+    reset_pin: GPIO22
+    data_rate: 80MHz
+    color_order: rgb
+    invert_colors: true
+    dimensions:
+      width: 172
+      height: 320
+      offset_width: 34
+      offset_height: 0
+    auto_clear_enabled: false
+    update_interval: never
+    # JD9853 vendor init from Waveshare's esp_lcd_jd9853 driver.
+    # ESPHome appends COLMOD / MADCTL / INVON / SLPOUT / DISPON itself.
+    init_sequence:
+      - [0x11]
+      - delay 120ms
+      - [0xDF, 0x98, 0x53]
+      - [0xDF, 0x98, 0x53]
+      - [0xB2, 0x23]
+      - [0xB7, 0x00, 0x47, 0x00, 0x6F]
+      - [0xBB, 0x1C, 0x1A, 0x55, 0x73, 0x63, 0xF0]
+      - [0xC0, 0x44, 0xA4]
+      - [0xC1, 0x16]
+      - [0xC3, 0x7D, 0x07, 0x14, 0x06, 0xCF, 0x71, 0x72, 0x77]
+      - [0xC4, 0x00, 0x00, 0xA0, 0x79, 0x0B, 0x0A, 0x16, 0x79, 0x0B, 0x0A, 0x16, 0x82]
+      - [0xC8, 0x3F, 0x32, 0x29, 0x29, 0x27, 0x2B, 0x27, 0x28, 0x28, 0x26, 0x25, 0x17, 0x12, 0x0D, 0x04, 0x00,
+               0x3F, 0x32, 0x29, 0x29, 0x27, 0x2B, 0x27, 0x28, 0x28, 0x26, 0x25, 0x17, 0x12, 0x0D, 0x04, 0x00]
+      - [0xD0, 0x04, 0x06, 0x6B, 0x0F, 0x00]
+      - [0xD7, 0x00, 0x30]
+      - [0xE6, 0x14]
+      - [0xDE, 0x01]
+      - [0xB7, 0x03, 0x13, 0xEF, 0x35, 0x35]
+      - [0xC1, 0x14, 0x15, 0xC0]
+      - [0xC2, 0x06, 0x3A]
+      - [0xC4, 0x72, 0x12]
+      - [0xBE, 0x00]
+      - [0xDE, 0x02]
+      - [0xE5, 0x00, 0x02, 0x00]
+      - [0xE5, 0x01, 0x02, 0x00]
+      - [0xDE, 0x00]
+      - [0x35, 0x00]
+      - [0xDE, 0x02]
+      - [0xE5, 0x00, 0x02, 0x00]
+      - [0xDE, 0x00]
+
+touchscreen:
+  - platform: axs5106l
+    id: touch
+    display: lcd
+    i2c_id: bus_i2c
+    address: 0x63
+    interrupt_pin: GPIO21
+    reset_pin: GPIO20
+    update_interval: 20ms
+    transform:
+      mirror_x: true
+
+binary_sensor:
+  - platform: gpio
+    id: key_raw
+    internal: true
+    pin:
+      number: GPIO9
+      inverted: true
+      ignore_strapping_warning: true
+      mode:
+        input: true
+        pullup: true
+    filters:
+      - delayed_on: 12ms
+      - delayed_off: 12ms
+
+script:
+  - id: rk_led
+    mode: restart
+    parameters:
+      color: int
+      effect: string
+    then:
+      - lambda: |-
+          if (effect == "off") {
+            auto call = id(status_led).turn_off();
+            call.perform();
+            return;
+          }
+          auto call = id(status_led).turn_on();
+          call.set_rgb(((color >> 16) & 0xFF) / 255.0f, ((color >> 8) & 0xFF) / 255.0f, (color & 0xFF) / 255.0f);
+          call.set_brightness(0.45f);
+          call.set_effect(effect == "solid" ? std::string("None") : effect);
+          call.perform();

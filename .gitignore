@@ -1,0 +1,13 @@
+# build output
+esphome/.esphome/
+__pycache__/
+esphome/shots/
+esphome/shots_*/
+
+# never publish
+# - generated device keys
+esphome/secrets.yaml
+# - Waveshare factory firmware dump (vendor binary)
+backup/
+# - audio captured on the device
+tools/recordings/

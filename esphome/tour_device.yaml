@@ -1,0 +1,42 @@
+# Hardware self-test: same firmware as roomkey.yaml, plus the scripted tour after
+# boot. Watch the screen (or the log) — every state is shown once, then normal use.
+#   esphome run tour_device.yaml
+substitutions:
+  node_name: roomkey-office
+  room_name: Office
+  door_name: Front door
+  language: en
+  timezone: Europe/Berlin
+  light_entity: light.all_lights
+  alarm_entity: alarm_control_panel.house
+  doorbell_entity: binary_sensor.doorbell_button
+  disarm_action: script.roomkey_disarm
+
+esphome:
+  name: ${node_name}
+  friendly_name: RoomKey ${room_name}
+  platformio_options:
+    build_flags:
+      - -DRK_TOUR_ON_BOOT
+  includes:
+    - src/roomkey_tour.h
+  on_boot:
+    - priority: -200
+      then:
+        - lambda: roomkey::sim::maybe_start_tour();
+
+packages:
+  board: !include packages/board_c6_lcd_147.yaml
+  net: !include packages/net_wifi.yaml
+  core: !include packages/roomkey_core.yaml
+  ha: !include packages/roomkey_ha.yaml
+  mic: !include packages/roomkey_mic.yaml
+  intercom: !include packages/roomkey_intercom.yaml
+
+logger:
+  level: DEBUG
+  logs:
+    lvgl: INFO
+    sensor: INFO
+    light: INFO
+    wifi: INFO

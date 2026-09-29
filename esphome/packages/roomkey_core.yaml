@@ -1,0 +1,190 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# RoomKey core: UI controller, fonts, key wiring, local entities.
+# Board-agnostic — expects the board contract (lcd, backlight, key_raw, rk_led).
+# ─────────────────────────────────────────────────────────────────────────────
+
+esphome:
+  includes:
+    - src/roomkey_ui.h
+  on_boot:
+    - priority: -100   # after LVGL is set up
+      then:
+        - lambda: |-
+            auto &c = roomkey::ctl();
+            c.set_language("${language}");
+            c.cfg.room = "${room_name}";
+            c.cfg.door = "${door_name}";
+            c.cfg.has_touch = ${has_touch};
+            c.cfg.bright = id(screen_brightness).state / 100.0f;
+            c.cfg.dim_after_ms = (uint32_t) id(dim_after).state * 1000;
+            c.fonts.small = id(f_small)->get_lv_font();
+            c.fonts.body = id(f_body)->get_lv_font();
+            c.fonts.title = id(f_title)->get_lv_font();
+            c.fonts.big = id(f_big)->get_lv_font();
+            c.fonts.icon_sm = id(f_icon_sm)->get_lv_font();
+            c.fonts.icon_md = id(f_icon_md)->get_lv_font();
+            c.fonts.icon_lg = id(f_icon_lg)->get_lv_font();
+            c.hooks.backlight = [](float b) {
+              if (b <= 0.001f) { auto call = id(backlight).turn_off(); call.perform(); return; }
+              auto call = id(backlight).turn_on();
+              call.set_brightness(b);
+              call.perform();
+            };
+            c.hooks.led = [](uint32_t col, const char *fx) { id(rk_led).execute((int) col, std::string(fx)); };
+            c.hooks.gesture = [](const char *g) {
+              static const char *const KNOWN[] = {"press", "hold", "tap", "swipe_up", "swipe_down", "talk_start", "talk_stop"};
+              for (auto k : KNOWN) if (strcmp(k, g) == 0) { id(key_gesture).trigger(g); return; }
+            };
+            c.build(lv_screen_active());
+
+binary_sensor:
+  - id: !extend key_raw
+    on_press:
+      - lambda: roomkey::ctl().key(true);
+    on_release:
+      - lambda: roomkey::ctl().key(false);
+
+interval:
+  - interval: 5s   # clock: `rk_time` comes from the board/net package
+    then:
+      - lambda: |-
+          auto now = id(rk_time).now();
+          if (now.is_valid()) roomkey::ctl().set_time(now.hour, now.minute);
+
+event:
+  - platform: template
+    id: key_gesture
+    name: "Input"
+    icon: mdi:gesture-tap-button
+    event_types: [press, hold, tap, swipe_up, swipe_down, talk_start, talk_stop]
+
+number:
+  - platform: template
+    id: screen_brightness
+    name: "Screen brightness"
+    icon: mdi:brightness-6
+    entity_category: config
+    min_value: 10
+    max_value: 100
+    step: 5
+    unit_of_measurement: "%"
+    initial_value: 70
+    restore_value: true
+    optimistic: true
+    on_value:
+      - lambda: roomkey::ctl().set_brightness(x / 100.0f);
+  - platform: template
+    id: dim_after
+    name: "Dim after"
+    icon: mdi:brightness-auto
+    entity_category: config
+    min_value: 0          # 0 = never dim
+    max_value: 600
+    step: 10
+    unit_of_measurement: "s"
+    initial_value: 60
+    restore_value: true
+    optimistic: true
+    on_value:
+      - lambda: roomkey::ctl().set_dim_after((uint32_t) x * 1000);
+
+button:
+  - platform: template
+    name: "Test doorbell"
+    icon: mdi:bell-ring
+    entity_category: diagnostic
+    on_press:
+      - lambda: roomkey::ctl().ring_start();
+
+text_sensor:
+  - platform: template
+    name: "Screen"
+    icon: mdi:monitor-small
+    entity_category: diagnostic
+    update_interval: 1s
+    lambda: return std::string(roomkey::ctl().view_name());
+    filters:
+      - lambda: |-
+          static std::string last;
+          if (x == last) return {};
+          last = x;
+          return x;
+
+# ── Fonts ────────────────────────────────────────────────────────────────────
+font:
+  - id: f_small
+    file: {type: gfonts, family: Inter, weight: 600}
+    size: 13
+    bpp: 4
+    glyphsets: [GF_Latin_Core]
+    ignore_missing_glyphs: true
+  - id: f_body
+    file: {type: gfonts, family: Inter, weight: 600}
+    size: 17
+    bpp: 4
+    glyphsets: [GF_Latin_Core]
+    ignore_missing_glyphs: true
+  - id: f_title
+    file: {type: gfonts, family: Inter, weight: 700}
+    size: 21
+    bpp: 4
+    glyphsets: [GF_Latin_Core]
+    ignore_missing_glyphs: true
+  - id: f_big
+    file: {type: gfonts, family: Inter, weight: 600}
+    size: 34
+    bpp: 4
+    glyphs: "0123456789:-– "
+  # Material Design Icons — same names as mdi: in Home Assistant.
+  - id: f_icon_sm
+    file: fonts/materialdesignicons-webfont.ttf
+    size: 16
+    bpp: 4
+    glyphs: &icons_small
+      - "\U000F068A"  # shield-home
+      - "\U000F099D"  # shield-lock
+      - "\U000F0565"  # shield-check
+      - "\U000F0ECC"  # shield-alert
+      - "\U000F1828"  # shield-moon
+      - "\U000F06BB"  # shield-airplane
+      - "\U000F051F"  # timer-sand
+      - "\U000F0164"  # cloud-off-outline
+      - "\U000F009E"  # bell-ring
+  - id: f_icon_md
+    file: fonts/materialdesignicons-webfont.ttf
+    size: 24
+    bpp: 4
+    glyphs:
+      - "\U000F03F6"  # phone-in-talk
+      - "\U000F02FD"  # information-outline
+      - "\U000F009E"  # bell-ring
+      - "\U000F0ECC"  # shield-alert
+      - "\U000F1398"  # close-thick
+      - "\U000F03F5"  # phone-hangup
+  - id: f_icon_lg
+    file: fonts/materialdesignicons-webfont.ttf
+    size: 60
+    bpp: 4
+    glyphs:
+      - "\U000F0335"  # lightbulb
+      - "\U000F0336"  # lightbulb-outline
+      - "\U000F009E"  # bell-ring
+      - "\U000F0ECC"  # shield-alert
+      - "\U000F078F"  # alarm-light
+      - "\U000F036C"  # microphone
+      - "\U000F07C5"  # ear-hearing
+      - "\U000F0565"  # shield-check
+      - "\U000F1398"  # close-thick
+
+# ── LVGL: one empty screen; the controller builds the UI on it ───────────────
+lvgl:
+  displays: [lcd]
+  buffer_size: ${lvgl_buffer}
+  log_level: WARN
+  pages:
+    - id: rk_page
+      bg_color: 0x0A0C0F
+      scrollable: false
+      widgets:   # declared so ESPHome compiles these LVGL widget types in
+        - label: {id: rk_dummy_label, hidden: true, text: " ", text_font: f_small}
+        - arc: {id: rk_dummy_arc, hidden: true}
