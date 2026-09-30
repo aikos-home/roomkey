@@ -387,6 +387,13 @@ class Controller {
   void test_alarm() { start_test_alarm_(); }
   void set_talk_level(float l) { level_in_ = l; }
   bool ringing() const { return ringing_; }
+  // TEST ONLY (WIP): keeps the microphone on for a timed test recording and says so on screen.
+  void set_test_recording(bool on) {
+    test_rec_ = on;
+    if (on) show_toast_("Mic test: recording 10 s", 10000);
+    render();
+  }
+  bool test_recording() const { return test_rec_; }
   bool in_call() const { return in_call_; }
   bool talking() const { return talking_; }
 
@@ -755,7 +762,7 @@ class Controller {
       case View::ALARM: render_alarm_(); break;
     }
     render_hints_(v);
-    bool want_mic = v == View::INFO || talking_;
+    bool want_mic = v == View::INFO || talking_ || test_rec_;
     if (want_mic != mic_on_ && hooks.mic) {
       mic_on_ = want_mic;
       hooks.mic(want_mic);
@@ -1350,6 +1357,7 @@ class Controller {
   bool ringing_ = false, in_call_ = false, talking_ = false;
   bool menu_open_ = false, info_open_ = false, disarming_ = false, test_alarm_ = false;
   bool online_ = false;
+  bool test_rec_ = false;
   int menu_sel_ = 0, missed_ = 0;
   char missed_at_[8] = "";
   int hh_ = -1, mm_ = -1, rssi_ = 0;

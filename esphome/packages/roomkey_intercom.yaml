@@ -53,7 +53,7 @@ interval:
           a.set_accept(c.in_call());   // audio in only during a call (see roomkey_audio.h)
           a.loop();
           if (c.in_call()) c.set_level(a.rx_level);
-          else if (a.tx()) a.end_session();   // call ended elsewhere (door hung up)
+          else if (a.tx() && !c.test_recording()) a.end_session();   // call ended elsewhere (door hung up)
 
 sensor:
   - platform: template

@@ -78,7 +78,7 @@ script:
     variables:
       # ← one line per RoomKey (node = ESPHome name, room = its room_name)
       roomkey_nodes:
-        - {node: roomkey-office, room: Office}
+        - {node: aikos-roomkey-office, room: Office}
         # - {node: roomkey-bedroom, room: Bedroom}
 
 automation:

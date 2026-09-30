@@ -22,6 +22,7 @@ packages:
   ha: !include packages/roomkey_ha.yaml
   intercom: !include packages/roomkey_intercom.yaml
   voice: !include packages/sim_voice.yaml
+  test_record: !include packages/roomkey_test_record.yaml
 
 logger:
   level: DEBUG

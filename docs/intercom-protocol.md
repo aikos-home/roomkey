@@ -48,9 +48,9 @@ a=rtpmap:96 L16/16000/1
 
 ```
 door button ─▶ HA (binary_sensor on) ─▶ all keys ring
-key "Office" pressed ─▶ event {type: answer, node: roomkey-office}
+key "Office" pressed ─▶ event {type: answer, node: aikos-roomkey-office}
 HA ─▶ other keys: ring_stop                       (automation in roomkey_package.yaml)
-HA ─▶ door station: "stream to roomkey-office.local:5004"   (door-station side, WIP)
+HA ─▶ door station: "stream to aikos-roomkey-office.local:5004"   (door-station side, WIP)
 door ══ RTP ══▶ key :5004  (key latches door as peer, plays it)
 key held   ─▶ event talk_start;  key ══ RTP ══▶ door   (door plays it)
 key released ─▶ event talk_stop

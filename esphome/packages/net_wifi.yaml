@@ -1,15 +1,17 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Networking for real hardware.
-# No Wi-Fi credentials are baked in: provision once via
-#   • Improv over USB  → https://web.esphome.io  → "Connect" → Wi-Fi, or
-#   • the fallback hotspot "RoomKey <room>" (password: ap_password secret).
-# To hardcode instead, add  ssid: !secret wifi_ssid / password: !secret wifi_password
+# Networking for real hardware — the usual ESPHome way: Wi-Fi from secrets.yaml
+# (wifi_ssid / wifi_password, gitignored, never in the repo; 2.4 GHz only).
+# Fallbacks if that network is unreachable: the hotspot "RoomKey <room>"
+# (password: ap_password secret) with a captive portal, and Improv over USB.
 # ─────────────────────────────────────────────────────────────────────────────
 
 wifi:
+  networks:
+    - ssid: !secret wifi_ssid
+      password: !secret wifi_password
   power_save_mode: none   # lowest latency for ring / talk
   ap:
-    ssid: "RoomKey ${room_name}"
+    ssid: "aikos RoomKey ${room_name}"
     password: !secret ap_password
 
 captive_portal:

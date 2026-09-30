@@ -104,7 +104,7 @@ script:
     variables:
       roomkey_nodes:
         - {node: roomkey-sim, room: Office}      # desktop simulator
-        - {node: roomkey-office, room: Office}   # desk prototype board
+        - {node: aikos-roomkey-desk, room: Desk} # desk prototype board (non-touch)
     sequence:
       - repeat:
           for_each: "{{ roomkey_nodes }}"

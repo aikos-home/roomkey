@@ -7,11 +7,11 @@ key subscribes to (lights, alarm, doorbell), answers its service calls
 (light.toggle, the disarm script) and prints its events (answer, talk, hangup…).
 
     # interactive: type `help`
-    python3 fake_home.py --host roomkey-office.local
+    python3 fake_home.py --host aikos-roomkey-desk.local
     # automated end-to-end test of the HA contract (works against the simulator)
     python3 fake_home.py --host localhost --test
     # also be the door station's audio: stream to the key on answer, record what it sends
-    python3 fake_home.py --host roomkey-office.local --door-audio some.mp3
+    python3 fake_home.py --host aikos-roomkey-desk.local --door-audio some.mp3
 
 Run it with the Python that ships with ESPHome (it has aioesphomeapi):
     ~/.local/share/uv/tools/esphome/bin/python fake_home.py …

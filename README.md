@@ -139,7 +139,7 @@ esphome compile sim.yaml                                   # desktop simulator (
 .esphome/build/roomkey-sim/.pioenvs/roomkey-sim/program     # SPACE = key, mouse = touch
 RK_TOUR=1 RK_TOUR_EXIT=1 RK_SHOTS=shots .esphome/build/roomkey-sim/.pioenvs/roomkey-sim/program  # screenshot every state
 ~/.local/share/uv/tools/esphome/bin/python ../tools/fake_home.py --host localhost --test   # HA + door contract test
-~/.local/share/uv/tools/esphome/bin/python ../tools/fake_home.py --host roomkey-office.local  # interactive fake HA
+~/.local/share/uv/tools/esphome/bin/python ../tools/fake_home.py --host aikos-roomkey-desk.local  # interactive fake HA
 ```
 `tour_device.yaml` runs the same tour on the real board and logs frame timings.
 

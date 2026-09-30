@@ -2,7 +2,7 @@
 # boot. Watch the screen (or the log) — every state is shown once, then normal use.
 #   esphome run tour_device.yaml
 substitutions:
-  node_name: roomkey-office
+  node_name: aikos-roomkey-desk
   room_name: Office
   door_name: Front door
   language: en
@@ -14,7 +14,7 @@ substitutions:
 
 esphome:
   name: ${node_name}
-  friendly_name: RoomKey ${room_name}
+  friendly_name: aikos RoomKey ${room_name}
   platformio_options:
     build_flags:
       - -DRK_TOUR_ON_BOOT

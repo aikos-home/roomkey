@@ -3,8 +3,8 @@
 #   flash:  esphome run roomkey.yaml
 # ─────────────────────────────────────────────────────────────────────────────
 substitutions:
-  node_name: roomkey-office
-  room_name: Office
+  node_name: aikos-roomkey-desk     # network name: aikos-<device>-<room> (board is in the device info)
+  room_name: Desk
   door_name: Front door
   language: en                      # en | de
   timezone: Europe/Berlin
@@ -16,10 +16,11 @@ substitutions:
 
 esphome:
   name: ${node_name}
-  friendly_name: RoomKey ${room_name}
+  friendly_name: aikos RoomKey ${room_name}
+  comment: "RoomKey · Waveshare ESP32-C6-LCD-1.47 (non-touch desk prototype)"
   project:
-    name: martinkadauke.roomkey
-    version: "0.1.0"
+    name: aikos-home.roomkey          # lets the aikos integration recognise RoomKeys
+    version: "0.2.0"
 
 packages:
   board: !include packages/board_c6_lcd_147.yaml        # ← swap for board_c6_touch_lcd_147.yaml
@@ -28,6 +29,7 @@ packages:
   ha: !include packages/roomkey_ha.yaml
   mic: !include packages/roomkey_mic.yaml         # INMP441 — safe to keep even if not wired
   intercom: !include packages/roomkey_intercom.yaml   # WIP: RTP audio to/from the door station
+  test_record: !include packages/roomkey_test_record.yaml   # TEST ONLY: 10 s mic after ring (off by default)
   # speaker: !include packages/roomkey_speaker.yaml  # WIP: enable once a MAX98357A is wired
 
 logger:
