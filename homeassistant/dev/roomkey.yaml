@@ -1,0 +1,142 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# RoomKey — package for the shared DEV Home Assistant (goes to packages/roomkey.yaml)
+#
+# = the real contract (../roomkey_package.yaml) + DEV-ONLY stand-ins for the entities
+#   other devices will provide later. Every stand-in is marked "DEV STAND-IN".
+#   The doorbell stand-in was removed on 2026-09-30: binary_sensor.doorbell_button now comes
+#   from Klingelbox's real bell (s3poeeth-intercom-bell, renamed in the entity registry).
+#   When Klingelbox (doorbell) or the alarm system provide the real entities, delete
+#   the matching stand-in here and point RoomKey's substitutions at the real ids.
+#
+# Rules on the dev instance: nothing under `homeassistant:` here (only packages are set
+# in configuration.yaml), no name/location, no secrets needed.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── DEV STAND-IN: two fake lights (input_boolean + template light) ───────────
+input_boolean:
+  roomkey_test_light_1:
+    name: RoomKey test light 1
+    icon: mdi:lightbulb
+  roomkey_test_light_2:
+    name: RoomKey test light 2
+    icon: mdi:lightbulb
+
+template:
+  - light:
+      - name: RoomKey test light 1
+        unique_id: roomkey_test_light_1
+        state: "{{ is_state('input_boolean.roomkey_test_light_1', 'on') }}"
+        turn_on:
+          - action: input_boolean.turn_on
+            target: {entity_id: input_boolean.roomkey_test_light_1}
+        turn_off:
+          - action: input_boolean.turn_off
+            target: {entity_id: input_boolean.roomkey_test_light_1}
+      - name: RoomKey test light 2
+        unique_id: roomkey_test_light_2
+        state: "{{ is_state('input_boolean.roomkey_test_light_2', 'on') }}"
+        turn_on:
+          - action: input_boolean.turn_on
+            target: {entity_id: input_boolean.roomkey_test_light_2}
+        turn_off:
+          - action: input_boolean.turn_off
+            target: {entity_id: input_boolean.roomkey_test_light_2}
+
+
+# ── contract: the light group the key toggles (dev: the two fake lights) ──────
+light:
+  - platform: group
+    name: All lights
+    unique_id: roomkey_all_lights
+    entities:
+      - light.roomkey_test_light_1
+      - light.roomkey_test_light_2
+
+# ── DEV STAND-IN: an alarm panel → alarm_control_panel.house ──────────────────
+alarm_control_panel:
+  - platform: manual
+    name: House
+    unique_id: roomkey_test_house_alarm
+    code_arm_required: false
+    arming_time: 5
+    delay_time: 20
+    trigger_time: 60
+
+# ── contract: disarm policy + broadcast helper ────────────────────────────────
+script:
+  roomkey_disarm:
+    alias: RoomKey disarm request
+    mode: queued
+    fields:
+      room: {description: Room the request came from}
+      entity_id: {description: Alarm panel}
+    sequence:
+      - variables:
+          panel: "{{ entity_id | default('alarm_control_panel.house') }}"
+          allowed: >
+            {{ states(panel) in ['armed_home', 'armed_night', 'armed_custom_bypass',
+                                 'arming', 'pending', 'triggered'] }}
+      - action: logbook.log
+        data:
+          name: RoomKey
+          message: "Disarm requested in {{ room }} ({{ states(panel) }}) → {{ 'allowed' if allowed else 'refused' }}"
+          entity_id: "{{ panel }}"
+      - if: "{{ allowed }}"
+        then:
+          - action: alarm_control_panel.alarm_disarm
+            target:
+              entity_id: "{{ panel }}"
+        else:
+          - action: script.roomkey_broadcast
+            data:
+              service_suffix: show_toast
+              data: {message: "Disarm here not allowed"}
+              only_room: "{{ room }}"
+
+  roomkey_broadcast:
+    alias: RoomKey broadcast
+    mode: parallel
+    fields:
+      service_suffix: {description: "ring | ring_stop | call_state | show_toast"}
+      data: {description: Action data}
+      except_node: {description: "node name to skip (e.g. the room that answered)"}
+      only_room: {description: "room name — send to that key only (optional)"}
+    variables:
+      roomkey_nodes:
+        - {node: roomkey-sim, room: Office}      # desktop simulator
+        - {node: roomkey-office, room: Office}   # desk prototype board
+    sequence:
+      - repeat:
+          for_each: "{{ roomkey_nodes }}"
+          sequence:
+            - if: "{{ repeat.item.node != except_node and (not only_room or repeat.item.room == only_room) }}"
+              then:
+                - action: "esphome.{{ repeat.item.node | replace('-', '_') }}_{{ service_suffix }}"
+                  data: "{{ data | default({}) }}"
+                  continue_on_error: true    # a key that is offline must not stop the others
+
+automation:
+  - alias: RoomKey · answered → stop ringing elsewhere
+    id: roomkey_answered_stop_others
+    mode: queued
+    triggers:
+      - trigger: event
+        event_type: esphome.roomkey
+        event_data: {type: answer}
+    actions:
+      - action: script.roomkey_broadcast
+        data:
+          service_suffix: ring_stop
+          except_node: "{{ trigger.event.data.node }}"
+
+  - alias: RoomKey · log intercom events
+    id: roomkey_log_events
+    mode: queued
+    triggers:
+      - trigger: event
+        event_type: esphome.roomkey
+    actions:
+      - action: logbook.log
+        data:
+          name: RoomKey
+          message: "{{ trigger.event.data.room }}: {{ trigger.event.data.type }}"

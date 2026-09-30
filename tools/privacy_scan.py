@@ -4,7 +4,8 @@
     (or set ROOMKEY_DENYLIST=PATH; KLINGELBOX_DENYLIST works too)
 
 Taken from the sibling project Klingelbox (github.com/martinkadauke/intercom, MIT) with one
-addition: RoomKey's documented example entity ids are allowed (ALLOWED_ENTITY_IDS).
+addition: RoomKey's documented example entity ids, its own `roomkey_test_*` DEV stand-ins and
+service verbs (input_boolean.turn_on …) are allowed.
 
 The denylist is a private text file that is never committed. One term per line:
   - plain words match case-insensitively as whole words ("anna" does not hit "Johanna");
@@ -35,6 +36,13 @@ BUILTIN = {
 ALLOWED_EMAILS = {"noreply@anthropic.com"}
 # Generic defaults documented in RoomKey's configs — examples, not anyone's real entities.
 ALLOWED_ENTITY_IDS = {"binary_sensor.doorbell_button", "binary_sensor.doorstation_call_active"}
+ALLOWED_OBJECT_PREFIXES = ("roomkey_test_",)            # RoomKey's own DEV stand-ins
+SERVICE_VERBS = {"turn_on", "turn_off", "toggle", "reload", "trigger", "select_option", "set_value"}
+
+
+def allowed_entity(eid):
+    obj = eid.split(".", 1)[1]
+    return eid in ALLOWED_ENTITY_IDS or obj.startswith(ALLOWED_OBJECT_PREFIXES) or obj in SERVICE_VERBS
 
 
 def repo_files(root):
@@ -94,7 +102,7 @@ def main():
             for m in rx.finditer(text):
                 if name == "e-mail address" and m.group(0).lower() in ALLOWED_EMAILS:
                     continue
-                if name == "HA entity id" and m.group(0) in ALLOWED_ENTITY_IDS:
+                if name == "HA entity id" and allowed_entity(m.group(0)):
                     continue
                 line = text.count("\n", 0, m.start()) + 1
                 print(f"{rel}:{line}: {name}: {m.group(0)}")

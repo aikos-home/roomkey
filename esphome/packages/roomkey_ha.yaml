@@ -37,6 +37,9 @@ esphome:
 api:
   encryption:
     key: !secret api_key
+  # No reboot when Home Assistant is away: the key must keep working (local demo,
+  # HA maintenance). ESPHome's default would restart it every 15 min without a client.
+  reboot_timeout: 0s
   actions:
     - action: ring
       then:
@@ -113,8 +116,30 @@ binary_sensor:
     id: ha_doorbell
     entity_id: ${doorbell_entity}
     internal: true
-    on_press:
-      - lambda: roomkey::ctl().ring_start();
+    on_press:   # every off→on rings — no cooldown (storm ringing ≈ 6 presses/s must all arrive)
+      - lambda: |-
+          id(doorbell_rx_count) += 1;
+          ESP_LOGI("roomkey", "doorbell press #%u received from HA", (unsigned) id(doorbell_rx_count));
+          roomkey::ctl().ring_start();
+      - component.update: doorbell_rx_sensor
+
+globals:
+  - id: doorbell_rx_count
+    type: uint32_t
+    initial_value: "0"
+
+sensor:
+  # Compare with the bell's presses_since_boot during a storm test: equal = nothing lost on the
+  # HA → key path.
+  - platform: template
+    id: doorbell_rx_sensor
+    name: "Doorbell presses received"
+    icon: mdi:counter
+    entity_category: diagnostic
+    accuracy_decimals: 0
+    state_class: total_increasing
+    update_interval: never
+    lambda: return id(doorbell_rx_count);
 
 script:
   - id: ha_toggle_lights

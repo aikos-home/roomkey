@@ -38,7 +38,7 @@ der Open-Hardware-Türsprechanlage.
 | Bereich | Stand |
 |---|---|
 | Oberfläche und Bedienlogik (Licht, Alarm, Klingel, Gespräch, Menü, Info) | ✅ läuft auf dem Board, geprüft im Simulator und auf der Hardware |
-| Home-Assistant-Schnittstelle | ✅ **11/11** End-to-End-Prüfungen gegen ein simuliertes Home Assistant |
+| Home-Assistant-Schnittstelle | ✅ **11/11 gegen ein echtes Home Assistant** (Dev-Instanz 2026.9): Licht schalten, Entschärfen über die HA-Regel (NACHT erlaubt, ABWESEND abgelehnt), Klingel → Annehmen / Sprechen / Auflegen; dazu 11/11 gegen das simulierte HA inkl. Audio |
 | Demo-Modus (alles funktioniert ohne Home Assistant) | ✅ ab Werk an |
 | Mikrofon (INMP441) | ✅ **auf der Hardware verifiziert** – Testton +30 dB, Sprache +18 dB über dem Raumpegel; 120-Hz-Hochpass gegen Trittschall und Kabelgeräusche |
 | Gegensprechen (RTP/L16 16 kHz, Push-to-Talk) | 🟡 **in Arbeit** – funktioniert Simulator ⇄ simulierte Tür; auf der Hardware noch nicht getestet |

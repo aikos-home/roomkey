@@ -38,7 +38,7 @@ open-hardware door intercom.
 | Area | State |
 |---|---|
 | UI + interaction state machine (lights, alarm, doorbell, call, menu, info) | ✅ done — runs on the board, verified in simulator and on hardware (scripted tour) |
-| Home Assistant contract (subscriptions, light.toggle, disarm script, events, actions) | ✅ done — **11/11** end-to-end checks against a fake HA (`tools/fake_home.py --test`) |
+| Home Assistant contract (subscriptions, light.toggle, disarm script, events, actions) | ✅ **11/11 against a real Home Assistant** (2026.9 dev instance, `tools/ha_contract_test.py`): lights toggle, disarm via HA policy (NIGHT allowed, AWAY refused), ring → answer / talk / hang-up events; also 11/11 against the fake HA incl. audio (`tools/fake_home.py --test`) |
 | Demo mode (everything works standalone, no HA needed) | ✅ on by default |
 | Status LED (WS2812 on the PoC board; glow ring on the touch board) | ✅ implemented — colours per state, not visually checked |
 | Microphone (INMP441) | ✅ **verified on hardware** — wired, recorded: 1 kHz test beep +30 dB, speech +18 dB over the room; 120 Hz high-pass removes knock/handling rumble. Test: `esphome/mic_test.yaml` + `tools/mic_check.py` |
@@ -153,6 +153,7 @@ RK_TOUR=1 RK_TOUR_EXIT=1 RK_SHOTS=shots .esphome/build/roomkey-sim/.pioenvs/room
 | [`esphome/src/roomkey_audio.h`](esphome/src/roomkey_audio.h) | RTP/L16 audio link |
 | [`homeassistant/`](homeassistant/) | HA package: disarm policy, ring-stop, door hooks |
 | [`tools/fake_home.py`](tools/fake_home.py) | fake Home Assistant + door station: contract test and interactive console |
+| [`tools/ha_contract_test.py`](tools/ha_contract_test.py) | the same contract against a real Home Assistant (with [`homeassistant/dev/roomkey.yaml`](homeassistant/dev/roomkey.yaml) stand-ins) |
 | [`tools/mic_check.py`](tools/mic_check.py) | records the microphone and checks it hears a test sound |
 | [`tools/privacy_scan.py`](tools/privacy_scan.py) | runs before every push |
 | [`docs/north-star.md`](docs/north-star.md) | the target design and its decisions |
