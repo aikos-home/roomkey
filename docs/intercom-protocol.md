@@ -64,3 +64,56 @@ key pressed ─▶ event hangup        |  door ends ─▶ HA ─▶ keys: call_
 3. On `hangup`: stop. When the visitor side ends: tell HA → `call_state: ended`.
 
 `tools/fake_home.py` implements exactly this door-side behaviour and is the reference.
+
+## Transcription and "who is speaking" (WIP, test setup)
+
+Both sides can be transcribed locally, and a visitor's self-introduction is shown on the
+screen on the other side (the RoomKey shows who is at the door; the door screen shows who
+answered). Nothing leaves the house; when the transcriber is off, calls work as before.
+
+```
+key (talking) ── RTP copy ──▶ transcriber :5006  (side "room")  ─┐   Whisper (local)
+door (mic)    ── RTP copy ──▶ transcriber :5008  (side "door")  ─┤─▶ tools/talk_identity.py ─▶ Home Assistant
+                                                                  │     sensor.talk_transcript       (room → shown at the door)
+                                                                  └──   sensor.talk_transcript_door  (door → shown on the keys)
+```
+
+* **Key:** entity "Transcriber address" (`host:port`, empty = off). While the key transmits
+  (push-to-talk) every RTP packet also goes there. Only its own microphone, never the door's.
+* **Door station:** sends a copy of its microphone to port 5008 while ringing and during a call;
+  the transcriber cuts a continuous stream into utterances at pauses (`--split-on-silence`).
+* **Transcriber** (`tools/rtp_recorder.py` + `tools/transcribe_publish.py`, e.g. on a Mac with
+  whisper.cpp): one WAV per utterance → text → who is speaking → HA state + event
+  `aikos_talk_transcript`. Attributes: `text`, `message` (without greeting and introduction),
+  `speaker` ("Anna", "Paketdienst · DHL", "Polizei", "" if nobody introduced themselves),
+  `speaker_kind`, `speaker_role`, `speaker_org`, `speaker_method`, `side`, `device`, …
+* **Who is speaking** (`tools/talk_identity.py`): rules first (self-introductions like "hier ist …",
+  "ich bin …", "… mein Name", "… hier", and roles or companies said up front), a local LLM through
+  Ollama only when the rules find nobody; its answer counts only if the words are in the transcript.
+  A role word later in a sentence is a topic, not an introduction ("beim Nachbarn abgeben").
+  **Nothing is verified:** anyone can say "Polizei". Screens show it as said.
+* **Spoken language:** Whisper runs twice in parallel: once fixed to German (`text`, `message`, `speaker` —
+  foreign speech comes out translated into German) and once detecting the language (`language`, `language_name`,
+  `language_name_en`, `language_probability`, `text_original`). A foreign language counts from 60 % certainty
+  (English 90 %: short German clips are sometimes taken for English).
+* **Whisper hint:** a word list of doorstep vocabulary (couriers, authorities, household names). If Whisper
+  answers unclear audio with the hint itself, the clip is transcribed again without it.
+* **RoomKey screen:** while ringing and in a call the door name ("Front door") is replaced by the
+  visitor's `speaker`, and a foreign language shows as "Speaks Chinese"; both are cleared on the next ring
+  and when the call ends. From a room only a name counts as a speaker (residents mention couriers as topics).
+* **Test recording** (WIP switch "TEST record after ring"): ends ~1.2 s after the last word (speech =
+  12 dB above the quietest level of the last 1.5 s), at most "TEST record length" seconds.
+
+### Measuring it
+
+`tools/talk_eval.py` speaks test cases with macOS voices (German, and foreign voices reading German =
+accented German), degrades them (street noise, voices in the background, distance and echo, shouting,
+telephone band, the key's 120 Hz high-pass), transcribes them and scores who was recognised.
+`tools/talk_eval_cases.json` has 101 cases; an adversarial set of 308 more was used during development.
+
+Run it (example, both sides, German):
+
+```bash
+python3 tools/rtp_recorder.py --port 5006 --exec "python3 tools/transcribe_publish.py {wav} --side room --language de --source-ip {src} --ha-url http://<ha>:8123 --token-file <token>"
+python3 tools/rtp_recorder.py --port 5008 --split-on-silence --exec "python3 tools/transcribe_publish.py {wav} --side door --language de --source-ip {src} --ha-url http://<ha>:8123 --token-file <token>"
+```

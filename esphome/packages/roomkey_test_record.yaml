@@ -1,21 +1,49 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# TEST ONLY (WIP) — record 10 s of the room microphone after every ring.
+# TEST ONLY (WIP) — record the room microphone after every ring until the speaker stops talking
+# (1.2 s of quiet), at most "TEST record length" seconds (default 15); nothing said in 8 s → stop.
 #
-# Prototype for the talk path: after a ring, the key streams its microphone for 10 s
+# Prototype for the talk path: after a ring, the key streams its microphone for a few seconds
 # as RTP L16 16 kHz (the intercom format) to "Test recorder address" (host:port),
 # where tools/rtp_recorder.py saves it as WAV. Off by default; the screen says when
 # the microphone is on. Remove this package once the real talk function exists.
+# Goes to the "Transcriber address" when one is set, else to "TEST recorder address".
 # Needs roomkey_mic.yaml + roomkey_intercom.yaml.
 # ─────────────────────────────────────────────────────────────────────────────
+
+substitutions:
+  test_record_s: "15"     # default maximum recording length in seconds; tune it in HA with "TEST record length"
 
 switch:
   - platform: template
     id: test_record_after_ring
-    name: "TEST record 10 s after ring"
+    name: "TEST record after ring"
     icon: mdi:record-rec
     entity_category: config
     optimistic: true
     restore_mode: RESTORE_DEFAULT_OFF
+
+number:
+  - platform: template
+    id: test_record_len
+    name: "TEST record length"
+    icon: mdi:timer-outline
+    entity_category: config
+    unit_of_measurement: s
+    min_value: 2
+    max_value: 30
+    step: 1
+    mode: box
+    optimistic: true
+    restore_value: true
+    initial_value: ${test_record_s}
+
+globals:
+  - id: test_rec_t0
+    type: uint32_t
+    initial_value: "0"
+  - id: test_rec_uses_peer
+    type: bool
+    initial_value: "false"
 
 text:
   - platform: template
@@ -37,20 +65,38 @@ script:
           condition:
             lambda: |-
               const std::string &t = id(test_recorder).state;
-              return id(test_record_after_ring).state && roomkey::audio().active() && t.find(':') != std::string::npos;
+              bool dest = t.find(':') != std::string::npos || id(transcriber).state.find(':') != std::string::npos;
+              return id(test_record_after_ring).state && roomkey::audio().active() && dest;
           then:
             - lambda: |-
-                const std::string &t = id(test_recorder).state;
-                size_t p = t.rfind(':');
-                roomkey::audio().set_peer(t.substr(0, p), (uint16_t) atoi(t.c_str() + p + 1));
-                roomkey::ctl().set_test_recording(true);     // mic on + on-screen notice
+                // With a transcriber configured the recording simply goes there (the tap); the peer slot
+                // stays free for a real call. Otherwise it goes to "TEST recorder address".
+                std::string t = id(transcriber).state;
+                id(test_rec_uses_peer) = t.find(':') == std::string::npos;
+                if (id(test_rec_uses_peer)) {
+                  t = id(test_recorder).state;
+                  size_t p = t.rfind(':');
+                  roomkey::audio().set_peer(t.substr(0, p), (uint16_t) atoi(t.c_str() + p + 1));
+                }
+                roomkey::ctl().set_test_recording(true, (uint32_t) id(test_record_len).state);   // mic on + on-screen notice
                 roomkey::audio().set_tx(true);
-                ESP_LOGI("roomkey.test", "TEST recording 10 s → %s", t.c_str());
-            - delay: 10s
+                id(test_rec_t0) = millis();
+                ESP_LOGI("roomkey.test", "TEST recording (max %.0f s) → %s", id(test_record_len).state, t.c_str());
+            - wait_until:
+                condition:
+                  lambda: |-
+                    auto &a = roomkey::audio();
+                    uint32_t t = millis() - id(test_rec_t0);
+                    if (t >= (uint32_t) (id(test_record_len).state * 1000)) return true;         // maximum reached
+                    if (a.voiced_since(id(test_rec_t0) + 300) && a.quiet_ms() > 1200) return true;  // done talking
+                    return t > 8000 && !a.voiced_since(id(test_rec_t0) + 300);                    // nobody spoke
             - lambda: |-
-                roomkey::audio().set_tx(false);
+                roomkey::audio().set_tx(false);    // sends what is still buffered, then stops
                 roomkey::ctl().set_test_recording(false);
-                roomkey::audio().clear_peer();
+                ESP_LOGI("roomkey.test", "TEST recording ended after %.1f s (noise floor %.0f dB, quiet %u ms)",
+                         (millis() - id(test_rec_t0)) / 1000.0f, roomkey::audio().noise_floor_db(),
+                         (unsigned) roomkey::audio().quiet_ms());
+                if (id(test_rec_uses_peer)) roomkey::audio().clear_peer();
                 ESP_LOGI("roomkey.test", "TEST recording done (%u packets sent in total)", (unsigned) roomkey::audio().tx_pkts);
 
 esphome:

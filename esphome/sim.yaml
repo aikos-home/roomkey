@@ -10,6 +10,7 @@ substitutions:
   light_entity: light.all_lights
   alarm_entity: alarm_control_panel.house
   doorbell_entity: binary_sensor.doorbell_button
+  visitor_entity: sensor.talk_transcript_door    # who is at the door (transcript attribute "speaker")
   disarm_action: script.roomkey_disarm
 
 esphome:

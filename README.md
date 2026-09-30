@@ -30,7 +30,7 @@ Built on ESP32-C6, ESPHome and Home Assistant.**
 - **Local and standard.** ESPHome native API: Home Assistant discovers it with ordinary
   entities, events and actions. No cloud, no custom integration.
 
-It is the in-house counterpart of [Klingelbox](https://github.com/martinkadauke/intercom), the
+It is the in-house counterpart of [Klingelbox](https://github.com/aikos-home/intercom), the
 open-hardware door intercom.
 
 ## Status
@@ -174,11 +174,20 @@ first hardware run showed 140 ms frames.
 3. Wi-Fi + Home Assistant on the real device.
 4. Intercom with Klingelbox: a minimal SIP client is the likely path (see the handoff doc).
 5. The wall: neutral wire, deep box, impulse relay — with an electrician.
+6. Later (decided 30.09.): voice identification, so the family members are told apart even when they
+   don't say their name. Local speaker embeddings on the transcriber host, enrolled with ~1 min of speech
+   per person through the key's mic. Display only, never for opening doors or disarming. Needs everyone's
+   consent; visitors' voices are only compared, never stored.
+7. Later (nice to have): translate a resident's answer into the visitor's language on the door screen
+   (today every transcript is shown in German; the original words stay in `text_original`).
 
 ## Privacy
 
 - The microphone only runs while you hold the key during a call, or while the *Room info*
   screen shows its live level meter. Nothing is recorded or sent otherwise.
+- Exceptions you switch on yourself: "Transcriber address" sends a copy of what you say during a call
+  (push-to-talk only) to your local transcriber; the WIP test switch "TEST record after ring" records the
+  room after every ring and says so on screen. Both are off by default.
 - Incoming audio is only accepted during an active call. Keep RoomKeys in the IoT VLAN, like the
   door devices.
 

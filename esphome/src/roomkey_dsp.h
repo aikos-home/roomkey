@@ -29,4 +29,16 @@ struct Biquad {
   }
 };
 
+// Peak limiter for the mic stream (int16 scale): instant attack, ~120 ms release. Loud speech
+// close to the mic is turned down smoothly instead of being clipped (clipping costs words).
+struct Limiter {
+  float env = 0.0f;
+  float ceiling = 0.8f * 32767.0f;  // ≈ −2 dBFS
+  float process(float v) {
+    float a = v < 0 ? -v : v;
+    env = a > env ? a : env * 0.9995f + a * 0.0005f;
+    return env > ceiling ? v * (ceiling / env) : v;
+  }
+};
+
 }  // namespace roomkey

@@ -9,7 +9,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 substitutions:
-  mic_gain: "4.0"   # digital gain into the intercom stream (×4 ≈ +12 dB)
+  mic_gain: "2.0"   # digital gain into the intercom stream (×2 ≈ +6 dB; ×4 clipped loud speech, Whisper needs no more)
 
 esphome:
   includes:
@@ -21,12 +21,18 @@ esphome:
         - lambda: |-
             roomkey::ctl().hooks.mic = [](bool on) {
               if (on) {
+                id(mic_session) += 1;   // on_data resets its filters and mutes the start-up pop
                 id(mic).start();
               } else {
                 id(mic).stop();
                 roomkey::ctl().set_mic_level(-1.0f, -120.0f);
               }
             };
+
+globals:
+  - id: mic_session
+    type: uint32_t
+    initial_value: "0"
 
 switch:
   - platform: gpio
@@ -57,6 +63,14 @@ microphone:
           // 120 Hz high-pass first: kills table knocks / handling rumble (measured +43 dB
           // below 80 Hz on loose wires) without touching the speech band.
           static roomkey::Biquad hp = roomkey::Biquad::highpass(120.0f, 16000.0f);
+          static roomkey::Limiter lim;
+          static uint32_t session = 0, mute = 0;
+          if (session != id(mic_session)) {   // a fresh start: old filter state + the INMP441's power-up step = a pop
+            session = id(mic_session);
+            hp = roomkey::Biquad::highpass(120.0f, 16000.0f);
+            lim = roomkey::Limiter();
+            mute = 512;                        // 32 ms
+          }
           const float gain = ${mic_gain};
           const int32_t *s = reinterpret_cast<const int32_t *>(x.data());
           size_t n = x.size() / 4;
@@ -67,8 +81,9 @@ microphone:
             size_t k = n - done < 512 ? n - done : 512;
             for (size_t i = 0; i < k; i++) {
               float y = hp.process(s[done + i] * (1.0f / 2147483648.0f));
+              if (mute) { mute--; y = 0.0f; }
               acc += y * y;
-              float v = y * gain * 32768.0f;
+              float v = lim.process(y * gain * 32768.0f);
               out[i] = (int16_t) (v > 32767.f ? 32767 : (v < -32768.f ? -32768 : v));
             }
             if (roomkey::audio().active()) roomkey::audio().push_s16(out, k);   // no-op unless talking
@@ -76,6 +91,7 @@ microphone:
           }
           if (n == 0) return;
           float db = 10.0f * log10f(acc / n + 1e-12f);
+          roomkey::audio().note_level(db);   // end-of-speech detection (timed test recordings)
           float lvl = (db + 65.0f) / 50.0f;   // −65 dBFS → 0 … −15 dBFS → 1
           lvl = lvl < 0 ? 0 : (lvl > 1 ? 1 : lvl);
           static float smooth = 0;

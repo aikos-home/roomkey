@@ -5,6 +5,8 @@
 #     the `set_intercom_peer` action (HA / door station)
 #   • outside a call every incoming packet is dropped unheard (no LAN device can play
 #     sound in a bedroom). Still: keep RoomKeys in the IoT VLAN, like the door devices.
+#   • "Transcriber address" (host:port, empty = off): while the key transmits, a copy of its
+#     mic stream also goes to the local transcriber (who is speaking + text for the door screen)
 # Signalling stays in HA (events answer / talk_* / hangup, action call_state).
 # See docs/intercom-protocol.md.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -46,7 +48,7 @@ interval:
       - lambda: |-
           auto &a = roomkey::audio();
           if (!a.active()) {
-            if (network::is_connected()) a.begin(${intercom_port});
+            if (network::is_connected() && a.begin(${intercom_port})) a.set_tap(id(transcriber).state);
             return;
           }
           auto &c = roomkey::ctl();
@@ -54,6 +56,20 @@ interval:
           a.loop();
           if (c.in_call()) c.set_level(a.rx_level);
           else if (a.tx() && !c.test_recording()) a.end_session();   // call ended elsewhere (door hung up)
+
+text:
+  - platform: template
+    id: transcriber
+    name: "Transcriber address"
+    icon: mdi:text-to-speech
+    entity_category: config
+    mode: text
+    optimistic: true
+    restore_value: true
+    initial_value: ""
+    max_length: 64
+    on_value:
+      - lambda: roomkey::audio().set_tap(x);
 
 sensor:
   - platform: template
@@ -70,3 +86,9 @@ sensor:
     accuracy_decimals: 0
     update_interval: 5s
     lambda: return roomkey::audio().tx_pkts;
+  - platform: template
+    name: "Intercom TX errors"
+    entity_category: diagnostic
+    accuracy_decimals: 0
+    update_interval: 30s
+    lambda: return roomkey::audio().tx_err + roomkey::audio().overruns;

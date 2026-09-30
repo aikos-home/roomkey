@@ -85,6 +85,7 @@ struct Strings {
   const char *m_title, *m_talk, *m_info, *m_test_ring, *m_test_alarm, *m_close;
   const char *offline, *missed, *demo, *ha_on, *ha_off, *not_sent;
   const char *tap_hint;
+  const char *speaks;  // printf: the visitor's language
 };
 
 static const Strings STR_EN = {
@@ -97,6 +98,7 @@ static const Strings STR_EN = {
     "MENU", "Talk to door", "Room info", "Test doorbell", "Test alarm", "Close",
     "Offline", "missed", "Demo mode", "connected", "offline", "Offline · not sent",
     "Press the key for lights",
+    "Speaks %s",
 };
 
 static const Strings STR_DE = {
@@ -109,6 +111,7 @@ static const Strings STR_DE = {
     "MENÜ", "Mit Tür sprechen", "Rauminfo", "Klingel testen", "Alarm testen", "Schließen",
     "Offline", "verpasst", "Demo-Modus", "verbunden", "offline", "Offline · nicht gesendet",
     "Taste drücken für Licht",
+    "Spricht %s",
 };
 
 // ── Model ────────────────────────────────────────────────────────────────────
@@ -214,6 +217,7 @@ class Controller {
   }
   void ring_start() {
     if (in_call_) return;  // already talking to the door
+    if (!ringing_) visitor_.clear(), visitor_lang_.clear();  // a new visitor (storm ringing keeps the current one)
     ringing_ = true;
     ring_since_ = millis();
     menu_open_ = info_open_ = false;
@@ -388,12 +392,31 @@ class Controller {
   void set_talk_level(float l) { level_in_ = l; }
   bool ringing() const { return ringing_; }
   // TEST ONLY (WIP): keeps the microphone on for a timed test recording and says so on screen.
-  void set_test_recording(bool on) {
+  void set_test_recording(bool on, uint32_t max_secs = 15) {
+    if (on == test_rec_) return;
     test_rec_ = on;
-    if (on) show_toast_("Mic test: recording 10 s", 10000);
+    if (on) show_toast_("Mic test: speak now", max_secs * 1000);
+    else show_toast_("Mic test: sent", 1200);
     render();
   }
   bool test_recording() const { return test_rec_; }
+  // Who is at the door, as the visitor introduced themselves ("Anna", "Paketdienst · DHL"), from the
+  // door-side transcript. Shown instead of the door name while ringing / in the call; not verified.
+  void set_visitor(const std::string &who) {
+    if (who.empty() || who == "unknown" || who == "unavailable") return;  // keep the last one said
+    if (!ringing_ && !in_call_) return;                                     // old news
+    visitor_ = who;
+    render_door_labels_();
+  }
+  const std::string &visitor() const { return visitor_; }
+  // The language the visitor speaks, when it is not German ("Chinese"), from the same transcript.
+  void set_visitor_language(const std::string &lang) {
+    if (lang.empty() || lang == "unknown" || lang == "unavailable" || lang == "German" || lang == "Deutsch") return;
+    if (!ringing_ && !in_call_) return;
+    visitor_lang_ = lang;
+    render_door_labels_();
+    if (built_) render_ring_();
+  }
   bool in_call() const { return in_call_; }
   bool talking() const { return talking_; }
 
@@ -595,7 +618,7 @@ class Controller {
       lv_obj_set_style_border_color(r, lv_color_hex(pal::CYAN), 0);
       ripples_[i] = r;
     }
-    lv_obj_t *t = label_(v_ring_, fonts.small, pal::CYAN, cfg.door.c_str());
+    lv_obj_t *t = ring_door_ = door_label_(v_ring_);
     lv_obj_set_style_text_letter_space(t, 1, 0);
     lv_obj_align(t, LV_ALIGN_TOP_MID, 0, 36);
     ring_disc_ = hero_(v_ring_, 140, &ring_icon_, nullptr);
@@ -621,7 +644,7 @@ class Controller {
   // ── build: call ───────────────────────────────────────────────────────────
   void build_call_() {
     v_call_ = view_box_();
-    lv_obj_t *t = label_(v_call_, fonts.small, pal::CYAN, cfg.door.c_str());
+    lv_obj_t *t = call_door_ = door_label_(v_call_);
     lv_obj_align(t, LV_ALIGN_TOP_MID, 0, 32);
     call_timer_ = label_(v_call_, fonts.big, pal::TEXT, "0:00");
     lv_obj_align(call_timer_, LV_ALIGN_TOP_MID, 0, 48);
@@ -889,10 +912,25 @@ class Controller {
 
   }
 
+  lv_obj_t *door_label_(lv_obj_t *parent) {  // "Front door", or who is there
+    lv_obj_t *l = label_(parent, fonts.small, pal::CYAN, cfg.door.c_str());
+    lv_obj_set_width(l, 164);
+    lv_label_set_long_mode(l, LV_LABEL_LONG_DOT);
+    lv_obj_set_style_text_align(l, LV_TEXT_ALIGN_CENTER, 0);
+    return l;
+  }
+  void render_door_labels_() {
+    if (!built_) return;
+    const std::string t = visitor_.empty() ? cfg.door : visitor_;
+    lv_label_set_text(ring_door_, t.c_str());
+    lv_label_set_text(call_door_, (visitor_lang_.empty() ? t : t + " · " + visitor_lang_).c_str());
+  }
+
   void render_ring_() {
-    char sub[16];
-    snprintf(sub, sizeof(sub), "%02d:%02d", hh_, mm_);
-    lv_label_set_text(ring_sub_, hh_ >= 0 ? sub : "");
+    char sub[48];
+    if (!visitor_lang_.empty()) snprintf(sub, sizeof(sub), S->speaks, visitor_lang_.c_str());   // "Speaks Chinese"
+    else snprintf(sub, sizeof(sub), "%02d:%02d", hh_, mm_);
+    lv_label_set_text(ring_sub_, (hh_ >= 0 || !visitor_lang_.empty()) ? sub : "");
   }
 
   void render_call_() {
@@ -1048,6 +1086,9 @@ class Controller {
     if (!in_call_) return;
     if (talking_) set_talk_(false);
     in_call_ = false;
+    visitor_.clear();
+    visitor_lang_.clear();
+    render_door_labels_();
     if (local && hooks.hangup && !cfg.demo) hooks.hangup();
     render();
   }
@@ -1358,6 +1399,8 @@ class Controller {
   bool menu_open_ = false, info_open_ = false, disarming_ = false, test_alarm_ = false;
   bool online_ = false;
   bool test_rec_ = false;
+  std::string visitor_, visitor_lang_;
+  lv_obj_t *ring_door_ = nullptr, *call_door_ = nullptr;
   int menu_sel_ = 0, missed_ = 0;
   char missed_at_[8] = "";
   int hh_ = -1, mm_ = -1, rssi_ = 0;

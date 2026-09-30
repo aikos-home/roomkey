@@ -34,6 +34,10 @@ esphome:
               if (!roomkey::ctl().cfg.demo) id(ha_event).execute(std::string(on ? "talk_start" : "talk_stop"));
             };
 
+substitutions:
+  visitor_entity: sensor.talk_transcript_door   # device files may override
+  visitor_language_attr: language_name_en        # language_name = German names (for language: de)
+
 api:
   encryption:
     key: !secret api_key
@@ -98,6 +102,29 @@ switch:
           c.set_alarm_state(id(ha_alarm_state).state);
 
 text_sensor:
+  # Who is at the door, as the visitor introduced themselves (door-side transcript, aikos vertraege.md §6).
+  - platform: homeassistant
+    id: ha_visitor
+    entity_id: ${visitor_entity}
+    attribute: speaker
+    internal: true
+    on_value:
+      - lambda: roomkey::ctl().set_visitor(x);
+  - platform: homeassistant
+    id: ha_visitor_language
+    entity_id: ${visitor_entity}
+    attribute: ${visitor_language_attr}
+    internal: true
+    on_value:
+      - lambda: roomkey::ctl().set_visitor_language(x);
+  # HA only sends an attribute when it CHANGES — the same visitor or language twice would be missed. The state (a
+  # timestamp) changes with every transcript: then re-apply the last values (after the attributes had time to arrive).
+  - platform: homeassistant
+    id: ha_visitor_stamp
+    entity_id: ${visitor_entity}
+    internal: true
+    on_value:
+      - script.execute: rk_apply_visitor
   - platform: homeassistant
     id: ha_alarm_state
     entity_id: ${alarm_entity}
@@ -142,6 +169,13 @@ sensor:
     lambda: return id(doorbell_rx_count);
 
 script:
+  - id: rk_apply_visitor
+    mode: restart
+    then:
+      - delay: 300ms
+      - lambda: |-
+          roomkey::ctl().set_visitor(id(ha_visitor).state);
+          roomkey::ctl().set_visitor_language(id(ha_visitor_language).state);
   - id: ha_toggle_lights
     then:
       - homeassistant.action:
