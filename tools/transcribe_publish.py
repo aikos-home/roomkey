@@ -158,6 +158,7 @@ def main():
     ap.add_argument("--no-llm", action="store_true")
     ap.add_argument("--no-prompt", action="store_true", help="don't give Whisper the doorstep vocabulary hint")
     ap.add_argument("--known-names", default="", help="comma-separated household names (spelling as shown)")
+    ap.add_argument("--delete-wav", action="store_true", help="delete the recording when done (privacy; for the service)")
     a = ap.parse_args()
     entity = a.entity or ("sensor.talk_transcript" if a.side == "room" else "sensor.talk_transcript_door")
     token = a.token_file.expanduser().read_text().strip()
@@ -232,3 +233,8 @@ if __name__ == "__main__":
     except Exception as exc:  # never crash the recorder that called us
         print(f"transcribe_publish failed: {exc}", file=sys.stderr, flush=True)
         sys.exit(1)
+    finally:
+        if "--delete-wav" in sys.argv[1:]:
+            wav = next((Path(x) for x in sys.argv[1:] if x.endswith(".wav")), None)
+            if wav:
+                wav.unlink(missing_ok=True)
