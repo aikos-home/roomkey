@@ -135,6 +135,8 @@ def prompt_echo(text: str, prompt: str = WHISPER_PROMPT) -> bool:
     ps = [w.lower() for w in re.findall(rf"{WORD}", prompt)]
     if len(set(ws) & PROMPT_WORDS) >= 4 or "sprechanlage" in text.lower():
         return True
+    if len(ws) >= 2 and " ".join(ws) in " ".join(ps):  # the whole "transcript" is a piece of the hint ("Martin, Lena.")
+        return True
     grams = {tuple(ps[i:i + 4]) for i in range(len(ps) - 3)}
     return any(tuple(ws[i:i + 4]) in grams for i in range(len(ws) - 3))
 
@@ -770,11 +772,12 @@ def selftest() -> bool:
         good = is_noise(noise)
         ok &= good
         print(f"{'✓' if good else '✗'} noise {noise!r}")
-    for echo in ["Polizei, Feuerwehr, Rettungsdienst, Schornsteinfeger.", "Hermes, DPD, UPS, GLS, FedEx", "Haustür-Sprechanlage."]:
+    for echo in ["Polizei, Feuerwehr, Rettungsdienst, Schornsteinfeger.", "Hermes, DPD, UPS, GLS, FedEx", "Haustür-Sprechanlage.",
+                 "Telekom, Vodafone."]:
         good = prompt_echo(echo)
         ok &= good
         print(f"{'✓' if good else '✗'} prompt echo {echo!r}")
-    for real in ["Hallo, hier ist die Polizei, bitte öffnen Sie.", "Guten Tag, hier ist der Paketdienst von DHL.",
+    for real in ["Hallo, hier ist die Polizei, bitte öffnen Sie.", "Guten Tag, hier ist der Paketdienst von DHL.", "Polizei!",
                  "Hier ist die Nachbarin von oben."]:
         good = not prompt_echo(real)
         ok &= good

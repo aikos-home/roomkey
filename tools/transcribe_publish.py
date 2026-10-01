@@ -35,6 +35,27 @@ from pathlib import Path
 from talk_identity import WHISPER_PROMPT, identify, is_noise, prompt_echo, strip_captions
 
 
+def has_speech(wav: Path, min_s: float = 0.3) -> bool:
+    """At least min_s of 20 ms frames clearly above the recording's own noise floor (10th percentile + 12 dB),
+    and not just quiet hiss (> -50 dBFS)."""
+    with wave.open(str(wav)) as w:
+        rate, n = w.getframerate(), w.getnframes()
+        pcm = w.readframes(n)
+    import array
+    import math
+    x = array.array("h", pcm)
+    step = rate // 50
+    db = []
+    for i in range(0, len(x) - step + 1, step):
+        fr = x[i:i + step]
+        db.append(20 * math.log10(math.sqrt(sum(v * v for v in fr) / step) / 32768 + 1e-9))
+    if not db:
+        return False
+    floor = sorted(db)[len(db) // 10]
+    loud = sum(1 for d in db if d > max(floor + 12.0, -50.0))
+    return loud * 0.02 >= min_s
+
+
 def padded(wav: Path) -> bytes:
     """The WAV with 0.3 s of silence before and 1 s after: Whisper drops words that touch the edges."""
     with wave.open(str(wav)) as w:
@@ -167,12 +188,16 @@ def main():
         duration = w.getnframes() / w.getframerate()
     t0 = time.time()
     names = [n.strip() for n in a.known_names.split(",") if n.strip()]
-    prompt = "" if a.no_prompt else WHISPER_PROMPT + "".join(f" Hier ist {n}." for n in names)   # household names too
+    # household names as a plain list (not "Hier ist Martin." — on silence Whisper answers with such a sentence)
+    prompt = "" if a.no_prompt else WHISPER_PROMPT + (" Namen: " + ", ".join(names) + "." if names else "")
+    if not has_speech(a.wav):                     # key pressed, nothing said: never let Whisper "hear" its hint
+        print(f"· {a.side}: no speech in {a.wav.name} (level), not transcribed", flush=True)
+        return
     # Pass 1: German text for the screens (for foreign speech Whisper translates it into German on the way).
     # It is published at once; pass 2 (which language was spoken, and its words) follows ~1 s later under the same
     # timestamp. The Whisper server works one request at a time, so waiting for both would delay the text by ~1 s.
     text = whisper(a.whisper_url, a.wav, a.language, prompt)
-    if not a.no_prompt and prompt_echo(text):         # unclear audio: Whisper repeated its hint → ask again without it
+    if not a.no_prompt and prompt_echo(text, prompt):  # unclear audio: Whisper repeated its hint → ask again without it
         text = whisper(a.whisper_url, a.wav, a.language, "")
     took = time.time() - t0
     if is_noise(text):

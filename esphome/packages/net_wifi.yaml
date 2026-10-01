@@ -47,3 +47,9 @@ interval:
       - lambda: |-
           float r = id(wifi_rssi).state;
           roomkey::ctl().set_net(id(wifi_ip).state, std::isnan(r) ? 0 : (int) r);
+
+# Plain restart button: the aikos "restart all" script (HA) finds it by project and restarts the keys with the rest.
+button:
+  - platform: restart
+    name: "Restart"
+    entity_category: config
