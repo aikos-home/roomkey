@@ -63,6 +63,21 @@ int main() {
     t = feed(g, t, 2000, [](uint32_t k) { return (k / 8) % 3 == 2 ? -48.0f : -28.0f; });
     CHECK(t < t0 && g.voiced_since(t0), "voiced_since works across the millis() wrap");
   }
+  {  // door mic, voice v2 live test 01.10.: dropouts (partly empty blocks) pulled the old minimum floor far down
+    VoiceGate g;
+    feed(g, 1000, 6000, [](uint32_t k) { return k % 40 == 7 ? -85.0f : (k % 3 ? -40.0f : -41.5f); });
+    CHECK(!g.voiced_since(0), "dropouts (1 block in 40 at -85 dBFS) don't turn the noise into speech");
+  }
+  {
+    VoiceGate g;
+    feed(g, 1000, 6000, [](uint32_t k) { return k % 6 == 0 ? -24.0f : -40.0f; });
+    CHECK(!g.voiced_since(0), "single loud blocks (cracks, 8 per second) are not speech");
+  }
+  {
+    VoiceGate g;
+    feed(g, 1000, 6000, [](uint32_t k) { return k % 40 < 2 ? -20.0f : -40.0f; });
+    CHECK(!g.voiced_since(0), "two loud blocks in a row are not speech either");
+  }
   printf("%d checks, %d failed\n", checks, fails);
   return fails ? 1 : 0;
 }
