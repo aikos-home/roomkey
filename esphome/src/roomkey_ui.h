@@ -946,9 +946,13 @@ class Controller {
   }
 
   void render_call_() {
-    uint32_t s = (millis() - call_since_) / 1000;
-    char t[12];
-    snprintf(t, sizeof(t), "%u:%02u", (unsigned) (s / 60), (unsigned) (s % 60));
+    // Walkie-talkie, not a phone call: the clock shows how long you are talking right now, nothing while listening
+    // (a conversation stays open for minutes in the background; its total length would look like a long call).
+    char t[12] = "";
+    if (talking_) {
+      uint32_t s = (millis() - talk_since_ms_) / 1000;
+      snprintf(t, sizeof(t), "%u:%02u", (unsigned) (s / 60), (unsigned) (s % 60));
+    }
     lv_label_set_text(call_timer_, t);
     if (talking_) {
       lv_label_set_text(call_icon_, icon::MIC);
@@ -1112,6 +1116,7 @@ class Controller {
     if (talking_ == on) return;
     talking_ = on;
     call_seen_ms_ = millis();
+    if (on) talk_since_ms_ = millis();
     if (hooks.talk) hooks.talk(on);
     if (hooks.gesture) hooks.gesture(on ? "talk_start" : "talk_stop");
     render_call_();
@@ -1417,7 +1422,7 @@ class Controller {
   bool online_ = false;
   bool test_rec_ = false;
   static constexpr uint32_t DOUBLE_MS = 350, CALL_SHOW_MS = 8000;
-  uint32_t call_seen_ms_ = 0;
+  uint32_t call_seen_ms_ = 0, talk_since_ms_ = 0;
   bool pending_press_ = false, double_ = false;
   uint32_t pending_press_ms_ = 0;
   std::string visitor_, visitor_lang_;
