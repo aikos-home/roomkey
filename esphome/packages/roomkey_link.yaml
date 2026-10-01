@@ -5,8 +5,8 @@
 # packet_transport over UDP 18511, unicast to the door talk computer, encrypted with key_link_key (one key for
 # all RoomKeys), rolling code, sent on change and every second. Provider name = node name.
 # The door listens for it from voice v2 on; until then Home Assistant forwards talk_start/talk_stop.
-# BENCH ONLY: the key is compiled in. The target is pairing in the HA GUI with a shared aikos_link block
-# (aikos features/kopplung.md); this package goes away then.
+# The key is compiled in (secrets.yaml). Owner's decision 01.10.: voice v2 runs on this; afterwards pairing in the
+# HA GUI with a shared aikos_link block replaces this package (aikos features/kopplung.md).
 # secrets.yaml: key_link_key, door_talk_host (IP of the door talk computer).
 # ─────────────────────────────────────────────────────────────────────────────
 udp:

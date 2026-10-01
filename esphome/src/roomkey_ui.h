@@ -497,6 +497,7 @@ class Controller {
     size_t common = 0;  // Whisper may revise earlier words: keep what is still the same, retype the rest
     while (common < t.size() && common < live_text_.size() && t[common] == live_text_[common]) common++;
     while (common > 0 && common < t.size() && ((uint8_t) t[common] & 0xC0) == 0x80) common--;  // UTF-8 boundary
+    if (t != live_text_) visitor_text_n_++;
     live_text_ = t;
     if (live_shown_ > common) live_shown_ = common;
     if (in_call_) call_seen_ms_ = millis();
@@ -512,6 +513,8 @@ class Controller {
   }
   bool in_call() const { return in_call_; }
   bool talking() const { return talking_; }
+  bool visitor_urgent() const { return visitor_urgent_; }
+  uint32_t visitor_text_count() const { return visitor_text_n_; }   // grows whenever the visitor's text changes (= they spoke)
 
  protected:
   // ── helpers ───────────────────────────────────────────────────────────────
@@ -1588,6 +1591,7 @@ class Controller {
   uint32_t pending_press_ms_ = 0;
   std::string visitor_, visitor_lang_, visitor_role_;
   bool visitor_urgent_ = false;
+  uint32_t visitor_text_n_ = 0;
   lv_obj_t *ring_door_ = nullptr, *call_door_ = nullptr;
   DoorRow ring_row_, call_row_;
   int menu_sel_ = 0, missed_ = 0;

@@ -28,6 +28,7 @@
 #include <string>
 
 #include "esphome/core/hal.h"
+#include "roomkey_dsp.h"
 #include "esphome/core/log.h"
 
 #ifdef USE_HOST
@@ -152,24 +153,13 @@ class AudioLink {
   // End-of-speech detection for timed recordings (mic task, once per mic block): speech is
   // VOICE_DB above the room's noise floor = the quietest block of the last ~1.5 s (speech has
   // gaps between words; steady noise does not). Muted start-up blocks don't count.
-  void note_level(float db) {
-    if (db < -100.0f) return;
-    uint32_t now = esphome::millis();
-    lv_db_[lv_i_] = db;
-    lv_ms_[lv_i_] = now;
-    lv_i_ = (lv_i_ + 1) % LV_N;
-    float floor = db;
-    for (int i = 0; i < LV_N; i++)
-      if (now - lv_ms_[i] < 1500 && lv_db_[i] < floor) floor = lv_db_[i];
-    floor_db_ = floor;
-    smooth_db_ = smooth_db_ < -100.0f ? db : smooth_db_ * 0.7f + db * 0.3f;   // single noisy blocks are not speech
-    if (smooth_db_ > floor + VOICE_DB && db > -75.0f) last_voice_ms_ = now, voice_ = true;
-  }
-  float noise_floor_db() const { return floor_db_; }
+  void note_level(float db) { mic_gate.note(db, esphome::millis()); }
+  float noise_floor_db() const { return mic_gate.floor_db(); }
   // Has anyone spoken since t0 (millis)?
-  bool voiced_since(uint32_t t0) const { return voice_ && (int32_t) (last_voice_ms_ - t0) >= 0; }
-  uint32_t quiet_ms() const { return esphome::millis() - last_voice_ms_; }
-  static constexpr float VOICE_DB = 12.0f;
+  bool voiced_since(uint32_t t0) const { return mic_gate.voiced_since(t0); }
+  uint32_t quiet_ms() const { return mic_gate.quiet_ms(esphome::millis()); }
+  VoiceGate mic_gate;   // this key's mic (mic task)
+  VoiceGate rx_gate;    // what comes in from the door (main loop): speech, not packets, ends a call (R17.8)
 
   // Producer side (microphone task): Q31 samples, optional gain.
   void push_q31(const int32_t *s, size_t n, float gain = 4.0f) {
@@ -253,6 +243,7 @@ class AudioLink {
         acc += f * f;
       }
       float db = 10.f * log10f(acc / (count ? count : 1) + 1e-12f);
+      rx_gate.note(db, esphome::millis());
       float lvl = (db + 60.f) / 50.f;
       rx_level = lvl < 0 ? 0 : lvl > 1 ? 1 : lvl;
       rx_pkts++;
@@ -322,13 +313,6 @@ class AudioLink {
   volatile bool tx_ = false, closing_ = false, to_peer_ = true;
   uint32_t last_tx_ms_ = 0;
   bool clear_after_drain_ = false;
-  volatile bool voice_ = false;
-  volatile uint32_t last_voice_ms_ = 0;
-  float floor_db_ = 0.0f, smooth_db_ = -120.0f;
-  static constexpr int LV_N = 96;  // mic blocks of the last ≥ 1.5 s
-  float lv_db_[LV_N] = {0};
-  uint32_t lv_ms_[LV_N] = {0};
-  int lv_i_ = 0;
   uint16_t seq_ = 0;
   uint32_t ts_ = 0, ssrc_ = 0, last_rx_ms_ = 0;
   int16_t ring_[RING];

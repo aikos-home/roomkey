@@ -31,8 +31,7 @@ packages:
   mic: !include packages/roomkey_mic.yaml         # INMP441 — safe to keep even if not wired
   intercom: !include packages/roomkey_intercom.yaml   # WIP: RTP audio to/from the door station
   test_record: !include packages/roomkey_test_record.yaml   # TEST ONLY: 10 s mic after ring (off by default)
-  # link: !include packages/roomkey_link.yaml     # WIP bench: talk_held / in_call straight to the door; enable with the
-  #                                                # door's v2 consumer (to be replaced by aikos_link, features/kopplung.md)
+  link: !include packages/roomkey_link.yaml       # voice v2 (WIP): talk_held / in_call straight to the door
   # speaker: !include packages/roomkey_speaker.yaml  # WIP: enable once a MAX98357A is wired
 
 logger:

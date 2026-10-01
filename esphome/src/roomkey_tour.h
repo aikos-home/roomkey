@@ -98,6 +98,7 @@ class Tour {
         {700, nullptr, "06_call_talking_hold"},
         {400, key(false), nullptr},
         {900, nullptr, "07_call_listening"},
+        {10500, nullptr, "07b_call_over_after_silence"},   // R17.8: "Call silence end" 10 s without speech
         {200, key(true), nullptr},
         {90, key(false), nullptr},
         {500, key(true), nullptr},
