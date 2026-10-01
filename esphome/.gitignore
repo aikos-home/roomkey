@@ -1,3 +1,5 @@
 .esphome/
 secrets.yaml
 /shots/
+secrets.yaml.bak*
+secrets*.bak*

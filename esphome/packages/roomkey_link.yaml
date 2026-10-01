@@ -1,0 +1,38 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# RoomKey → door, device to device (voice v2, WIP; aikos features/sprechen.md §4b, contract by the door thread):
+#   talk_held  this key's talk button is held: the door plays this key only then
+#   in_call    this key takes part in the call: the door's call ends when no key is in it any more
+# packet_transport over UDP 18511, unicast to the door talk computer, encrypted with key_link_key (one key for
+# all RoomKeys), rolling code, sent on change and every second. Provider name = node name.
+# The door listens for it from voice v2 on; until then Home Assistant forwards talk_start/talk_stop.
+# BENCH ONLY: the key is compiled in. The target is pairing in the HA GUI with a shared aikos_link block
+# (aikos features/kopplung.md); this package goes away then.
+# secrets.yaml: key_link_key, door_talk_host (IP of the door talk computer).
+# ─────────────────────────────────────────────────────────────────────────────
+udp:
+  id: rk_link_udp
+  addresses: [!secret door_talk_host]
+
+packet_transport:
+  - platform: udp
+    udp_id: rk_link_udp
+    update_interval: 1s
+    rolling_code_enable: true
+    encryption: !secret key_link_key
+    binary_sensors:
+      - talk_held
+      - in_call
+
+binary_sensor:
+  - platform: template
+    id: talk_held
+    name: Talk held
+    icon: mdi:microphone
+    entity_category: diagnostic
+    lambda: return roomkey::ctl().talking();
+  - platform: template
+    id: in_call
+    name: In call
+    icon: mdi:phone-in-talk
+    entity_category: diagnostic
+    lambda: return roomkey::ctl().in_call();
