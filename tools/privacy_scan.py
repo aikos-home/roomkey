@@ -35,7 +35,10 @@ BUILTIN = {
 }
 ALLOWED_EMAILS = {"noreply@anthropic.com"}
 # Generic defaults documented in RoomKey's configs — examples, not anyone's real entities.
-ALLOWED_ENTITY_IDS = {"binary_sensor.doorbell_button", "binary_sensor.doorstation_call_active"}
+ALLOWED_ENTITY_IDS = {"binary_sensor.doorbell_button", "binary_sensor.doorstation_call_active",
+                      # aikos contract entities (aikos features/sprechen.md §4b A), the same in every home
+                      "binary_sensor.aikos_front_door", "binary_sensor.aikos_quiet_hours", "sensor.aikos_people",
+                      "sensor.aikos_call_log"}
 ALLOWED_OBJECT_PREFIXES = ("roomkey_test_",)            # RoomKey's own DEV stand-ins
 SERVICE_VERBS = {"turn_on", "turn_off", "toggle", "reload", "trigger", "select_option", "set_value"}
 
