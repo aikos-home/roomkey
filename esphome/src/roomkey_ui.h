@@ -67,7 +67,7 @@ constexpr const char *ALARM_LIGHT = "\U000F078F";   // mdi:alarm-light
 constexpr const char *MIC = "\U000F036C";           // mdi:microphone
 constexpr const char *EAR = "\U000F07C5";           // mdi:ear-hearing
 constexpr const char *HANGUP = "\U000F03F5";        // mdi:phone-hangup
-constexpr const char *PHONE_TALK = "\U000F03F6";    // mdi:phone-in-talk
+constexpr const char *PHONE_TALK = "\U000F03F6";    // mdi:phone-in-talk (md + lg fonts)
 constexpr const char *CLOUD_OFF = "\U000F0164";     // mdi:cloud-off-outline
 constexpr const char *CHECK = "\U000F0E1E";         // mdi:check-bold
 constexpr const char *CLOSE = "\U000F1398";         // mdi:close-thick
@@ -130,6 +130,7 @@ struct Strings {
   const char *offline, *missed, *demo, *ha_on, *ha_off, *not_sent;
   const char *tap_hint;
   const char *speaks;  // printf: the visitor's language
+  const char *answered, *join_hint, *a_join, *hold_here;  // another room answered (R19); touch: hold below the chat
 };
 
 static const Strings STR_EN = {
@@ -143,6 +144,7 @@ static const Strings STR_EN = {
     "Offline", "missed", "Demo mode", "connected", "offline", "Offline · not sent",
     "Press the key for lights",
     "Speaks %s",
+    "Answered", "Press to listen in", "Listen", "Hold here to talk",
 };
 
 static const Strings STR_DE = {
@@ -156,6 +158,7 @@ static const Strings STR_DE = {
     "Offline", "verpasst", "Demo-Modus", "verbunden", "offline", "Offline · nicht gesendet",
     "Taste drücken für Licht",
     "Spricht %s",
+    "Angenommen", "Drücken: mithören", "Mithören", "Hier halten: sprechen",
 };
 
 // ── Model ────────────────────────────────────────────────────────────────────
@@ -261,6 +264,7 @@ class Controller {
   }
   void ring_start() {
     if (in_call_) return;  // already talking to the door
+    answered_elsewhere_ = false;
     if (!ringing_) visitor_.clear(), visitor_lang_.clear(), visitor_role_.clear(), visitor_urgent_ = false,
                    live_text_.clear(), live_shown_ = 0;  // a new visitor
     ringing_ = true;
@@ -270,10 +274,13 @@ class Controller {
     wake();
     render();
   }
+  // missed = the ring timed out; otherwise another room answered (HA) and this key may join (R19)
   void ring_stop(bool missed = false) {
     if (!ringing_) return;
     ringing_ = false;
     if (hooks.ringtone) hooks.ringtone(false);
+    answered_elsewhere_ = !missed && !in_call_;
+    answered_ms_ = millis();
     if (missed) {
       missed_++;
       snprintf(missed_at_, sizeof(missed_at_), "%02d:%02d", hh_, mm_);
@@ -444,7 +451,7 @@ class Controller {
     // The conversation stays open 2 min after the last audio (the door's answer must get through), but the
     // screen shows it only while something happens: talking, door audio arriving, or just now.
     if (in_call_ && (talking_ || age_(call_seen_ms_) < (int32_t) CALL_SHOW_MS)) return View::CALL;
-    if (ringing_) return View::RING;
+    if (ringing_ || joinable_()) return View::RING;   // ringing, or answered elsewhere and this room may join (R19)
     if (menu_open_) return View::MENU;
     if (info_open_) return View::INFO;
     return View::HOME;
@@ -540,6 +547,12 @@ class Controller {
       build_chat_();
       render();
     }
+  }
+  // The door has a call (aikos binary_sensor.aikos_intercom_talk_in_call; with voice v2 straight from the door).
+  void set_door_call(bool on) {
+    door_call_ = on ? 1 : 0;
+    if (!on) answered_elsewhere_ = false;
+    if (built_) render();
   }
   bool in_call() const { return in_call_; }
   bool talking() const { return talking_; }
@@ -783,6 +796,10 @@ class Controller {
     lv_obj_set_scrollbar_mode(chat_box_, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_scroll_dir(chat_box_, LV_DIR_VER);
     lv_obj_add_flag(chat_box_, LV_OBJ_FLAG_HIDDEN);
+    if (cfg.has_touch) {   // R18: swipe through the chat like on a phone
+      lv_obj_add_flag(chat_box_, LV_OBJ_FLAG_CLICKABLE);
+      lv_obj_add_event_cb(chat_box_, &Controller::on_chat_scroll_cb_, LV_EVENT_SCROLL, this);
+    }
     call_live_ = live_label_(chat_box_, 0, 0);
     lv_obj_align(call_live_, LV_ALIGN_TOP_LEFT, 0, 0);
     if (cfg.has_touch) {  // press-and-hold the disc = talk (same as the key)
@@ -805,6 +822,17 @@ class Controller {
     }
     call_state_ = label_(v_call_, fonts.small, pal::MUTED, "");
     lv_obj_align(call_state_, LV_ALIGN_TOP_MID, 0, 244);
+    if (cfg.has_touch) {   // the chat hides the disc: the meter strip below it is the press-and-hold talk button then
+      talk_zone_ = box_(v_call_);
+      lv_obj_set_size(talk_zone_, 150, 46);
+      lv_obj_align(talk_zone_, LV_ALIGN_TOP_MID, 0, 220);
+      lv_obj_set_style_radius(talk_zone_, 23, 0);
+      lv_obj_set_style_border_width(talk_zone_, 1, 0);
+      lv_obj_set_style_border_color(talk_zone_, lv_color_hex(pal::LINE), 0);
+      lv_obj_add_flag(talk_zone_, LV_OBJ_FLAG_CLICKABLE);
+      lv_obj_add_event_cb(talk_zone_, &Controller::on_call_disc_cb_, LV_EVENT_ALL, this);
+      lv_obj_add_flag(talk_zone_, LV_OBJ_FLAG_HIDDEN);
+    }
   }
 
   // ── build: alarm ──────────────────────────────────────────────────────────
@@ -1136,6 +1164,10 @@ class Controller {
     lv_obj_set_style_text_align(call_live_, chat_rows_.empty() ? LV_TEXT_ALIGN_CENTER : LV_TEXT_ALIGN_LEFT, 0);
     if (call_text) lv_obj_remove_flag(chat_box_, LV_OBJ_FLAG_HIDDEN); else lv_obj_add_flag(chat_box_, LV_OBJ_FLAG_HIDDEN);
     if (call_text) lv_obj_add_flag(call_disc_, LV_OBJ_FLAG_HIDDEN); else lv_obj_remove_flag(call_disc_, LV_OBJ_FLAG_HIDDEN);
+    if (talk_zone_) {   // touch: talk below the chat while the disc is hidden (and while talking, to release it there)
+      bool zone = call_text || (talking_ && !lv_obj_has_flag(talk_zone_, LV_OBJ_FLAG_HIDDEN));
+      if (zone) lv_obj_remove_flag(talk_zone_, LV_OBJ_FLAG_HIDDEN); else lv_obj_add_flag(talk_zone_, LV_OBJ_FLAG_HIDDEN);
+    }
     if (call_text && chat_back_ == 0) scroll_chat_(false);
   }
 
@@ -1194,6 +1226,13 @@ class Controller {
 
   void render_ring_() {
     render_live_();
+    lv_label_set_text(ring_icon_, ringing_ ? icon::BELL_RING : icon::PHONE_TALK);
+    if (!ringing_) for (lv_obj_t *r : ripples_) lv_obj_add_flag(r, LV_OBJ_FLAG_HIDDEN);   // no ringing waves
+    lv_label_set_text(ring_title_, ringing_ ? S->doorbell : S->answered);
+    if (!ringing_) {   // answered in another room: press = listen in, hold = talk (R19)
+      lv_label_set_text(ring_sub_, S->join_hint);
+      return;
+    }
     char sub[48];
     if (!visitor_lang_.empty()) snprintf(sub, sizeof(sub), S->speaks, visitor_lang_.c_str());   // "Speaks Chinese"
     else snprintf(sub, sizeof(sub), "%02d:%02d", hh_, mm_);
@@ -1218,7 +1257,8 @@ class Controller {
     } else {
       lv_label_set_text(call_icon_, icon::EAR);
       style_disc_(call_disc_, call_icon_, pal::CYAN, LV_OPA_10, 3, false);
-      lv_label_set_text(call_state_, S->listening);
+      const bool chat_shown = !lv_obj_has_flag(chat_box_, LV_OBJ_FLAG_HIDDEN);
+      lv_label_set_text(call_state_, talk_zone_ && chat_shown ? S->hold_here : S->listening);
       lv_obj_set_style_text_color(call_state_, lv_color_hex(pal::CYAN), 0);
     }
     for (int i = 0; i < METER_N; i++)
@@ -1263,7 +1303,7 @@ class Controller {
         break;
       case View::MENU: press = S->a_next; hold = S->a_select; break;
       case View::INFO: press = S->a_back; break;
-      case View::RING: press = S->a_answer; hold = S->a_talk; hold_col = pal::GREEN; break;
+      case View::RING: press = ringing_ ? S->a_answer : S->a_join; hold = S->a_talk; hold_col = pal::GREEN; break;
       case View::CALL:   // push-to-talk only: no hang-up
         press = chat_rows_.empty() ? nullptr : S->a_older;
         hold = S->a_talk;
@@ -1362,8 +1402,18 @@ class Controller {
     if (hooks.answer && !cfg.demo) hooks.answer();
     begin_call_();
   }
+  void dismiss_ring_() {   // the user waved the ring (or the join offer) away: no join view
+    ring_stop();
+    answered_elsewhere_ = false;
+    render();
+  }
+  bool joinable_() const {
+    return answered_elsewhere_ && !in_call_ && door_call_ != 0 &&
+           (door_call_ == 1 || age_(answered_ms_) < (int32_t) JOIN_UNKNOWN_MS);   // door state unknown: 2 min
+  }
   void begin_call_() {
     call_seen_ms_ = millis();
+    answered_elsewhere_ = false;
     if (in_call_) return;
     in_call_ = true;
     talking_ = false;
@@ -1479,6 +1529,7 @@ class Controller {
   void start_anims_(View v) {
     switch (v) {
       case View::RING:
+        if (!ringing_) break;   // answered elsewhere: no ringing animation
         for (int i = 0; i < 2; i++) anim_(ripples_[i], anim_ripple_cb_, 0, 1000, 1400, true, false, i * 700, lv_anim_path_ease_out);
         anim_(ring_icon_, anim_rot_cb_, -140, 140, 90, true, true);
         break;
@@ -1643,11 +1694,18 @@ class Controller {
     auto *c = (Controller *) lv_event_get_user_data(e);
     if (c->key_down_) return;
     if (c->hooks.dismiss && !c->cfg.demo) c->hooks.dismiss();
-    c->ring_stop();
+    c->dismiss_ring_();
   }
   static void on_hangup_cb_(lv_event_t *e) {
     auto *c = (Controller *) lv_event_get_user_data(e);
     if (!c->key_down_) c->end_call_(true);
+  }
+  // a finger moved the chat: stay on the call view, and don't jump back to the newest while the user reads
+  static void on_chat_scroll_cb_(lv_event_t *e) {
+    auto *c = (Controller *) lv_event_get_user_data(e);
+    if (lv_indev_active() == nullptr) return;   // our own scroll_chat_()
+    c->call_seen_ms_ = c->chat_back_ms_ = millis();
+    c->chat_back_ = lv_obj_get_scroll_bottom(c->chat_box_) > 4;
   }
   static void on_call_disc_cb_(lv_event_t *e) {
     auto *c = (Controller *) lv_event_get_user_data(e);
@@ -1674,7 +1732,7 @@ class Controller {
     } else if (dir == LV_DIR_BOTTOM) {  // swipe down: back / dismiss
       if (c->hooks.gesture) c->hooks.gesture("swipe_down");
       if (v == View::MENU || v == View::INFO) { c->menu_open_ = c->info_open_ = false; c->render(); }
-      else if (v == View::RING) { if (c->hooks.dismiss && !c->cfg.demo) c->hooks.dismiss(); c->ring_stop(); }
+      else if (v == View::RING) { if (c->hooks.dismiss && !c->cfg.demo) c->hooks.dismiss(); c->dismiss_ring_(); }
       else if (v == View::CALL) c->end_call_(true);
     }
     lv_indev_wait_release(lv_indev_active());
@@ -1698,10 +1756,14 @@ class Controller {
   uint32_t call_seen_ms_ = 0, talk_since_ms_ = 0;
   bool pending_press_ = false, double_ = false;
   uint32_t pending_press_ms_ = 0;
+  bool answered_elsewhere_ = false;
+  int door_call_ = -1;                                  // -1 unknown, 0 no call at the door, 1 call
+  uint32_t answered_ms_ = 0;
+  static constexpr uint32_t JOIN_UNKNOWN_MS = 120000;
   std::string visitor_, visitor_lang_, visitor_role_;
   std::vector<ChatMsg> chat_;
   std::vector<lv_obj_t *> chat_rows_;
-  lv_obj_t *chat_box_ = nullptr;
+  lv_obj_t *chat_box_ = nullptr, *talk_zone_ = nullptr;
   int chat_back_ = 0;            // 1 = scrolled back (a press moves 100 px up; at the top it returns to the newest)
   int chat_end_y_ = 0;
   uint32_t chat_back_ms_ = 0;

@@ -15,6 +15,7 @@ substitutions:
   intercom_port: "5004"
   front_door_entity: binary_sensor.aikos_front_door     # aikos: front door open (debounced)
   quiet_hours_entity: binary_sensor.aikos_quiet_hours   # aikos: quiet hours now
+  door_call_entity: binary_sensor.aikos_intercom_talk_in_call   # the door has a call (voice v2: from the door itself)
 
 esphome:
   includes:
@@ -170,6 +171,13 @@ binary_sensor:
     id: rk_quiet_hours
     entity_id: ${quiet_hours_entity}
     internal: true
+  # R19: answered in another room → this key may join while the door's call runs
+  - platform: homeassistant
+    id: rk_door_call
+    entity_id: ${door_call_entity}
+    internal: true
+    on_state:
+      - lambda: roomkey::ctl().set_door_call(x);
   # Visitor audio may play now (before an answer): switch on, inside the time window, and outside the quiet
   # hours unless it is an emergency (R17.13, R17.15). Without a valid clock only "always" (from = until) counts.
   - platform: template

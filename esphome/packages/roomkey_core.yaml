@@ -204,6 +204,7 @@ font:
       - "\U000F078F"  # alarm-light
       - "\U000F036C"  # microphone
       - "\U000F07C5"  # ear-hearing
+      - "\U000F03F6"  # phone-in-talk (answered in another room, R19)
       - "\U000F0565"  # shield-check
       - "\U000F1398"  # close-thick
 

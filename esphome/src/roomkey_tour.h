@@ -136,6 +136,14 @@ class Tour {
         {300, key(true), nullptr},
         {90, key(false), nullptr},
         {300, nullptr, "16_offline_toast"},
+        // R19: it rings, another room answers → this key offers to join; one press joins (listening, chat)
+        {2000, []() { ctl().set_online(true); ctl().ring_start(); }, nullptr},
+        {1100, nullptr, "17_ringing_again"},
+        {300, []() { ctl().set_door_call(true); ctl().ring_stop(false); }, nullptr},
+        {600, nullptr, "18_answered_elsewhere_join"},
+        {200, key(true), nullptr},
+        {90, key(false), nullptr},
+        {800, nullptr, "19_joined_chat_touch"},
     };
     timer_ = lv_timer_create(&Tour::tick_cb_, 20, this);
     next_at_ = esphome::millis() + 1500;  // let the UI settle
