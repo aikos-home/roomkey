@@ -130,6 +130,14 @@ text_sensor:
             }
           }
           roomkey::ctl().set_chat(std::move(msgs));
+  # R22: the chat counts only while the call log says a call is active (never the last call's chat)
+  - platform: homeassistant
+    id: ha_call_log_active
+    entity_id: ${call_log_entity}
+    attribute: active
+    internal: true
+    on_value:
+      - lambda: roomkey::ctl().set_chat_active(x == "True" || x == "true" || x == "on");
   # Who is at the door, as the visitor introduced themselves (door-side transcript, aikos vertraege.md §6).
   - platform: homeassistant
     id: ha_visitor
