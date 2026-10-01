@@ -22,6 +22,7 @@ Standard library only. Hooked into tools/rtp_recorder.py with --exec.
 """
 import argparse
 import datetime as dt
+import os
 import re
 import io
 import json
@@ -32,7 +33,7 @@ import uuid
 import wave
 from pathlib import Path
 
-from talk_identity import WHISPER_PROMPT, identify, is_noise, prompt_echo, strip_captions
+from talk_identity import WHISPER_PROMPT, identify, is_noise, prompt_echo, strip_captions, strip_echo
 
 
 def has_speech(wav: Path, min_s: float = 0.3) -> bool:
@@ -146,6 +147,30 @@ def spoken_language(d: dict) -> tuple[str, float]:
     return (code, p) if p >= (LANG_MIN_P_EN if code == "en" else LANG_MIN_P) else ("de", p)
 
 
+def drop_echo(text: str, ha_url: str, token: str, window_s: float = 30.0, ref_entity: str = "sensor.talk_transcript",
+              activity_file: str = "", wait_s: float = 4.0) -> str:
+    """The door mic hears the resident through the door speaker (voice v2: door mic always on). Drop door sentences that
+    mostly repeat what a RoomKey transcript said in the last window_s seconds. If a resident talked after the last room
+    transcript (activity_file, touched by the room receiver), that transcript is still being made: wait up to wait_s."""
+    deadline = time.time() + wait_s
+    while True:
+        try:
+            room = ha(ha_url, token, "GET", f"/api/states/{ref_entity}")
+            made = dt.datetime.fromisoformat(room["state"]).timestamp()
+            said = room["attributes"].get("text", "")
+        except Exception:
+            return text
+        try:
+            active = os.path.getmtime(activity_file) if activity_file else 0.0
+        except OSError:
+            active = 0.0
+        if active - 1.0 > made and time.time() - active < 15 and time.time() < deadline:
+            time.sleep(0.3)
+            continue
+        break
+    return strip_echo(text, said) if time.time() - made <= window_s else text
+
+
 def ha(url: str, token: str, method: str, path: str, body=None):
     req = urllib.request.Request(url.rstrip("/") + path, method=method,
                                  data=json.dumps(body).encode() if body is not None else None,
@@ -180,6 +205,8 @@ def main():
     ap.add_argument("--no-prompt", action="store_true", help="don't give Whisper the doorstep vocabulary hint")
     ap.add_argument("--known-names", default="", help="comma-separated household names (spelling as shown)")
     ap.add_argument("--delete-wav", action="store_true", help="delete the recording when done (privacy; for the service)")
+    ap.add_argument("--echo-ref", default="sensor.talk_transcript", help="door side: the room transcript to filter echoes against")
+    ap.add_argument("--activity-file", default="", help="door side: touched by the room receiver while a resident talks")
     a = ap.parse_args()
     entity = a.entity or ("sensor.talk_transcript" if a.side == "room" else "sensor.talk_transcript_door")
     token = a.token_file.expanduser().read_text().strip()
@@ -215,12 +242,18 @@ def main():
             original = strip_captions(detected.get("text", "")) or text
             text = (to_german(original, LANGUAGES.get(lang, (lang,))[0], a.llm_url, a.llm_model) if not a.no_llm else "") or text
         took = time.time() - t0
+    if a.side == "door":
+        text = drop_echo(text, a.ha_url, token, ref_entity=a.echo_ref, activity_file=a.activity_file)
+        if not text:
+            print(f"· door: only an echo of the resident in {a.wav.name}, not published", flush=True)
+            return
     who = identify(text, names,
                    "" if a.no_llm else a.llm_url, a.llm_model, side=a.side)
     device, key_id = key_for_ip(a.ha_url, token, a.source_ip) if a.source_ip else (None, None)
     created = dt.datetime.now().astimezone().isoformat(timespec="seconds")
     data = {"text": text, "message": who.message, "speaker": who.speaker, "speaker_kind": who.kind,
-            "speaker_role": who.role, "speaker_org": who.org, "speaker_method": who.method, "side": a.side,
+            "speaker_role": who.vtype, "speaker_org": who.org, "speaker_method": who.method, "urgent": who.urgent,
+            "side": a.side,
             "device": device or "unknown", "key_id": key_id or "unknown", "duration_s": round(duration, 1),
             "language": lang, "language_name": LANGUAGES.get(lang, (lang,))[0] if lang else "",
             "language_name_en": LANGUAGES.get(lang, (None, lang))[1] if lang else "",

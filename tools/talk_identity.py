@@ -52,15 +52,47 @@ ROLES: dict[str, tuple[str, list[str]]] = {
     "taxi":      ("Taxi", [r"taxi\w*"]),
     "officials": ("Behörde", [r"ordnungsamt", r"zoll", r"gerichtsvollzieher\w*", r"(?-i:Amt)", r"behörde", r"\w+amt"]),
     "telecom":   ("Techniker", [r"glasfaser\w*", r"kabelanschluss"]),
+    # voice v2 (R17.10): more visitor types; the RoomKey shows an icon per id
+    "shopping":  ("Einkauf", [r"getränke\w*", r"einkäufe", r"einkaufs\w*", r"lebensmittel\w*"]),
+    "pharmacy":  ("Apotheke", [r"apotheke\w*", r"botendienst", r"medikament\w*"]),
+    "flowers":   ("Blumen", [r"blumen\w*", r"florist\w*", r"blumenlieferung"]),
+    "freight":   ("Spedition", [r"spedition\w*", r"möbel\w*", r"umzugs\w*", r"umzug"]),
+    "waste":     ("Müllabfuhr", [r"müll\w*", r"sperrmüll", r"stadtreinigung", r"abfall\w*"]),
+    "household_help": ("Haushaltshilfe", [r"putzhilfe", r"putzfrau", r"reinigungskraft", r"haushaltshilfe", r"gärtner\w*",
+                                          r"babysitter\w*", r"tagesmutter"]),
+    "seasonal":  ("Sternsinger", [r"sternsinger\w*"]),
+    "religion":  ("Glaubensgemeinschaft", []),       # only via ORGS ("Zeugen Jehovas") and content
+    "campaign":  ("Wahlkampf", [r"kandidat\w*", r"wahlhelfer\w*", r"wahlkämpfer\w*"]),
 }
+# content → visitor type, for the icon only (not a speaker): door side, when nobody introduced themselves
+CONTENT_TYPES: list[tuple[str, str]] = [
+    ("kids_friend", r"\b(?:ein |eine )?(?:freund|freundin|kumpel) von\b|\baus (?:der|seiner|ihrer) klasse\b|\bzum spielen\b|\bkita\b"),
+    ("sales", r"\b(?:spende\w*|sammeln für|umfrage|angebot|zeitungsabo|abonnement|energieberatung|stromvertrag|tarif\w*|"
+              r"vertrag\w*|verkaufe\w*|lose)\b"),
+    ("religion", r"\b(?:zeugen jehovas|bibel\w*|kirche\w*|gottes|glauben|gemeinde (?:christi|gottes))\b"),
+    ("seasonal", r"\b(?:süßes oder saures|halloween|sankt martin|st\.? martin|nikolaus|sternsinger\w*|weihnachts\w*)\b"),
+    ("campaign", r"\b(?:partei\w*|wahlkampf|wahlhelfer\w*|kandidat\w*|wahl\b|bundestagswahl|landtagswahl|kommunalwahl)\b"),
+]
+# somebody needs help — overrides quiet hours (R17.15); content, not an introduction
+URGENT = (r"^\W*hilfe\b|\bhilfe\s*!|\b(?:brauche|brauchen) (?:dringend |sofort )?hilfe|\bhelfen sie mir\b|\bbitte helfen\b|"
+          r"\bhilf mir\b|\bnotfall\b|\b(?:rufen sie|ruf|ruft) (?:bitte )?(?:einen |den |die )?(?:krankenwagen|notarzt|polizei|feuerwehr)\b|"
+          r"\b(?:ist|bin|sind) (?:\w+ )?(?:gestürzt|bewusstlos|verletzt)\b|\bblutet\b|\bes brennt\b|\bfeuer\s*!|"
+          r"\beinbrecher\w*|\beinbruch\b|\büberfall\w*|\bhelp\b|\bemergency\b|"
+          r"\b(?:habe|hab|haben) (?:schon |bereits )?(?:die |den |einen )?(?:krankenwagen|notarzt|polizei|feuerwehr) "
+          r"(?:schon |bereits )?(?:gerufen|angerufen|alarmiert)\b")
+FAMILY_TYPE = {"mama", "papa", "mami", "papi", "mutti", "vati", "oma", "opa", "omi", "opi", "tante", "onkel"}
+SELF_DECLARED = {"police", "officials", "utility", "trades", "telecom"}   # common scams: shown with a "?" badge
 # companies → (display name, role id). Short acronyms are case-sensitive: "Ups!" is not UPS.
 ORGS: list[tuple[str, str, str]] = [
     (r"(?-i:D\.?\s?H\.?\s?L\.?)", "DHL", "parcel"), (r"hermes", "Hermes", "parcel"), (r"(?-i:D\.?\s?P\.?\s?[DT]\.?)", "DPD", "parcel"),
     (r"(?-i:UPS)", "UPS", "parcel"), (r"(?-i:GLS)", "GLS", "parcel"), (r"fed ?ex", "FedEx", "parcel"),
     (r"amazon", "Amazon", "parcel"), (r"deutsche post", "Deutsche Post", "mail"),
     (r"lieferando", "Lieferando", "food"), (r"wolt", "Wolt", "food"), (r"uber ?eats", "Uber Eats", "food"),
-    (r"flink", "Flink", "food"), (r"rewe", "Rewe", "food"), (r"hellofresh|hello fresh", "HelloFresh", "food"),
-    (r"gorillas", "Gorillas", "food"), (r"telekom", "Telekom", "telecom"), (r"vodafone", "Vodafone", "telecom"),
+    (r"flink", "Flink", "shopping"), (r"rewe", "Rewe", "shopping"), (r"hellofresh|hello fresh", "HelloFresh", "food"),
+    (r"gorillas", "Gorillas", "shopping"), (r"picnic", "Picnic", "shopping"), (r"knuspr", "Knuspr", "shopping"),
+    (r"fleurop", "Fleurop", "flowers"), (r"zeugen jehovas", "Zeugen Jehovas", "religion"),
+    (r"essen auf rädern", "Essen auf Rädern", "food"),
+    (r"telekom", "Telekom", "telecom"), (r"vodafone", "Vodafone", "telecom"),
     (r"vattenfall", "Vattenfall", "utility"), (r"(?-i:E\.ON|EnBW)", "E.ON", "utility"),
 ]
 
@@ -82,7 +114,7 @@ PHRASES = [
     (r"meine?\s+name\s+(?:ist|is)|ich\s+hei(?:ß|ss)e|hier\s+spricht|my\s+name\s+is|je\s+m['’]appelle|me\s+llamo|"
      r"mi\s+chiamo|nazywam\s+się|benim\s+adım", 3),
     (r"(?<!das\s)hier\s+(?:ist|sind|is)|this\s+is|it['’]s|c['’]est", 2),     # "das hier ist Anna" presents someone else
-    (r"(?:ich|i|isch|icke|ick)\s+bin(?:['’]?s|\s+es|\s+et)?|wir\s+sind|(?:ich|wir)\s+(?:komme|kommen)(?=\s+(?:von|vom|aus)\b)|"
+    (r"(?:ich|i|isch|icke|ick)\s+bin(?:['’]?s|\s+es|\s+et)?|wir\s+sind(?:['’]?s|\s+es)?|(?:ich|wir)\s+(?:komme|kommen)(?=\s+(?:von|vom|aus)\b)|"
      r"i\s+am|i['’]m|we\s+are|sono|je\s+suis|soy|jestem", 1),
 ]
 # capitalised words that are never a name (sentence starts, pronouns, fillers)
@@ -111,8 +143,14 @@ NOT_NAMES = {w.lower() for w in """Montag Dienstag Mittwoch Donnerstag Freitag S
     Deutscher Deutsche Türke Türkin Italiener Italienerin Spanier Spanierin Franzose Französin Pole Polin Russe Russin
     Ukrainer Ukrainerin Amerikaner Amerikanerin Kanadier Kanadierin Engländer Engländerin Brite Britin Österreicher
     Österreicherin Schweizer Schweizerin Grieche Griechin Rumäne Rumänin Syrer Syrerin Iraker Irakerin Afghane Afghanin
-    Vietnamese Vietnamesin Chinese Chinesin Japaner Japanerin Inder Inderin Araber Araberin Kurde Kurdin Student
-    Studentin Schüler Schülerin Rentner Rentnerin Single Vater Mutter""".split()}
+    Vietnamese Vietnamesin Chinese Chinesin Japaner Japanerin Inder Inderin Araber Araberin Kurde Kurdin
+    Rentner Rentnerin Single""".split()}
+# "ich bin (dein) Bruder / ein Freund von … / Student": not a name, but a fine self-description, shown as said
+RELATION = {w.lower() for w in """Bruder Schwester Enkel Enkelin Sohn Tochter Cousin Cousine Neffe Nichte Schwager Schwägerin
+    Schwiegersohn Schwiegertochter Patenkind Freund Freundin Kumpel Kollege Kollegin Mitbewohner Mitbewohnerin Student
+    Studentin Schüler Schülerin Azubi Praktikant Praktikantin Vater Mutter Lieblingsnachbar Lieblingsnachbarin""".split()}
+FAMILY_REL = {"bruder", "schwester", "enkel", "enkelin", "sohn", "tochter", "cousin", "cousine", "neffe", "nichte", "schwager",
+              "schwägerin", "schwiegersohn", "schwiegertochter", "patenkind", "vater", "mutter"}
 FAMILY = {"mama", "papa", "mami", "papi", "mutti", "vati", "oma", "opa", "omi", "opi", "tante", "onkel"}
 
 # Whisper "hears" these in silence or noise (training-data subtitles). They are removed, never shown.
@@ -150,6 +188,8 @@ class Identity:
     org: str = ""       # company, or ""
     message: str = ""   # transcript without greeting + self-introduction ("" if nothing else was said)
     method: str = ""    # "rules" | "llm" | ""
+    urgent: bool = False  # somebody needs help (R17.15)
+    vtype: str = ""     # visitor type id for the RoomKey icon (role, "family", "name", content type, "emergency", "")
 
 
 def _find(pattern: str, text: str):
@@ -217,11 +257,12 @@ def lead(text: str) -> tuple[str, str, str, str]:
     "Hallo, Paket für …", "Polizei, bitte öffnen", ", Ihre Nachbarin", "Paket von Amazon", "Gerichtsvollzieher Braun, …".
     A role word or company later in a sentence is only a topic ("beim Nachbarn abgeben", "die Polizei rufen",
     "mein Paket von Amazon", "Das Paket von Amazon ist beschädigt")."""
-    m = re.match(r"\s*[,.!?;:–-]*\s*" + LEAD + rf"(?:{ARTICLE}\s+)?(?P<w1>{WORD})(?:\s+(?P<w2>{WORD}))?", text, re.I)
+    m = re.match(r"\s*[,.!?;:–-]*\s*" + LEAD + rf"(?:{ARTICLE}\s+)?(?P<w1>{WORD})(?:\s+(?P<w2>{WORD})(?:\s+(?P<w3>{WORD}))?)?",
+                 text, re.I)
     if not m:
         return "", "", "", ""
-    w1, w2 = m.group("w1"), m.group("w2") or ""
-    for cand in (f"{w1} {w2}", w1, w1.split("-")[0]):   # a company up front is an announcement ("Amazon-Lieferung")
+    w1, w2, w3 = m.group("w1"), m.group("w2") or "", m.group("w3") or ""
+    for cand in (f"{w1} {w2} {w3}", f"{w1} {w2}", w1, w1.split("-")[0]):   # "Essen auf Rädern"   # a company up front is an announcement ("Amazon-Lieferung")
         org, rid = org_of(cand)
         if org:
             return rid, org, cand, ""
@@ -256,10 +297,12 @@ def brings(text: str) -> tuple[str, str]:
     return rid, ""
 
 
-AS_SAID = {"trades", "care", "property", "officials", "ambulance", "chimney", "utility", "telecom", "mail", "fire"}   # "Hausmeister", "Gerichtsvollzieher", "Notarzt"
+AS_SAID = {"trades", "care", "property", "officials", "ambulance", "chimney", "utility", "telecom", "mail", "fire", "freight"}   # "Hausmeister", "Gerichtsvollzieher", "Notarzt"
 
 
 def role_label(rid: str, matched: str = "") -> str:
+    if rid == "relation":
+        return matched[:1].upper() + matched[1:]
     label = ROLES[rid][0]
     if rid == "neighbour" and matched.lower().endswith("in"):
         return "Nachbarin"
@@ -333,6 +376,8 @@ def _message(text: str, span: tuple[int, int] | None) -> str:
 
 
 def _compose(name: str, rid: str, org: str, matched: str = "") -> str:
+    if rid == "relation":
+        return role_label(rid, matched) + (f" von {org}" if org else "")
     tail = org or (role_label(rid, matched) if rid else "")
     if name:
         return f"{name} · {tail}" if tail else name
@@ -403,10 +448,12 @@ def parse_who(text: str, pos: int, known: dict) -> _Who | None:
                 names += ["und"] + more; end = toks[k - 1][2]; i = k
         if names and names[0].lower() in NOT_NAMES and not titles:
             return None
+        if names and names[0].lower() in RELATION and not titles:
+            rid, matched, names = "relation", names[0], []   # shown as said: "Bruder", "Freund von Tom", "Student"
         if names and len(names) == 1 and not titles and re.search(r"(?:ung|heit|keit|schaft|tion|tät|ismus)$", names[0]):
             return None                                      # "ich bin der Meinung": an abstract noun, not a name
-        if names and possessive and names[0].lower() not in FAMILY:
-            return None                                      # "Hier ist mein Pass" (but "Hier ist dein Papa")
+        if names and possessive and names[0].lower() not in FAMILY and names[0].lower() not in RELATION:
+            return None                                      # "Hier ist mein Pass" (but "Hier ist dein Papa", "dein Bruder")
         if names and len(names) == 1 and len(names[0]) < 2:
             return None                                      # "ich bin M, …": a stray letter is no name
         if not names and titles:
@@ -501,7 +548,8 @@ def _rules(text: str, known_names=(), side: str = "door") -> Identity:
             found.append((2, 0, _Who(m.group("w"), "", "", "", m.end()), 0))
 
     if side == "room":                               # a resident: only a name counts, never a role or company
-        found = [(s, p, _Who(w.name, "", "", "", w.end), st) for s, p, w, st in found if w.name]
+        found = [(s, p, w if w.rid == "relation" and not w.name else _Who(w.name, "", "", "", w.end), st)
+                 for s, p, w, st in found if w.name or w.rid == "relation"]          # "Ich bin der Sohn" is fine too
     if found:
         strength, _, best, start = max(found, key=lambda f: (f[0], f[1]))
         name, rid, org, matched = best.name, best.rid, best.org, best.matched
@@ -572,7 +620,7 @@ Antworte nur mit JSON: {"speaker": "...", "kind": "name"|"role"|"none", "role": 
 SIDE_HINT = {"door": "Sie kommt von der HAUSTÜR (Besuch, Lieferdienst, Behörde …).",
              "room": "Sie kommt aus einem ZIMMER: Es spricht jemand, der hier wohnt. Nur ein Name kann zählen; "
                      "Lieferdienste, Handwerker usw. sind dann nur Thema."}
-THIRD_PERSON = (r"hat|hatte|ist|war|sagt|sagte|kommt|kam|wird|will|möchte|lässt|grüßt|wartet|schläft|arbeitet|braucht|"
+THIRD_PERSON = (r"hat|hatte|ist|war|sagt|sagte|meinte|erzählte|kommt|kam|wird|will|möchte|lässt|grüßt|wartet|schläft|arbeitet|braucht|"
                 r"steht|sitzt|holt|bringt|ruft|meint|weiß|kann|muss|soll|darf|wohnt")
 
 
@@ -612,6 +660,9 @@ def by_llm(text: str, url: str, model: str, timeout: float = 8.0, side: str = "d
         return None                                                   # "Haben Sie Internet von der Telekom?"
     if re.search(r"\b(?:ob|dass|weil|wenn|falls)\b[^,.!?]*$", before, re.I):
         return None                                                   # "…, ob das Ordnungsamt bei Ihnen war"
+    if re.search(r"\b(?:habe|hab|haben|hat|rufe|rufen|ruf|hole|holen|frage|fragen|suche|suchen|kenne|kennen)\s+"
+                 r"(?:(?:die|den|der|das|ein|eine|einen)\s+)?(?:\w+\s+)?$", before, re.I):
+        return None                                                   # "Ich habe die Polizei schon gerufen" (an object)
     if re.search(r"\bnicht\s+(?:(?:der|die|das|ein|eine|ihr|ihre)\s+)?$", before, re.I):
         return None                                                   # "Ich bin nicht der Postbote"
     if re.search(r"\bbin\s+$", before, re.I) and re.match(r"\s+(?-i:[a-zäöüß])\w*en\b", after):
@@ -662,16 +713,52 @@ def _clause_span(text: str, speaker: str):
     return None
 
 
+def strip_echo(text: str, said: str) -> str:
+    """Drop the sentences of a door transcript that mostly repeat what the resident said (the door mic hears the door
+    speaker). Short sentences (< 3 words) stay: "Ja", "Danke" are too common to call an echo."""
+    ref = {w.lower() for w in re.findall(r"\w+", said)}
+    if not ref:
+        return text
+    keep = []
+    for sent in re.split(r"(?<=[.!?])\s+", text):
+        ws = [w.lower() for w in re.findall(r"\w+", sent)]
+        if len(ws) >= 3 and sum(1 for w in ws if w in ref) / len(ws) >= 0.7:
+            continue
+        keep.append(sent)
+    return " ".join(keep).strip()
+
+
+def classify(ident: Identity, text: str, side: str = "door") -> Identity:
+    """Visitor type for the icon and the emergency flag (voice v2, R17.10 / R17.15)."""
+    ident.urgent = re.search(URGENT, text, re.I) is not None
+    if side == "room":
+        ident.vtype = "name" if ident.name else ""
+        return ident
+    if ident.role == "relation":
+        word = ident.speaker.split()[0].lower() if ident.speaker else ""
+        ident.vtype = "family" if word in FAMILY_REL else ("kids_friend" if word in ("freund", "freundin", "kumpel")
+                                                            and re.search(CONTENT_TYPES[0][1], text, re.I) else "name")
+    elif ident.role:
+        ident.vtype = ident.role
+    elif ident.name:
+        ident.vtype = "family" if ident.name.split()[-1].lower() in FAMILY_TYPE else "name"
+    else:
+        ident.vtype = next((t for t, pat in CONTENT_TYPES if re.search(pat, text, re.I)), "")
+    if ident.urgent and ident.vtype in ("", "name", "family", "neighbour"):
+        ident.vtype = "emergency" if not ident.vtype else ident.vtype
+    return ident
+
+
 def identify(text: str, known_names=(), llm_url: str = "", llm_model: str = "qwen3:8b", side: str = "door") -> Identity:
     text = clean(text)
     ident = by_rules(text, known_names, side)
     if ident.speaker or not llm_url or len(re.findall(L + r"{2,}", text)) < 3:
-        return ident
+        return classify(ident, text, side)
     try:
-        return by_llm(text, llm_url, llm_model, side=side) or ident
+        return classify(by_llm(text, llm_url, llm_model, side=side) or ident, text, side)
     except Exception as exc:  # LLM down or slow: the rules' answer stands
         print(f"talk_identity: LLM skipped ({exc})", file=sys.stderr)
-        return ident
+        return classify(ident, text, side)
 
 
 # ── self-test ─────────────────────────────────────────────────────────────────
@@ -757,8 +844,37 @@ CASES = [  # text, speaker, message   (door side unless the text starts with "ro
 ]
 
 
+TYPE_CASES = [  # text, side, vtype, urgent
+    ("Guten Tag, Paketdienst von DHL, ich habe ein Paket für Sie.", "door", "parcel", False),
+    ("Hallo, die Apotheke, ich bringe Ihre Medikamente.", "door", "pharmacy", False),
+    ("Blumen für Frau Schmidt!", "door", "flowers", False),
+    ("Hallo, Flink, Ihre Einkäufe.", "door", "shopping", False),
+    ("Guten Tag, wir sammeln Spenden für das Tierheim.", "door", "sales", False),
+    ("Guten Tag, wir sind von den Zeugen Jehovas.", "door", "religion", False),
+    ("Süßes oder Saures!", "door", "seasonal", False),
+    ("Wir sind die Sternsinger und bringen den Segen.", "door", "seasonal", False),
+    ("Guten Tag, ich bin Kandidat für den Stadtrat und wollte mich vorstellen.", "door", "campaign", False),
+    ("Hallo, ich bin ein Freund von Jonas, darf er raus zum Spielen?", "door", "kids_friend", False),
+    ("Ich bin's, Oma!", "door", "family", False),
+    ("Hallo, ich bin Susanne Maier.", "door", "name", False),
+    ("Hallo, hier ist die Polizei.", "door", "police", False),
+    ("Hilfe! Mein Mann ist gestürzt, bitte rufen Sie einen Krankenwagen!", "door", "emergency", True),
+    ("Hier ist Anna von nebenan, bitte helfen Sie mir, es brennt!", "door", "neighbour", True),
+    ("Kann ich Ihnen helfen?", "door", "", False),
+    ("Soll ich die Polizei rufen?", "door", "", False),
+    ("Danke für die Hilfe gestern.", "door", "", False),
+    ("Hier ist Papa, ich komme gleich.", "room", "name", False),
+]
+
+
 def selftest() -> bool:
     ok = True
+    for text, side, vtype, urgent in TYPE_CASES:
+        got = classify(by_rules(text, side=side), clean(text), side)
+        good = got.vtype == vtype and got.urgent == urgent
+        ok &= good
+        print(f"{'✓' if good else '✗'} type {side} {text!r} → {got.vtype!r}{' URGENT' if got.urgent else ''}"
+              + ("" if good else f"   expected {vtype!r}{' URGENT' if urgent else ''}"))
     for text, speaker, message in CASES:
         side = "room" if text.startswith("room:") else "door"
         text = text.removeprefix("room:")

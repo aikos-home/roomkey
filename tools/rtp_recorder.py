@@ -114,6 +114,8 @@ def main():
     ap.add_argument("--token-file", type=Path)
     ap.add_argument("--whisper-url", default="http://127.0.0.1:6667/v1/audio/transcriptions")
     ap.add_argument("--known-names", default="")
+    ap.add_argument("--activity-file", default="", help="touched while audio arrives (room side: tells the door side 'a resident talks')")
+    ap.add_argument("--live-quiet-file", default="", help="no live partials while this file was touched < 0.8 s ago")
     a = ap.parse_args()
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind(("0.0.0.0", a.port))
@@ -123,7 +125,8 @@ def main():
     if a.live:
         from talk_live import Live
         live = Live(a.ha_url, a.token_file.expanduser().read_text().strip(), a.live, a.live_side, a.whisper_url,
-                    [n.strip() for n in a.known_names.split(",") if n.strip()])
+                    [n.strip() for n in a.known_names.split(",") if n.strip()], quiet_file=a.live_quiet_file)
+    last_touch = 0.0
 
     def finish(rec, **kw):
         if live:
@@ -145,6 +148,9 @@ def main():
             continue
         if not data or len(data) <= 12 or data[0] >> 6 != 2 or data[1] & 0x7F != PT_L16:
             continue                                                     # ≤ 12 bytes = keepalive
+        if a.activity_file and time.time() - last_touch > 0.25:
+            Path(a.activity_file).touch()
+            last_touch = time.time()
         hdr = 12 + 4 * (data[0] & 0x0F)
         seq = struct.unpack(">H", data[2:4])[0]
         payload = data[hdr:]

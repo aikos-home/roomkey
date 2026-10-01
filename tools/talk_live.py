@@ -25,7 +25,9 @@ import urllib.request
 import uuid
 import wave
 
-from talk_identity import WHISPER_PROMPT, by_rules, is_noise, prompt_echo, strip_captions
+import os
+
+from talk_identity import WHISPER_PROMPT, by_rules, classify, clean, is_noise, prompt_echo, strip_captions, strip_echo
 
 RATE = 16000
 
@@ -51,10 +53,13 @@ def wav_bytes(pcm: bytes) -> bytes:
 
 
 class Live:
-    def __init__(self, ha_url: str, token: str, entity: str, side: str, whisper_url: str, names=(), interval: float = 0.3):
+    def __init__(self, ha_url: str, token: str, entity: str, side: str, whisper_url: str, names=(), interval: float = 0.3,
+                 quiet_file: str = "", echo_ref: str = "sensor.talk_transcript"):
         self.ha_url, self.token, self.entity, self.side = ha_url.rstrip("/"), token, entity, side
         self.whisper_url, self.names, self.interval = whisper_url, list(names), interval
         self.prompt = WHISPER_PROMPT + (" Namen: " + ", ".join(self.names) + "." if self.names else "")
+        self.quiet_file = quiet_file   # touched by the room receiver while a RoomKey talks: no door partials then (echo)
+        self.echo_ref = echo_ref       # after that, the resident's transcript: its echo is removed from the partials
         self.rec = None
         self.lock = threading.Lock()
         threading.Thread(target=self._run, daemon=True).start()
@@ -63,6 +68,7 @@ class Live:
     def start(self, rec):
         with self.lock:
             self.rec, self.text, self.speaker, self.seq, self.done_len = rec, "", "", 0, 0
+            self.vtype, self.urgent, self.warned, self.overlap = "", False, False, False
             self.started = dt.datetime.now().astimezone().isoformat(timespec="seconds")
 
     def stop(self, rec):
@@ -87,21 +93,55 @@ class Live:
             if len(pcm) - done_len < int(0.3 * RATE) * 2 or not has_speech_pcm(pcm):
                 continue
             try:
+                active = os.path.getmtime(self.quiet_file) if self.quiet_file else 0.0
+            except OSError:
+                active = 0.0
+            if time.time() - active < 0.8:
+                self.overlap = True             # a resident is talking: the door mic hears the door speaker
+                continue
+            said = None
+            if self.overlap:                    # this utterance overlapped the resident: wait for the resident's text
+                said = self._resident_text(active)
+                if said is None:
+                    continue
+            try:
                 text = self._whisper(wav_bytes(pcm))
-            except Exception:
+            except Exception as exc:
+                if not getattr(self, "warned", False):
+                    print(f"  live: Whisper failed ({exc})", flush=True)
+                    self.warned = True
                 continue
             text = strip_captions(text)
+            if said:
+                text = strip_echo(text, said)
             if not text or is_noise(text) or prompt_echo(text, self.prompt):
                 continue
-            who = by_rules(text, self.names, self.side)
+            who = classify(by_rules(text, self.names, self.side), clean(text), self.side)
             with self.lock:
-                if self.rec is not rec or text == self.text:
+                if self.rec is not rec:
+                    continue                    # a new utterance began meanwhile: this text is stale
+                if text == self.text:
                     self.done_len = len(pcm)
                     continue
                 self.text, self.done_len, self.seq = text, len(pcm), self.seq + 1
                 self.speaker = who.speaker or self.speaker
+                self.vtype = who.vtype or getattr(self, "vtype", "")
+                self.urgent = who.urgent or getattr(self, "urgent", False)
                 speaker, seq = self.speaker, self.seq
             self._publish(started, text, speaker, False, seq)
+
+    def _resident_text(self, active: float):
+        """The resident's last transcript once it covers the talk that ended at `active`; None while it is still made."""
+        req = urllib.request.Request(f"{self.ha_url}/api/states/{self.echo_ref}", headers={"Authorization": f"Bearer {self.token}"})
+        try:
+            with urllib.request.urlopen(req, timeout=5) as r:
+                st = json.loads(r.read())
+            made = dt.datetime.fromisoformat(st["state"]).timestamp()
+        except Exception:
+            return ""                           # no reference: show the partials unfiltered (the final text is filtered)
+        if made < active - 1.0 and time.time() - active < 5:
+            return None
+        return st["attributes"].get("text", "") if time.time() - made < 30 else ""
 
     def _whisper(self, audio: bytes) -> str:
         boundary = uuid.uuid4().hex
@@ -116,7 +156,8 @@ class Live:
 
     def _publish(self, started: str, text: str, speaker: str, final: bool, seq: int):
         body = {"state": started, "attributes": {
-            "text": text, "speaker": speaker, "final": final, "side": self.side, "seq": seq,
+            "text": text, "speaker": speaker, "speaker_role": getattr(self, "vtype", ""), "urgent": getattr(self, "urgent", False),
+            "final": final, "side": self.side, "seq": seq,
             "updated": dt.datetime.now().astimezone().isoformat(timespec="milliseconds"),
             "friendly_name": "Talk live " + self.side + " (TEST)", "icon": "mdi:text-recognition"}}
         req = urllib.request.Request(f"{self.ha_url}/api/states/{self.entity}", data=json.dumps(body).encode(), method="POST",
