@@ -324,6 +324,12 @@ class Controller {
   void toast(const std::string &text, uint32_t ms = 1800) { show_toast_(text.c_str(), ms); }
 
   // ── raw inputs ────────────────────────────────────────────────────────────
+  // simulator tour only: a key-down that happened at `at` (to test a late loop)
+  void key_at(bool down, uint32_t at) {
+    key(down);
+    if (down) key_down_ms_ = at;
+  }
+  void end_call_for_tour() { end_call_(false); }
   void key(bool down) {
     uint32_t now = millis();
     ESP_LOGD(TAG, "key %s in %s (held %u ms)", down ? "down" : "up", view_name(), (unsigned) (now - key_down_ms_));
@@ -351,6 +357,14 @@ class Controller {
       key_down_ = false;
       press_anim_(false);
       set_hold_progress_(0);
+      // A hold the timer never saw (the loop was late, e.g. a busy simulator): where holding means talk, it still
+      // counts as a hold, so the key joins as on time. Never for disarming, where a stretched press must not count.
+      const bool talk_hold = (view() == View::HOME && !(is_armed(alarm_) || alarm_ == Alarm::ARMING)) || view() == View::CALL;
+      if (!hold_fired_ && !key_consumed_ && talk_hold && now - key_down_ms_ >= hold_ms_()) {
+        ESP_LOGD(TAG, "late hold in %s", view_name());
+        on_hold_();
+        hold_fired_ = true;
+      }
       if (hold_fired_) {
         on_hold_release_();
       } else if (!key_consumed_) {

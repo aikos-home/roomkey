@@ -144,6 +144,10 @@ class Tour {
         {200, key(true), nullptr},
         {90, key(false), nullptr},
         {800, nullptr, "19_joined_chat_touch"},
+        // a hold the timer never saw (the loop was late): key down and up in one go, 400 ms apart → still talk/join
+        {300, []() { ctl().end_call_for_tour(); }, nullptr},
+        {300, []() { ctl().key_at(true, esphome::millis() - 400); ctl().key(false); }, nullptr},
+        {200, nullptr, "21b_late_hold_joined"},
         // live text: a Whisper revision of words already shown appears at once (no retyping from the start)
         {300, []() { ctl().set_live_text("Alice klar, ich habe hier ein Paket für Sie, es passt leider nicht in den Briefkasten."); }, nullptr},
         {4000, nullptr, nullptr},
