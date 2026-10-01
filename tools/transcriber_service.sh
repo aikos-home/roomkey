@@ -42,7 +42,7 @@ if [ "${AIKOS_LIVE:-$([ "$side" = door ] && echo 1 || echo 0)}" = 1 ]; then
   entity=sensor.talk_live; [ "$side" = door ] && entity=sensor.talk_live_door
   live=(--live "$entity" --live-side "$side" --ha-url "$ha" --token-file "$token" --whisper-url "$whisper" --known-names "$names")
 fi
-exec "$py" -u tools/rtp_recorder.py --port "$port" --out "$rec" "${live[@]}" \
+exec "$py" -u tools/rtp_recorder.py --port "$port" --out "$rec" ${live[@]+"${live[@]}"} \
   --on-start "curl -s -m 30 $(q "$llm")/api/generate -d '{\"model\":\"qwen3:8b\",\"keep_alive\":-1}' >/dev/null" \
   --exec "$(q "$py") -u tools/transcribe_publish.py {wav} --side $side --source-ip {src} --ha-url $(q "$ha") \
 --token-file $(q "$token") --whisper-url $(q "$whisper") --llm-url $(q "$llm") --known-names $(q "$names") --delete-wav"
