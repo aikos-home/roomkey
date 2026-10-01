@@ -169,6 +169,12 @@ text_sensor:
     on_value:
       - lambda: roomkey::ctl().set_live_text(x);
   - platform: homeassistant
+    id: ha_live_started             # state = when this utterance started: a new one types in from the start
+    entity_id: ${live_entity}
+    internal: true
+    on_value:
+      - lambda: roomkey::ctl().live_utterance(x);
+  - platform: homeassistant
     id: ha_live_speaker
     entity_id: ${live_entity}
     attribute: speaker

@@ -509,14 +509,22 @@ class Controller {
   void set_live_text(const std::string &t) {
     if (t.empty() || t == "unknown" || t == "unavailable") return;
     if (!ringing_ && !in_call_) return;
-    size_t common = 0;  // Whisper may revise earlier words: keep what is still the same, retype the rest
-    while (common < t.size() && common < live_text_.size() && t[common] == live_text_[common]) common++;
-    while (common > 0 && common < t.size() && ((uint8_t) t[common] & 0xC0) == 0x80) common--;  // UTF-8 boundary
+    // Every update carries the whole utterance so far. Whisper revises earlier words now and then: show a revision of
+    // what is already on screen at once and type only the new words (retyping from the first changed letter made a
+    // long utterance look as if it streamed in again). A new utterance (live_utterance) types from the start.
     if (t != live_text_) visitor_text_n_++;
     live_text_ = t;
-    if (live_shown_ > common) live_shown_ = common;
+    size_t keep = std::min(live_shown_, t.size());
+    while (keep > 0 && keep < t.size() && ((uint8_t) t[keep] & 0xC0) == 0x80) keep--;  // UTF-8 boundary
+    live_shown_ = keep;
     if (in_call_) call_seen_ms_ = millis();
     if (built_) render();
+  }
+  // A new utterance at the door (the live sensor's state = when it started): its text types in from the start.
+  void live_utterance(const std::string &started) {
+    if (started.empty() || started == "unknown" || started == "unavailable" || started == live_started_) return;
+    live_started_ = started;
+    live_shown_ = 0;
   }
   // The language the visitor speaks, when it is not German ("Chinese"), from the same transcript.
   void set_visitor_language(const std::string &lang) {
@@ -1780,7 +1788,7 @@ class Controller {
   int door_call_ = -1;                                  // -1 unknown, 0 no call at the door, 1 call
   uint32_t answered_ms_ = 0;
   static constexpr uint32_t JOIN_UNKNOWN_MS = 120000;
-  std::string visitor_, visitor_lang_, visitor_role_;
+  std::string visitor_, visitor_lang_, visitor_role_, live_started_;
   std::vector<ChatMsg> chat_;
   std::vector<lv_obj_t *> chat_rows_;
   lv_obj_t *chat_box_ = nullptr, *talk_zone_ = nullptr;
