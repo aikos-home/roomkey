@@ -21,6 +21,11 @@ import FreeCAD as App  # noqa: F401  (FreeCAD runtime)
 import Part
 from FreeCAD import Vector as V
 
+try:                      # FreeCADCmd's stdout is ASCII even with PYTHONIOENCODING set ("×" below)
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:         # noqa: BLE001
+    pass
+
 HERE = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.path.join(os.getcwd(), "hardware", "cad")
 sys.path.insert(0, HERE)
 import roomkey_params as P  # noqa: E402

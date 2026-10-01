@@ -1,0 +1,144 @@
+{
+ "variant": "L",
+ "version": "0.5",
+ "parts": {
+  "key shell": {
+   "valid": true,
+   "solids": 1,
+   "volume_cm3": 3.54,
+   "size": [
+    26.85,
+    46.8,
+    16.5
+   ]
+  },
+  "switch plate": {
+   "valid": true,
+   "solids": 1,
+   "volume_cm3": 1.2,
+   "size": [
+    26.95,
+    46.9,
+    1.5
+   ]
+  },
+  "collar": {
+   "valid": true,
+   "solids": 1,
+   "volume_cm3": 1.79,
+   "size": [
+    29.75,
+    49.7,
+    8.9
+   ]
+  },
+  "plate": {
+   "valid": true,
+   "solids": 1,
+   "volume_cm3": 3.44,
+   "size": [
+    55.0,
+    55.0,
+    7.1
+   ]
+  },
+  "chassis": {
+   "valid": true,
+   "solids": 1,
+   "volume_cm3": 8.09,
+   "size": [
+    71.0,
+    71.0,
+    23.4
+   ]
+  }
+ },
+ "collisions": [],
+ "gaps": {
+  "key shell ↔ plate (rest)": 1.0,
+  "key shell ↔ collar (rest, side skirts: roll limit)": 0.25,
+  "key shell ↔ collar (key pressed)": 0.25,
+  "stem posts ↔ MX housing 2 stem window (key pressed)": 0.35,
+  "key back (without posts) ↔ MX housing 2 top (key pressed to MX bottom-out = the key stop)": 0.5,
+  "key shell ↔ switch plate (key pressed)": 3.3,
+  "key shell ↔ plate (wobble ±1.5° about x, rest)": 0.858,
+  "key shell ↔ collar (wobble ±1.5° about x, rest)": 0.25,
+  "key shell ↔ MX switch 1 (wobble ±1.5° about x, rest)": 0.257,
+  "key shell ↔ MX switch 2 (wobble ±1.5° about x, rest)": 0.257,
+  "key shell ↔ plate (wobble ±1.5° about x, pressed)": 0.761,
+  "key shell ↔ collar (wobble ±1.5° about x, pressed)": 0.168,
+  "key shell ↔ MX switch 1 (wobble ±1.5° about x, pressed)": 0.229,
+  "key shell ↔ MX switch 2 (wobble ±1.5° about x, pressed)": 0.229,
+  "key shell ↔ plate (wobble ±1.5° about y, rest)": 0.862,
+  "key shell ↔ collar (wobble ±1.5° about y, rest)": 0.179,
+  "key shell ↔ MX switch 1 (wobble ±1.5° about y, rest)": 0.378,
+  "key shell ↔ MX switch 2 (wobble ±1.5° about y, rest)": 0.378,
+  "key shell ↔ plate (wobble ±1.5° about y, pressed)": 0.765,
+  "key shell ↔ collar (wobble ±1.5° about y, pressed)": 0.109,
+  "key shell ↔ MX switch 1 (wobble ±1.5° about y, pressed)": 0.262,
+  "key shell ↔ MX switch 2 (wobble ±1.5° about y, pressed)": 0.262,
+  "plate ↔ chassis (left wing; 0 = lip on its catch face, by design)": 0.0,
+  "plate without lips ↔ chassis (left wing)": 0.029,
+  "plate ↔ key shell (left wing)": 0.853,
+  "mic carrier ↔ chassis (left wing)": 0.286,
+  "plate ↔ chassis (right wing; 0 = lip on its catch face, by design)": 0.0,
+  "plate without lips ↔ chassis (right wing)": 0.029,
+  "plate ↔ key shell (right wing)": 0.853,
+  "mic carrier ↔ chassis (right wing)": 0.297,
+  "plate ↔ chassis (top band; 0 = lip on its catch face, by design)": 0.0,
+  "plate without lips ↔ chassis (top band)": 0.026,
+  "plate ↔ key shell (top band)": 0.841,
+  "mic carrier ↔ chassis (top band)": 0.264,
+  "plate ↔ chassis (bottom band; 0 = lip on its catch face, by design)": 0.0,
+  "plate without lips ↔ chassis (bottom band)": 0.063,
+  "plate ↔ key shell (bottom band)": 0.878,
+  "mic carrier ↔ chassis (bottom band)": 0.307,
+  "plate ↔ chassis (top-left corner; 0 = lip on its catch face, by design)": 0.0,
+  "plate without lips ↔ chassis (top-left corner)": 0.06,
+  "plate ↔ key shell (top-left corner)": 0.89,
+  "mic carrier ↔ chassis (top-left corner)": 0.307,
+  "mic carrier ↔ chassis (rest)": 0.35,
+  "plate ↔ frame (rest)": 0.3,
+  "plate ↔ frame (left wing, RSS stop)": 0.16,
+  "plate ↔ frame (right wing, RSS stop)": 0.16,
+  "plate ↔ frame (top band, RSS stop)": 0.157,
+  "plate ↔ frame (bottom band, RSS stop)": 0.193,
+  "plate ↔ frame (top-left corner, RSS stop)": 0.225,
+  "chassis rims ↔ frame (rest, locating clearance)": 0.1,
+  "chassis ↔ box (radial; flange sits on the rim)": 0.875,
+  "collar ↔ chassis (rest; glued seat, back face on the rear wall = 0 by design)": 0.0,
+  "speaker ↔ chassis (rest; front edge on the plenum floor = 0 by design)": 0.0,
+  "antenna chip ↔ MX switch 2 (rest)": 9.0,
+  "antenna chip ↔ MX switch 2 (key pressed)": 5.0,
+  "antenna chip ↔ LED 3 (rest)": 15.813,
+  "antenna chip ↔ LED 3 (key pressed)": 12.761,
+  "antenna chip ↔ LED 4 (rest)": 15.813,
+  "antenna chip ↔ LED 4 (key pressed)": 12.761,
+  "antenna chip ↔ speaker 2030 (rest)": 15.719,
+  "antenna chip ↔ speaker 2030 (key pressed)": 14.694,
+  "antenna chip ↔ hub (rest)": 34.299,
+  "antenna chip ↔ hub (key pressed)": 31.401,
+  "antenna chip ↔ box screw L (rest)": 32.131,
+  "antenna chip ↔ box screw L (key pressed)": 31.591,
+  "antenna chip ↔ switch BL (rest)": 16.413,
+  "antenna chip ↔ switch BL (key pressed)": 15.066,
+  "nub pushes plunger TL (left wing), mm³": 2.504,
+  "nub pushes plunger BL (left wing), mm³": 2.504,
+  "nub pushes plunger TR (right wing), mm³": 2.504,
+  "nub pushes plunger BR (right wing), mm³": 2.504,
+  "nub pushes plunger TL (top band), mm³": 2.504,
+  "nub pushes plunger TR (top band), mm³": 2.504,
+  "nub pushes plunger BL (bottom band), mm³": 2.504,
+  "nub pushes plunger BR (bottom band), mm³": 2.504,
+  "nub pushes plunger TL (top-left corner), mm³": 2.504,
+  "nub pushes plunger TR (top-left corner), mm³": 1.556,
+  "nub pushes plunger BL (top-left corner), mm³": 1.699
+ },
+ "trimmed_mm3": 0.0,
+ "states": {
+  "rest": "all pairs",
+  "key pressed": "key + stems + board translated 4.0 (MX bottom-out); base exemptions only",
+  "key wobble": "key + stems + board tilted ±1.5° about x and y (through the stem tops' mid-point), at rest and pressed 3.7; base exemptions only (stems in their housings and sockets) — end presses beyond the stem play: desk rig",
+  "plate pressed": "five press points; nominal stop (travel 0.75 at the farthest engaged switch, all pairs) and RSS worst stop (1.12; switch bodies exempt: in the real stack a deeper stop means a deeper switch)"
+ }
+}
