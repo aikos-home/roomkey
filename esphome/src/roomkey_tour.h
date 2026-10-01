@@ -24,10 +24,11 @@ namespace sim {
 inline void tour_chat() {
   using M = Controller::ChatMsg;
   std::vector<M> chat;
-  M a; a.id = "door-1"; a.door = true; a.who = "Paketdienst · DHL"; a.role = "parcel";
+  M a; a.id = "door-1"; a.door = true; a.who = "Paketdienst · DHL"; a.role = "parcel"; a.identified = true;
   a.text = "Guten Tag, ich habe ein Paket für Sie, passt nicht in den Briefkasten."; chat.push_back(a);
   M b; b.id = "room-1"; b.who = "Jonas"; b.text = "Ich komme gleich runter."; chat.push_back(b);
   M c; c.id = "door-2"; c.door = true; c.who = "Paketdienst · DHL"; c.role = "parcel"; c.lang = "Polish";
+  c.identified = true;   // R25: held for the call (sticky)
   c.text = "Alles klar, ich warte."; chat.push_back(c);
   ctl().set_chat_active(true);
   ctl().set_chat(chat);

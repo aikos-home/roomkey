@@ -126,6 +126,7 @@ text_sensor:
               c.lang = (const char *) (m["lang"] | "");
               c.door = std::string((const char *) (m["side"] | "")) == "door";
               c.urgent = m["urgent"] | false;
+              c.identified = std::string((const char *) (m["spk"] | "")) != "" || (m["sticky"] | false);   // R25
               if (!c.text.empty()) msgs.push_back(std::move(c));
             }
           }
