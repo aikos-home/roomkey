@@ -4,7 +4,7 @@
 #
 # Prototype for the talk path: after a ring, the key streams its microphone for a few seconds
 # as RTP L16 16 kHz (the intercom format) to "Test recorder address" (host:port),
-# where tools/rtp_recorder.py saves it as WAV. Off by default; the screen says when
+# where the transcriber's receiver (aikos services/transcriber) saves it as WAV. Off by default; the screen says when
 # the microphone is on. Remove this package once the real talk function exists.
 # Goes to the "Transcriber address" when one is set, else to "TEST recorder address".
 # Needs roomkey_mic.yaml + roomkey_intercom.yaml.
