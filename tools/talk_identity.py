@@ -81,7 +81,7 @@ URGENT = (r"^\W*hilfe\b|\bhilfe\s*!|\b(?:brauche|brauchen) (?:dringend |sofort )
           r"\b(?:habe|hab|haben) (?:schon |bereits )?(?:die |den |einen )?(?:krankenwagen|notarzt|polizei|feuerwehr) "
           r"(?:schon |bereits )?(?:gerufen|angerufen|alarmiert)\b")
 FAMILY_TYPE = {"mama", "papa", "mami", "papi", "mutti", "vati", "oma", "opa", "omi", "opi", "tante", "onkel"}
-SELF_DECLARED = {"police", "officials", "utility", "trades", "telecom"}   # common scams: shown with a "?" badge
+SELF_DECLARED = {"police", "officials", "utility", "trades"}   # "laut Besucher" (§2c): shown with a "?" badge
 # companies → (display name, role id). Short acronyms are case-sensitive: "Ups!" is not UPS.
 ORGS: list[tuple[str, str, str]] = [
     (r"(?-i:D\.?\s?H\.?\s?L\.?)", "DHL", "parcel"), (r"hermes", "Hermes", "parcel"), (r"(?-i:D\.?\s?P\.?\s?[DT]\.?)", "DPD", "parcel"),
