@@ -1,0 +1,135 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Voice v2 on the key with the shared building block aikos_voice (aikos-home/aikos, tag voice-v2.0.0), role room.
+# Replaces roomkey_intercom.yaml (the key's own audio). The call model (KeyCall) decides who hears what and when the
+# key leaves (silence, max length, the door ended or is unreachable, front door); the screen follows it.
+#   needs: a microphone with id `mic` (board/mic package; simulator: sim_microphone), roomkey_call.yaml (settings,
+#          addresses, front door), roomkey_link.yaml (door messages + key_state to the door).
+# Wire, rules and error cases: aikos-home/aikos esphome/components/aikos_voice/README.md.
+# ─────────────────────────────────────────────────────────────────────────────
+
+substitutions:
+  voice_mic_gain: "2.0"        # as the own audio path had it (×2 ≈ +6 dB)
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/aikos-home/aikos
+      ref: voice-v2.0.0        # a tag, never a branch
+      path: esphome/components
+    components: [aikos_voice]
+
+aikos_voice:
+  id: voice
+  role: room
+  microphone:
+    microphone: mic
+    bits_per_sample: 16
+  mic_gain: ${voice_mic_gain}
+  mic_start_mute: 32ms         # the board pops when the mic starts
+  on_call_start:
+    - lambda: roomkey::ctl().call_state("active");
+  on_call_end:
+    - lambda: |-
+        ESP_LOGI("roomkey.call", "left the call: %s", reason.c_str());
+        auto &c = roomkey::ctl();
+        if (reason == "door unreachable") c.door_unreachable();   // a hold without a ring that the door never took
+        c.call_state("ended");
+
+binary_sensor:
+  - platform: aikos_voice
+    busy:
+      id: rk_voice_busy          # holding while another room has the floor: the screen says "besetzt"
+      internal: true
+      on_state:
+        - lambda: roomkey::ctl().set_floor_busy(x);
+
+sensor:
+  - platform: aikos_voice
+    key_state:
+      id: key_state              # sent to the door by roomkey_link.yaml
+      name: Key state
+      icon: mdi:phone-in-talk
+      entity_category: diagnostic
+    tx_packets:
+      name: "Intercom TX packets"
+      entity_category: diagnostic
+    rx_packets:
+      name: "Intercom RX packets"
+      entity_category: diagnostic
+    tx_errors:
+      name: "Intercom TX errors"
+      entity_category: diagnostic
+
+esphome:
+  on_boot:
+    - priority: -170           # after roomkey_ha.yaml (-150) set its hooks: chain onto them
+      then:
+        - lambda: |-
+            auto &c = roomkey::ctl();
+            c.cfg.call_max_ms = 3600000;   // the call model ends calls (max length is its rule now)
+            auto prev_talk = c.hooks.talk;
+            c.hooks.talk = [prev_talk](bool on) {   // the key's button: holding = join and talk
+              if (prev_talk) prev_talk(on);
+              id(voice).hold(on);
+            };
+            auto prev_answer = c.hooks.answer;
+            c.hooks.answer = [prev_answer]() {      // one press on the ring / join view: join to listen (R19, R21)
+              if (prev_answer) prev_answer();
+              id(voice).join();
+            };
+            auto prev_hangup = c.hooks.hangup;
+            c.hooks.hangup = [prev_hangup]() {      // touch: hang up = leave the call
+              if (prev_hangup) prev_hangup();
+              id(voice).end_call();
+            };
+        - script.execute: rk_apply_door
+        - script.execute: rk_apply_transcriber
+
+script:
+  # roomkey_call.yaml: addresses and the front door
+  - id: rk_apply_door
+    then:
+      - lambda: id(voice).set_door(id(door_address).state);
+  - id: rk_apply_transcriber
+    then:
+      - lambda: id(voice).set_transcriber(id(transcriber).state);
+  - id: rk_front_door_opened
+    then:
+      - lambda: id(voice).end_call();
+  # roomkey_link.yaml: the door's messages, with every packet
+  - id: rk_door_msg
+    parameters: {call_on: bool, call_id: uint32_t, answered: bool}
+    then:
+      - lambda: id(voice).door_call(call_on, call_id, answered);
+  - id: rk_floor_msg
+    parameters: {key: int}
+    then:
+      - lambda: id(voice).floor_key(key);
+
+interval:
+  - interval: 200ms
+    then:
+      - lambda: |-
+          // the settings of roomkey_call.yaml, handed to the call model when they change
+          static float silence = -1, max_len = -1;
+          static int hear = -1;
+          static uint32_t text_n = 0;
+          auto &c = roomkey::ctl();
+          if (id(rk_call_silence).state != silence) {
+            silence = id(rk_call_silence).state;
+            id(voice).set_call_silence_end((uint32_t) (silence * 1000));
+          }
+          if (id(rk_call_max).state != max_len) {
+            max_len = id(rk_call_max).state;
+            id(voice).set_call_max_length((uint32_t) (max_len * 1000));
+          }
+          const int h = id(rk_hear_before_now).state ? 1 : 0;   // the switch, its times and quiet hours (R17.13/15)
+          if (h != hear) {
+            hear = h;
+            id(voice).set_hear_visitor(h == 1);
+          }
+          // new words from the visitor count as speech at the door (noise can fool the level detector)
+          if (c.visitor_text_count() != text_n) {
+            text_n = c.visitor_text_count();
+            if (c.in_call()) id(voice).speech(::aikos::voice::Role::DOOR);
+          }

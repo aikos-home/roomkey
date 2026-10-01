@@ -24,6 +24,7 @@ packages:
   core: !include packages/roomkey_core.yaml
   ha: !include packages/roomkey_ha.yaml
   intercom: !include packages/roomkey_intercom.yaml
+  call: !include packages/roomkey_call.yaml        # call settings, front door, door + transcriber address
   voice: !include packages/sim_voice.yaml
   test_record: !include packages/roomkey_test_record.yaml
 

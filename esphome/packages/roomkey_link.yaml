@@ -49,20 +49,17 @@ packet_transport:
         encryption: !secret ring_transport_key
 
 sensor:
-  - platform: template
-    id: key_state
-    name: Key state                        # 0 idle, 1 in the call, 2 holding
-    icon: mdi:phone-in-talk
-    entity_category: diagnostic
-    accuracy_decimals: 0
-    update_interval: never                 # published on change below; the transport resends it every second
+  # key_state (0 idle, 1 in the call, 2 holding) comes from the voice package: roomkey_intercom.yaml (own audio) or
+  # roomkey_voice.yaml (aikos_voice). Door messages go to the UI here and to the voice package's scripts.
   - platform: packet_transport
     id: rk_door_call_id
     provider: aikos-intercom-talk
     remote_id: door_call_id
     internal: true
     on_value:
-      - lambda: roomkey::ctl().set_door_call(x != 0);
+      - lambda: |-
+          roomkey::ctl().set_door_call(x != 0);
+          id(rk_door_msg).execute(x != 0, (uint32_t) (std::isnan(x) ? 0 : x), id(rk_door_answered).state);
   - platform: packet_transport
     id: rk_floor_key
     provider: aikos-intercom-talk
@@ -80,6 +77,7 @@ sensor:
             break;
           }
           roomkey::ctl().set_floor_busy(x > 0 && (int) x != own);
+          id(rk_floor_msg).execute(std::isnan(x) ? 0 : (int) x);
 
   # Direct ring path: a new press number rings (the bell resends the same number every second; after the key boots,
   # the number it sees first is history, not a press)
@@ -143,10 +141,3 @@ binary_sensor:
     on_state:
       - lambda: roomkey::ctl().set_door_answered(x);
 
-interval:
-  - interval: 20ms
-    then:
-      - lambda: |-
-          auto &c = roomkey::ctl();
-          const float s = c.talking() ? 2 : c.in_call() ? 1 : 0;
-          if (id(key_state).state != s) id(key_state).publish_state(s);   // NaN at boot → published once

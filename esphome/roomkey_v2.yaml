@@ -1,6 +1,6 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # RoomKey — one per room. Copy this file per room and change the substitutions.
-#   flash:  esphome run roomkey.yaml
+#   flash:  esphome run roomkey_v2.yaml   (voice v2 with aikos_voice; roomkey.yaml = the key's own audio, until v2 is verified)
 # ─────────────────────────────────────────────────────────────────────────────
 substitutions:
   node_name: aikos-roomkey-desk     # network name: aikos-<device>-<room> (board is in the device info)
@@ -29,9 +29,8 @@ packages:
   core: !include packages/roomkey_core.yaml
   ha: !include packages/roomkey_ha.yaml
   mic: !include packages/roomkey_mic.yaml         # INMP441 — safe to keep even if not wired
-  intercom: !include packages/roomkey_intercom.yaml   # WIP: RTP audio to/from the door station
+  voice: !include packages/roomkey_voice.yaml       # voice v2: the shared aikos_voice building block (room role)
   call: !include packages/roomkey_call.yaml        # call settings, front door, door + transcriber address
-  test_record: !include packages/roomkey_test_record.yaml   # TEST ONLY: 10 s mic after ring (off by default)
   link: !include packages/roomkey_link.yaml       # voice v2 (WIP): talk_held / in_call straight to the door
   # speaker: !include packages/roomkey_speaker.yaml  # WIP: enable once a MAX98357A is wired
 

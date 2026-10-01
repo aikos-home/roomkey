@@ -133,6 +133,7 @@ struct Strings {
   const char *answered, *join_hint, *a_join, *hold_here;  // another room answered (R19); touch: hold below the chat
   const char *busy;                                       // another room has the floor (R17.14)
   const char *door_call;                                  // a call at the door this key is not in (R21)
+  const char *door_unreachable;                           // a hold without a ring that the door never took
 };
 
 static const Strings STR_EN = {
@@ -149,6 +150,7 @@ static const Strings STR_EN = {
     "Answered", "Press to listen in", "Listen", "Hold here to talk",
     "Busy · another room talks",
     "Call at the door",
+    "Door not reachable",
 };
 
 static const Strings STR_DE = {
@@ -165,6 +167,7 @@ static const Strings STR_DE = {
     "Angenommen", "Drücken: mithören", "Mithören", "Hier halten: sprechen",
     "Besetzt · anderer Raum spricht",
     "Gespräch an der Tür",
+    "Tür nicht erreichbar",
 };
 
 // ── Model ────────────────────────────────────────────────────────────────────
@@ -325,6 +328,7 @@ class Controller {
   void set_brightness(float b) { cfg.bright = b; apply_screen_(true); }
   void set_dim_after(uint32_t ms) { cfg.dim_after_ms = ms; wake(); }
   void toast(const std::string &text, uint32_t ms = 1800) { show_toast_(text.c_str(), ms); }
+  void door_unreachable() { show_toast_(S->door_unreachable, 2500); }
 
   // ── raw inputs ────────────────────────────────────────────────────────────
   // simulator tour only: a key-down that happened at `at` (to test a late loop)

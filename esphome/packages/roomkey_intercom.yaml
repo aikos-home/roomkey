@@ -13,9 +13,6 @@
 
 substitutions:
   intercom_port: "5004"
-  front_door_entity: binary_sensor.aikos_front_door     # aikos: front door open (debounced)
-  quiet_hours_entity: binary_sensor.aikos_quiet_hours   # aikos: quiet hours now
-  door_call_entity: binary_sensor.aikos_intercom_talk_in_call   # the door has a call (voice v2: from the door itself)
 
 esphome:
   includes:
@@ -38,6 +35,19 @@ esphome:
             };
 
 script:
+  # the link's door messages (roomkey_link.yaml): nothing to do for the own audio path
+  - id: rk_door_msg
+    parameters: {call_on: bool, call_id: uint32_t, answered: bool}
+    then: []
+  - id: rk_floor_msg
+    parameters: {key: int}
+    then: []
+  - id: rk_apply_transcriber
+    then:
+      - lambda: roomkey::audio().set_tap(id(transcriber).state);
+  - id: rk_front_door_opened
+    then:
+      - lambda: roomkey::ctl().call_state("ended");
   - id: rk_apply_door
     then:
       - lambda: |-
@@ -87,144 +97,21 @@ interval:
           if (a.rx_gate.voiced_since(speech_ms)) speech_ms = a.rx_gate.last_voice_ms();
           if (c.visitor_text_count() != text_n) text_n = c.visitor_text_count(), speech_ms = now;   // new words = speech
           c.cfg.call_max_ms = (uint32_t) id(rk_call_max).state * 1000;
+          { const float ks = c.talking() ? 2 : c.in_call() ? 1 : 0;
+            if (id(key_state).state != ks) id(key_state).publish_state(ks); }   // NaN at boot → published once
           if (c.in_call() && !c.talking() && now - speech_ms > (uint32_t) id(rk_call_silence).state * 1000) {
             ESP_LOGI("roomkey.call", "no speech for %.0f s: call over", id(rk_call_silence).state);
             c.call_state("ended");
           }
 
-# ── Call settings of this key (voice v2, aikos features/sprechen.md §4b B; kept in flash, work without HA) ──
-switch:
-  - platform: template
-    id: rk_hear_before
-    name: "Hear visitor before answer"     # R17.13: the visitor's voice already plays here before anyone answers
-    icon: mdi:account-voice
-    entity_category: config
-    optimistic: true
-    restore_mode: RESTORE_DEFAULT_OFF
-  - platform: template
-    id: rk_door_ends_call
-    name: "Front door ends call"           # R17.8: opening the front door ends this key's call
-    icon: mdi:door-open
-    entity_category: config
-    optimistic: true
-    restore_mode: RESTORE_DEFAULT_ON
-
-datetime:
-  - platform: template
-    id: rk_hear_from
-    type: time
-    name: "Hear visitor from"              # time window for "Hear visitor before answer"; from = until: always
-    entity_category: config
-    optimistic: true
-    restore_value: true
-    initial_value: "00:00:00"
-  - platform: template
-    id: rk_hear_until
-    type: time
-    name: "Hear visitor until"
-    entity_category: config
-    optimistic: true
-    restore_value: true
-    initial_value: "00:00:00"
-
-number:
-  - platform: template
-    id: rk_call_silence
-    name: "Call silence end"               # seconds without speech either way until the call ends (R17.8)
-    icon: mdi:timer-sand
-    entity_category: config
-    unit_of_measurement: s
-    mode: box
-    min_value: 3
-    max_value: 120
-    step: 1
-    initial_value: 10
-    optimistic: true
-    restore_value: true
-  - platform: template
-    id: rk_call_max
-    name: "Call max length"                # safety net if noise looks like speech
-    icon: mdi:timer-off-outline
-    entity_category: config
-    unit_of_measurement: s
-    mode: box
-    min_value: 30
-    max_value: 1800
-    step: 10
-    initial_value: 300
-    optimistic: true
-    restore_value: true
-
-binary_sensor:
-  # Front door from aikos: only the edge closed → open counts (a door left open ends nothing more)
-  - platform: homeassistant
-    id: rk_front_door
-    entity_id: ${front_door_entity}
-    internal: true
-    on_state:
-      - lambda: |-
-          static int prev = -1;              // the value HA reports at connect arrives without on_state
-          if (x && prev != 1 && id(rk_door_ends_call).state && roomkey::ctl().in_call()) {
-            ESP_LOGI("roomkey.call", "front door opened: call over");
-            roomkey::ctl().call_state("ended");
-          }
-          prev = x ? 1 : 0;
-  - platform: homeassistant
-    id: rk_quiet_hours
-    entity_id: ${quiet_hours_entity}
-    internal: true
-  # R19: answered in another room → this key may join while the door's call runs
-  - platform: homeassistant
-    id: rk_door_call
-    entity_id: ${door_call_entity}
-    internal: true
-    on_state:
-      - lambda: roomkey::ctl().set_door_call(x);
-  # Visitor audio may play now (before an answer): switch on, inside the time window, and outside the quiet
-  # hours unless it is an emergency (R17.13, R17.15). Without a valid clock only "always" (from = until) counts.
-  - platform: template
-    id: rk_hear_before_now
-    internal: true
-    lambda: |-
-      if (!id(rk_hear_before).state) return false;
-      if (id(rk_quiet_hours).has_state() && id(rk_quiet_hours).state && !roomkey::ctl().visitor_urgent()) return false;
-      int from = id(rk_hear_from).hour * 60 + id(rk_hear_from).minute;
-      int until = id(rk_hear_until).hour * 60 + id(rk_hear_until).minute;
-      if (from == until) return true;
-      auto t = id(rk_time).now();
-      if (!t.is_valid()) return false;
-      int m = t.hour * 60 + t.minute;
-      return from < until ? (m >= from && m < until) : (m >= from || m < until);
-
-text:
-  # Where the door talk computer listens (host:port). Holding the key talks to it even without a ring;
-  # a ring sets the same peer through HA anyway. Empty = only after a ring.
-  - platform: template
-    id: door_address
-    name: "Door address"
-    icon: mdi:door
-    entity_category: config
-    mode: text
-    optimistic: true
-    restore_value: true
-    initial_value: ""
-    max_length: 64
-    on_value:
-      - script.execute: rk_apply_door
-  - platform: template
-    id: transcriber
-    name: "Transcriber address"
-    icon: mdi:text-to-speech
-    entity_category: config
-    mode: text
-    optimistic: true
-    restore_value: true
-    initial_value: ""
-    max_length: 64
-    on_value:
-      - lambda: roomkey::audio().set_tap(x);
-
 sensor:
+  - platform: template
+    id: key_state                          # for the link (roomkey_link.yaml): 0 idle, 1 in the call, 2 holding
+    name: Key state
+    icon: mdi:phone-in-talk
+    entity_category: diagnostic
+    accuracy_decimals: 0
+    update_interval: never                 # published on change; the link's transport resends it every second
   - platform: template
     name: "Intercom RX packets"
     id: intercom_rx
