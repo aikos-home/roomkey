@@ -1,0 +1,11 @@
+# The device's microphone for aikos_voice (roomkey_voice.yaml): the INMP441 with id `mic` (roomkey_mic.yaml).
+# A simulator has none and feeds the same path with push_samples() (aikos_voice v2.1).
+substitutions:
+  voice_mic_gain: "2.0"        # as the own audio path had it (×2 ≈ +6 dB)
+
+aikos_voice:
+  microphone:
+    microphone: mic
+    bits_per_sample: 16
+  mic_gain: ${voice_mic_gain}
+  mic_start_mute: 32ms         # the board pops when the mic starts

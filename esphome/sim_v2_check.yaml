@@ -1,0 +1,108 @@
+# Review build for aikos_voice on the simulator (aikos PR #24, v2.1): the key's voice package with push_samples()
+# instead of a mic. Cut off from the house like sim_tour.yaml: no link to the door or the bell, its own name, RTP port
+# and API port; its "door" is ../tools/voice_host_check.py on this machine (127.0.0.1), which runs it:
+#   esphome compile sim_v2_check.yaml && python3 ../tools/voice_host_check.py
+# Without RK_V2CHECK=1 it only idles. Never add it to Home Assistant.
+substitutions:
+  node_name: roomkey-v2check
+  aikos_voice_ref: voice-v2.1                    # the PR branch, for this review build only (keys pin tags)
+  room_name: Office
+  door_name: Front door
+  language: en
+  timezone: Europe/Berlin
+  light_entity: light.all_lights
+  alarm_entity: alarm_control_panel.house
+  doorbell_entity: binary_sensor.doorbell_button
+  visitor_entity: sensor.talk_transcript_door
+  disarm_action: script.roomkey_disarm
+
+esphome:
+  name: ${node_name}
+  friendly_name: RoomKey v2 check
+  on_boot:
+    - priority: -300                             # after roomkey_voice.yaml chained its hooks (-170)
+      then:
+        - if:
+            condition:
+              lambda: return getenv("RK_V2CHECK") != nullptr;
+            then:
+              - script.execute: v2_check
+
+packages:
+  board: !include packages/board_sim.yaml
+  core: !include packages/roomkey_core.yaml
+  ha: !include packages/roomkey_ha.yaml
+  voice: !include packages/roomkey_voice.yaml
+  call: !include packages/roomkey_call.yaml
+
+logger:
+  level: INFO
+
+api:
+  port: 6063                                     # not the HA simulator's 6053
+
+aikos_voice:
+  port: 5034                                     # not the door's 5004
+
+interval:
+  # the simulator's "mic": a synthetic voice for the time that passed since the last call, in blocks of up to 800
+  # samples (the simulator's loop is slow while the call screen animates: 50 ms and more). aikos_voice takes them
+  # only while the call has the mic open, like a stopped mic otherwise.
+  - interval: 10ms
+    then:
+      - lambda: |-
+          static uint32_t last = 0, t = 0;
+          const uint32_t now = millis();
+          uint32_t n = last ? (now - last) * 16 : 0;   // 16 samples per ms
+          last = now;
+          if (n > 16000) n = 16000;                      // more than a second late: the rest is lost, as on a chip
+          static int16_t buf[800];
+          while (n > 0) {
+            const uint32_t m = n < 800 ? n : 800;
+            for (uint32_t i = 0; i < m; i++, t++) {
+              const float x = t / 16000.0f;
+              const float env = 0.55f + 0.45f * sinf(2 * 3.14159f * 3.0f * x);   // syllable-ish envelope
+              const float v = sinf(2 * 3.14159f * 440.0f * x) + 0.3f * sinf(2 * 3.14159f * 880.0f * x);
+              buf[i] = (int16_t) (v * env * 9000);
+            }
+            id(voice).push_samples(buf, m);
+            n -= m;
+          }
+
+script:
+  # hold the key (case 2: no ring), the door takes the call, another key gets the floor ("besetzt"), it comes free,
+  # release. voice_host_check.py matches the "CHECK" lines with what reached its door.
+  - id: v2_check
+    then:
+      - delay: 1s
+      - lambda: |-
+          id(voice).set_door("127.0.0.1:5036");
+          id(voice).floor_key(1);   // "key 1" = this machine (127.0.0.1): not busy, if the host finds its own address
+          ESP_LOGI("v2check", "CHECK hold");
+          roomkey::ctl().key(true);
+      - delay: 900ms                             # past the screen's hold time: talk → aikos_voice hold
+      - lambda: |-
+          id(voice).door_call(true, 4242, true);   // the door's broadcast: it took the call
+          ESP_LOGI("v2check", "CHECK door_call");
+      - delay: 2500ms
+      - lambda: |-
+          ESP_LOGI("v2check", "CHECK talking talking=%d key_state=%d busy=%d", (int) roomkey::ctl().talking(),
+                   (int) id(key_state).state, (int) id(rk_voice_busy).state);
+          id(voice).floor_key(77);   // another key has the floor
+          ESP_LOGI("v2check", "CHECK floor_other");
+      - delay: 1500ms
+      - lambda: |-
+          ESP_LOGI("v2check", "CHECK busy busy=%d screen=%d", (int) id(rk_voice_busy).state,
+                   (int) roomkey::ctl().floor_busy());
+          id(voice).floor_key(0);
+          ESP_LOGI("v2check", "CHECK floor_free");
+      - delay: 1500ms
+      - lambda: |-
+          id(voice).door_call(true, 4242, true);   // the door's refresh (every second on the wire)
+          ESP_LOGI("v2check", "CHECK release busy=%d", (int) id(rk_voice_busy).state);
+          roomkey::ctl().key(false);
+      - delay: 1500ms
+      - lambda: |-
+          ESP_LOGI("v2check", "CHECK done key_state=%d talking=%d", (int) id(key_state).state,
+                   (int) roomkey::ctl().talking());
+          exit(0);

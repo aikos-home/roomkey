@@ -10,5 +10,6 @@ to the transcriber go to aikos-home/aikos only (pull request, `transcriber-unit`
 logic, new tag).
 
 Still RoomKey's own: `rtp_play.py` (send a WAV as RTP: stands in for a key or the door), `mic_check.py`,
-`fake_home.py` and `ha_contract_test.py` (Home Assistant contract tests), `privacy_scan.py`, and the CAD helpers
+`fake_home.py` and `ha_contract_test.py` (Home Assistant contract tests), `voice_host_check.py` (the key's voice v2 on
+the simulator against a fake door on this machine, build `esphome/sim_v2_check.yaml` first), `privacy_scan.py`, and the CAD helpers
 (`cad_preview.py`, `insert_drawings.py`, `insert_wallcheck.py`).
