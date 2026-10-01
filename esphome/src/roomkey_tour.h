@@ -157,6 +157,15 @@ class Tour {
         {4000, nullptr, nullptr},
         {100, []() { ctl().set_live_text("Alles klar, ich habe hier ein Paket für Sie, es passt leider nicht in den Briefkasten. Kann"); }, nullptr},
         {120, nullptr, "22_live_revision_shown_at_once"},
+        // T12: the talk clock runs only while talking and starts at 0:00 on every hold, also within one call
+        {300, []() { ctl().set_floor_busy(false); ctl().end_call_for_tour(); ctl().set_door_call(false); }, nullptr},
+        {300, key(true), nullptr},
+        {2600, nullptr, "T12a_talking_clock_runs"},
+        {100, key(false), nullptr},
+        {600, nullptr, "T12b_listening_no_clock"},
+        {5000, key(true), nullptr},
+        {500, nullptr, "T12c_talking_again_from_0"},
+        {100, key(false), nullptr},
         // R17.14: holding while another room has the floor → "besetzt", nothing is sent
         {200, []() { ctl().set_floor_busy(true); }, nullptr},
         {200, key(true), nullptr},
