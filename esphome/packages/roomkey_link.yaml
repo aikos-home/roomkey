@@ -8,11 +8,30 @@
 # The key sends unicast to the door talk computer (sent on change + every second); the door broadcasts.
 # The key is compiled in (secrets.yaml). Owner's decision 01.10.: voice v2 runs on this; afterwards pairing in the
 # HA GUI with a shared aikos_link block replaces this package (aikos features/kopplung.md).
-# secrets.yaml: key_link_key, door_talk_host (IP of the door talk computer).
+#   bell → keys  boot_id, presses, ringing (provider aikos-intercom-bell, ring_transport_key, unicast from the bell):
+#                the DIRECT ring path, so the key rings without Home Assistant (system test F1, 01.10.)
+# secrets.yaml: key_link_key, ring_transport_key, door_talk_host (IP of the door talk computer).
 # ─────────────────────────────────────────────────────────────────────────────
+substitutions:
+  door_talk_host: !secret door_talk_host
+
+esphome:
+  on_boot:
+    - priority: -180
+      then:
+        - lambda: |-
+            // a key that was never told where the door is uses the door talk computer from secrets (system test F3)
+            if (id(door_address).state.empty()) {
+              auto call = id(door_address).make_call();
+              call.set_value("${door_talk_host}:${intercom_port}");
+              call.perform();
+            }
+            id(doorbell_direct_sensor).update();   // both ring counters start at 0 (a baseline for tests)
+            id(doorbell_rx_sensor).update();
+
 udp:
   id: rk_link_udp
-  addresses: [!secret door_talk_host]
+  addresses: ["${door_talk_host}"]
 
 packet_transport:
   - platform: udp
@@ -26,6 +45,8 @@ packet_transport:
     providers:
       - name: aikos-intercom-talk
         encryption: !secret key_link_key
+      - name: aikos-intercom-bell
+        encryption: !secret ring_transport_key
 
 sensor:
   - platform: template
@@ -59,6 +80,59 @@ sensor:
             break;
           }
           roomkey::ctl().set_floor_busy(x > 0 && (int) x != own);
+
+  # Direct ring path: a new press number rings (the bell resends the same number every second; after the key boots,
+  # the number it sees first is history, not a press)
+  - platform: packet_transport
+    id: rk_bell_boot_id
+    provider: aikos-intercom-bell
+    remote_id: boot_id
+    name: "Bell boot id (direct)"           # diagnostic: equals the bell's boot id = the direct packets arrive and decrypt
+    internal: false
+    icon: mdi:bell-cog
+    entity_category: diagnostic
+    accuracy_decimals: 0
+  - platform: packet_transport
+    id: rk_bell_presses
+    provider: aikos-intercom-bell
+    remote_id: presses
+    internal: true
+    on_value:
+      - lambda: |-
+          static uint32_t last_boot = 0, last_presses = 0;
+          static bool known = false;
+          const float b = id(rk_bell_boot_id).state;
+          const uint32_t boot = std::isnan(b) ? 0 : (uint32_t) b, presses = std::isnan(x) ? 0 : (uint32_t) x;
+          uint32_t new_presses = 0;
+          if (!known || boot != last_boot) {
+            if (known && boot != 0) new_presses = presses;     // the bell rebooted: its presses since then are new
+            known = boot != 0;
+          } else if (presses > last_presses) {
+            new_presses = presses - last_presses;
+          }
+          last_boot = boot;
+          last_presses = presses;
+          if (new_presses == 0) return;
+          id(doorbell_direct_count) += new_presses;
+          id(doorbell_direct_sensor).update();
+          ESP_LOGI("roomkey", "doorbell press #%u received directly from the bell", (unsigned) presses);
+          if (millis() - id(doorbell_ha_ms) < 1500 && id(doorbell_ha_ms) != 0) return;   // HA already rang this one
+          id(doorbell_direct_ms) = millis();
+          roomkey::ctl().ring_start();
+  - platform: template
+    id: doorbell_direct_sensor
+    name: "Doorbell presses direct"         # compare with the bell's presses: equal = nothing lost without HA
+    icon: mdi:counter
+    entity_category: diagnostic
+    accuracy_decimals: 0
+    state_class: total_increasing
+    update_interval: never
+    lambda: return id(doorbell_direct_count);
+
+globals:
+  - id: doorbell_direct_count
+    type: uint32_t
+    initial_value: "0"
 
 binary_sensor:
   - platform: packet_transport

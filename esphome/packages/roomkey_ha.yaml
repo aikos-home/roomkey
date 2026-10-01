@@ -232,11 +232,20 @@ binary_sensor:
       - lambda: |-
           id(doorbell_rx_count) += 1;
           ESP_LOGI("roomkey", "doorbell press #%u received from HA", (unsigned) id(doorbell_rx_count));
+          id(doorbell_ha_ms) = millis();
+          // the direct path (roomkey_link.yaml) may have rung this press already: don't ring a dismissed ring again
+          if (millis() - id(doorbell_direct_ms) < 1500 && id(doorbell_direct_ms) != 0) return;
           roomkey::ctl().ring_start();
       - component.update: doorbell_rx_sensor
 
 globals:
   - id: doorbell_rx_count
+    type: uint32_t
+    initial_value: "0"
+  - id: doorbell_ha_ms                  # when HA last delivered a press (the direct path skips the same press)
+    type: uint32_t
+    initial_value: "0"
+  - id: doorbell_direct_ms              # when the direct ring path (roomkey_link.yaml) last rang; 0 = never
     type: uint32_t
     initial_value: "0"
 

@@ -24,6 +24,7 @@ packages:
   intercom: !include packages/roomkey_intercom.yaml
   voice: !include packages/sim_voice.yaml
   test_record: !include packages/roomkey_test_record.yaml
+  link: !include packages/roomkey_link.yaml       # key_state ⇄ door, direct ring path from the bell (system test F3)
 
 logger:
   level: DEBUG
