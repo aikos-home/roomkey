@@ -83,7 +83,7 @@ switches with one line.
 | Header | 2 × 9, one GND | 2 × 11, two GND, VBUS, VBAT |
 | Mic SCK/WS/SD, L/R | IO18/IO19/IO23, L/R→IO0 | IO7/IO8/IO17, L/R→GND or IO3 |
 | Amp BCLK/LRC/DIN, power | IO18/IO19/IO20, 5V | IO7/IO8/IO16, VBUS |
-| Key | BOOT + GND | BOOT + GND |
+| Key | **IO1** + **IO2** (or the BOOT button) | BOOT + GND |
 
 Firmware: swap the `board:` line in `roomkey.yaml`. The keycap is **not** interchangeable.
 
@@ -91,7 +91,7 @@ Firmware: swap the `board:` line in `roomkey.yaml`. The keycap is **not** interc
 
 | Part | Pins |
 |---|---|
-| Mechanical key switch | **BOOT** + **GND** (parallel to the BOOT button — no extra GPIO; the onboard BOOT button *is* the key today) |
+| Mechanical key switch | **IO1** + **IO2** (IO2 is held LOW by the firmware, because the header's only GND feeds the mic; no soldering; the onboard BOOT button works as the key too) |
 | INMP441 mic | VDD→**3V3**, GND→**GND**, L/R→**IO0** (held low by firmware — the header has only one GND), SCK→**IO18**, WS→**IO19**, SD→**IO23** |
 | I²S amp (WIP, e.g. MAX98357A) | VIN→**5V**, GND, BCLK→**IO18**, LRC→**IO19**, DIN→**IO20** |
 
@@ -173,7 +173,9 @@ first hardware run showed 140 ms frames.
 2. Speaker, amp and touch board on the bench as they arrive.
 3. Wi-Fi + Home Assistant on the real device.
 4. Intercom with Klingelbox: a minimal SIP client is the likely path (see the handoff doc).
-5. The wall: neutral wire, deep box, impulse relay — with an electrician.
+5. The wall: the insert itself is safety extra-low voltage only (12 V); mains parts (supply, impulse relay)
+   sit in certified devices elsewhere, placed by an electrician. Draft and open questions:
+   [hardware/docs/insert-design.md](hardware/docs/insert-design.md).
 6. Later (decided 30.09.): voice identification, so the family members are told apart even when they
    don't say their name. Local speaker embeddings on the transcriber host, enrolled with ~1 min of speech
    per person through the key's mic. Display only, never for opening doors or disarming. Needs everyone's
@@ -193,7 +195,7 @@ first hardware run showed 140 ms frames.
 
 ## Safety
 
-- Anything on 230 V — the power supply in the wall box, the relay for the room light — is a job
+- Anything on 230 V — the low-voltage supply and the relay for the room light, both in certified devices outside the insert — is a job
   for an electrician. The desk prototype runs on USB only.
 - Many older German light-switch boxes have no neutral wire; check before planning a mains supply.
 

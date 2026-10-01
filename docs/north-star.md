@@ -47,6 +47,13 @@ physically. Its *behaviour* can stay 100 % non-smart:
   can pulse the relay too.
 * **Alternative:** two-gang frame, old switch untouched, RoomKey next to it.
 
+> **Update 2026-10-01 (wall insert draft v0.5, [`../hardware/docs/insert-design.md`](../hardware/docs/insert-design.md)):**
+> the RoomKey insert is **SELV-only (12 V in)** — no power supply, no relay and no 230 V in the RoomKey box. The 12 V
+> supply and the impulse relay are certified devices placed by the electrician elsewhere (where the switch leg ends, a
+> two-chamber box, or the distribution board; design doc §9). The paragraph below is the original v2 idea and is
+> superseded on this point. Also: this room's relay-switched light cannot be part of the key's "all lights" action, and
+> Home cannot show its state, unless a feedback path is added (design doc §8.2, Q3c).
+
 Blocking checks (electrician): **neutral wire in the switch box?** (older light-switch boxes
 often have only L + switched L; the 5 V supply and relay coil need N) · deep box (61 mm) for
 supply + relay + audio · all mains work by an electrician, certified modules only.

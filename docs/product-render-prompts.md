@@ -10,6 +10,7 @@ Design notes
   holes) reads as texture from 1 m; alternatives are the shadow gap / bottom-edge slot or a plate
   exciter (invisible but weak for voice).
 - Mic pinhole at the top, as far from the speaker as possible.
+- (Superseded 01.10.: the insert is 12 V SELV only; supply and relay sit in certified devices elsewhere, see hardware/docs/insert-design.md.)
 - Light-switch boxes in older German installs often have **no neutral** → a 230 V→5 V supply needs N
   (sockets have it). Replacing a light switch means a relay must switch the lamp (bonus: works
   without HA). Mains work = electrician, deep flush box.

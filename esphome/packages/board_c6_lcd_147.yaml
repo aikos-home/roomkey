@@ -5,9 +5,11 @@
 #   (10k pull-ups on IO4–IO7, none on IO1–IO3/IO18/IO19, empty I²C bus).
 #
 #   GPIO6/7  LCD MOSI/SCK (shared w/ TF)   GPIO8  WS2812 status LED
-#   GPIO14   LCD CS    GPIO15 LCD DC       GPIO9  BOOT = mechanical key (parallel)
+#   GPIO14   LCD CS    GPIO15 LCD DC       GPIO9  BOOT button (= the key, too)
+#   IO1 + IO2 (header) = mechanical key switch: IO2 is held LOW as its "ground" (the header's only GND
+#   feeds the mic), IO1 reads it with the internal pull-up. No soldering; BOOT is not on the header.
 #   GPIO21   LCD RST   GPIO22 LCD BL       GPIO4/5 TF CS/MISO (unused)
-#   Header, free: IO1 IO2 IO3 TXD(16) RXD(17)   (IO0 = mic L/R, IO18/19/20/23 = I²S)
+#   Header, free: IO3 TXD(16) RXD(17)   (IO0 = mic L/R, IO1/IO2 = key switch, IO18/19/20/23 = I²S)
 #
 # Board contract (every board package provides): display `lcd`,
 # light `backlight`, binary_sensor `key_raw`, script `rk_led`,
@@ -16,6 +18,8 @@
 
 substitutions:
   has_touch: "false"
+  key_switch_pin: GPIO1   # header "1": mechanical key switch …
+  key_switch_gnd: GPIO2   # … to header "2", held LOW (or to GND)
   lvgl_buffer: 25%
   # I²S audio (WIP — nothing attached yet): one shared bus, half-duplex.
   i2s_bclk: GPIO18    # → MAX98357A BCLK + INMP441 SCK
@@ -81,9 +85,9 @@ display:
     update_interval: never
 
 binary_sensor:
-  # BOOT button == mechanical key switch (wired in parallel, active low).
+  # The key = the onboard BOOT button OR a mechanical key switch between IO1 and GND (both active low).
   - platform: gpio
-    id: key_raw
+    id: key_boot
     internal: true
     pin:
       number: GPIO9
@@ -93,8 +97,32 @@ binary_sensor:
         input: true
         pullup: true
     filters:
+      - delayed_on: 12ms   # debounce
+      - delayed_off: 12ms
+  - platform: gpio
+    id: key_switch
+    name: "Key switch (IO1)"          # diagnostic: is the mechanical switch seen?
+    entity_category: diagnostic
+    pin:
+      number: ${key_switch_pin}
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+    filters:
       - delayed_on: 12ms   # debounce for a real MX switch
       - delayed_off: 12ms
+  - platform: template
+    id: key_raw
+    internal: true
+    lambda: return id(key_boot).state || id(key_switch).state;
+
+switch:
+  - platform: gpio
+    id: key_switch_low
+    pin: ${key_switch_gnd}
+    internal: true
+    restore_mode: ALWAYS_OFF   # LOW: the key switch's return path (~50 µA through the pull-up)
 
 script:
   - id: rk_led

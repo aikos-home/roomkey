@@ -79,7 +79,7 @@ script:
                   roomkey::audio().set_peer(t.substr(0, p), (uint16_t) atoi(t.c_str() + p + 1));
                 }
                 roomkey::ctl().set_test_recording(true, (uint32_t) id(test_record_len).state);   // mic on + on-screen notice
-                roomkey::audio().set_tx(true);
+                roomkey::audio().set_tx(true, false);   // to the transcriber only — never to the door
                 id(test_rec_t0) = millis();
                 ESP_LOGI("roomkey.test", "TEST recording (max %.0f s) → %s", id(test_record_len).state, t.c_str());
             - wait_until:
@@ -89,9 +89,10 @@ script:
                     uint32_t t = millis() - id(test_rec_t0);
                     if (t >= (uint32_t) (id(test_record_len).state * 1000)) return true;         // maximum reached
                     if (a.voiced_since(id(test_rec_t0) + 300) && a.quiet_ms() > 1200) return true;  // done talking
+                    if (roomkey::ctl().talking()) return true;                                    // the key took over
                     return t > 8000 && !a.voiced_since(id(test_rec_t0) + 300);                    // nobody spoke
             - lambda: |-
-                roomkey::audio().set_tx(false);    // sends what is still buffered, then stops
+                if (!roomkey::ctl().talking()) roomkey::audio().set_tx(false);   // (a held key keeps talking)
                 roomkey::ctl().set_test_recording(false);
                 ESP_LOGI("roomkey.test", "TEST recording ended after %.1f s (noise floor %.0f dB, quiet %u ms)",
                          (millis() - id(test_rec_t0)) / 1000.0f, roomkey::audio().noise_floor_db(),

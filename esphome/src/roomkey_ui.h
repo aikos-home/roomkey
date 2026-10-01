@@ -171,7 +171,7 @@ struct Config {
   uint32_t dim_after_ms = 0;          // 0 = never dim (set from HA: "Dim after")
   uint32_t off_after_ms = 0;          // 0 = never switch fully off
   uint32_t ring_timeout_ms = 40000;
-  uint32_t call_max_ms = 180000;
+  uint32_t call_max_ms = 1800000;   // safety net only: a conversation normally ends after 2 min without audio
   uint32_t disarm_hold_ms = 1500;
   uint32_t menu_hold_ms = 600;
   uint32_t talk_hold_ms = 220;
@@ -258,7 +258,10 @@ class Controller {
     render_status_();
   }
   void set_net(const std::string &ip, int rssi) { ip_ = ip; rssi_ = rssi; render_info_(); }
-  void set_level(float lvl) { level_in_ = lvl; }  // 0..1, incoming audio (listening)
+  void set_level(float lvl) {  // 0..1, incoming audio (listening)
+    level_in_ = lvl;
+    if (lvl > 0.05f) call_seen_ms_ = millis();   // the door speaks: show the call
+  }
   // Called from the microphone task: store numbers only, never touch LVGL here.
   void set_mic_level(float lvl, float db) { mic_level_ = lvl; mic_db_ = db; }
   void set_brightness(float b) { cfg.bright = b; apply_screen_(true); }
@@ -273,6 +276,8 @@ class Controller {
       if (key_down_) return;
       key_down_ = true;
       key_down_ms_ = now;
+      double_ = pending_press_ && age_(pending_press_ms_) < (int32_t) DOUBLE_MS;   // second press of a double press
+      pending_press_ = false;
       hold_fired_ = false;
       key_consumed_ = false;
       cancel_touch_();  // the finger that pressed the key must not also "tap"
@@ -317,10 +322,15 @@ class Controller {
         }
       }
     }
+    if (built_ && view() != shown_) render();   // e.g. the call view hides 8 s after the last activity
+    if (pending_press_ && age_(pending_press_ms_) >= (int32_t) DOUBLE_MS) {   // no second press came: lights
+      pending_press_ = false;
+      if (view() == View::HOME) toggle_lights_();
+    }
     // timeouts — age_() re-reads the clock: the hold handler above may have just stamped
     // a timestamp *after* `now`, and unsigned `now - later` would underflow.
     if (ringing_ && age_(ring_since_) > (int32_t) cfg.ring_timeout_ms) ring_stop(true);
-    if (in_call_ && age_(call_since_) > (int32_t) cfg.call_max_ms) end_call_(true);
+    if (in_call_ && !talking_ && age_(call_since_) > (int32_t) cfg.call_max_ms) end_call_(false);
     if (menu_open_ && age_(last_input_ms_) > 9000) { ESP_LOGD(TAG, "menu timeout"); menu_open_ = false; render(); }
     if (info_open_ && age_(last_input_ms_) > 15000) { info_open_ = false; render(); }
     if (disarming_ && age_(disarm_since_) > 8000) {
@@ -373,7 +383,9 @@ class Controller {
 
   View view() const {
     if (alarm_ == Alarm::PENDING || alarm_ == Alarm::TRIGGERED || disarming_) return View::ALARM;
-    if (in_call_) return View::CALL;
+    // The conversation stays open 2 min after the last audio (the door's answer must get through), but the
+    // screen shows it only while something happens: talking, door audio arriving, or just now.
+    if (in_call_ && (talking_ || age_(call_seen_ms_) < (int32_t) CALL_SHOW_MS)) return View::CALL;
     if (ringing_) return View::RING;
     if (menu_open_) return View::MENU;
     if (info_open_) return View::INFO;
@@ -986,13 +998,13 @@ class Controller {
     switch (v) {
       case View::HOME:
         press = S->a_lights;
-        hold = armed ? S->a_disarm : S->a_menu;
+        hold = armed ? S->a_disarm : S->a_talk;
         if (armed) hold_col = pal::RED;
         break;
       case View::MENU: press = S->a_next; hold = S->a_select; break;
       case View::INFO: press = S->a_back; break;
       case View::RING: press = S->a_answer; hold = S->a_talk; hold_col = pal::GREEN; break;
-      case View::CALL: press = S->a_end; hold = S->a_talk; hold_col = pal::GREEN; break;
+      case View::CALL: hold = S->a_talk; hold_col = pal::GREEN; break;   // push-to-talk only: no hang-up
       case View::ALARM: hold = disarming_ ? nullptr : S->a_disarm; hold_col = pal::RED; break;
     }
     const char *acts[2] = {press, hold};
@@ -1009,14 +1021,17 @@ class Controller {
   // ── actions ───────────────────────────────────────────────────────────────
   void on_press_() {
     switch (view()) {
-      case View::HOME: toggle_lights_(); break;
+      case View::HOME:   // press = lights, double press = menu (so a single press waits DOUBLE_MS)
+        if (double_) open_menu();
+        else { pending_press_ = true; pending_press_ms_ = millis(); }
+        break;
       case View::MENU:
         menu_sel_ = (menu_sel_ + 1) % MENU_N;
         render_menu_();
         break;
       case View::INFO: info_open_ = false; render(); break;
       case View::RING: answer_(); break;
-      case View::CALL: end_call_(true); break;
+      case View::CALL: break;  // push-to-talk only: a short press does nothing, the call ends after 2 min quiet
       case View::ALARM:
         if (!disarming_) { shake_(alarm_disc_); show_toast_(S->hold_to_disarm, 1400); }
         break;
@@ -1024,7 +1039,7 @@ class Controller {
   }
   uint32_t hold_ms_() {
     switch (view()) {
-      case View::HOME: return (is_armed(alarm_) || alarm_ == Alarm::ARMING) ? cfg.disarm_hold_ms : cfg.menu_hold_ms;
+      case View::HOME: return (is_armed(alarm_) || alarm_ == Alarm::ARMING) ? cfg.disarm_hold_ms : cfg.talk_hold_ms;
       case View::MENU: return 500;
       case View::CALL: return cfg.talk_hold_ms;
       case View::ALARM: return disarming_ ? 0 : cfg.disarm_hold_ms;
@@ -1034,9 +1049,9 @@ class Controller {
   void on_hold_() {
     ESP_LOGD(TAG, "hold fired in %s", view_name());
     switch (view()) {
-      case View::HOME:
+      case View::HOME:   // hold = talk to the door, always (decided 01.10.); armed: hold = disarm
         if (is_armed(alarm_) || alarm_ == Alarm::ARMING) disarm_();
-        else open_menu();
+        else { begin_call_(); set_talk_(true); }
         break;
       case View::MENU: menu_select_(menu_sel_); break;
       case View::CALL: set_talk_(true); break;
@@ -1075,6 +1090,7 @@ class Controller {
     begin_call_();
   }
   void begin_call_() {
+    call_seen_ms_ = millis();
     if (in_call_) return;
     in_call_ = true;
     talking_ = false;
@@ -1095,6 +1111,7 @@ class Controller {
   void set_talk_(bool on) {
     if (talking_ == on) return;
     talking_ = on;
+    call_seen_ms_ = millis();
     if (hooks.talk) hooks.talk(on);
     if (hooks.gesture) hooks.gesture(on ? "talk_start" : "talk_stop");
     render_call_();
@@ -1399,6 +1416,10 @@ class Controller {
   bool menu_open_ = false, info_open_ = false, disarming_ = false, test_alarm_ = false;
   bool online_ = false;
   bool test_rec_ = false;
+  static constexpr uint32_t DOUBLE_MS = 350, CALL_SHOW_MS = 8000;
+  uint32_t call_seen_ms_ = 0;
+  bool pending_press_ = false, double_ = false;
+  uint32_t pending_press_ms_ = 0;
   std::string visitor_, visitor_lang_;
   lv_obj_t *ring_door_ = nullptr, *call_door_ = nullptr;
   int menu_sel_ = 0, missed_ = 0;

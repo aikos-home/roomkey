@@ -92,7 +92,8 @@ STOP = {w.lower() for w in """Ich Sie Ihr Ihre Wir Es Er Hier Da Dort Jetzt Glei
     Und Aber Oder Dann Doch So Na Nun Das Die Der Den Dem Ein Eine Neue Neu Alles Nichts Etwas Viel Guten Gute Schön
     Mein Meine Dein Deine Unser Unsere Euer Eure Man Jemand Niemand Keiner Tschüss Servus Moin Grüß Wohnt Ist Sind
     Hast Habt Haben Kannst Könnt Können Kann Machst Macht Mach Komm Kommt Kommst Gib Geh Geht Soll Sollen Will Wollen
-    Bin Bist War Waren Wird Werden Hat Hätte Würde Würden Gibt Liegt Steht Wartet Klingelt Schau Guck Sag Sagt""".split()}
+    Bin Bist War Waren Wird Werden Hat Hätte Würde Würden Gibt Liegt Steht Wartet Klingelt Schau Guck Sag Sagt
+    Raus Rein Weg Los Hoch Runter Rauf Achtung Vorsicht Hilfe""".split()}
 TITLES = {"frau", "herr", "herrn", "dr", "doktor", "prof", "schwester", "pfarrer", "pastor"}
 # capitalised nouns that follow "ich bin" / "hier ist" without being a name ("ich bin Vegetarier", "hier ist Wasser")
 NOT_NAMES = {w.lower() for w in """Montag Dienstag Mittwoch Donnerstag Freitag Samstag Sonntag Wochenende Feierabend
@@ -104,7 +105,14 @@ NOT_NAMES = {w.lower() for w in """Montag Dienstag Mittwoch Donnerstag Freitag S
     Unterwegs Leute Menschen Männer Frauen Kinder Besucher Gast Gäste Bescheid Schuld Ordnung Platz Raum Zimmer Balkon
     Dach Hof Eingang Ausgang Stau Verspätung Pause Dienst Schicht Nachtschicht Spätschicht Frühschicht Training Sport
     Wetter Regen Schnee Sonne Winter Sommer Herbst Frühling Weihnachten Ostern Silvester Schnitt
-    Schatz Schatzi Liebling Süße Süßer Mausi Hase Häschen Spatz Baby Darling Honey""".split()}
+    Schatz Schatzi Liebling Süße Süßer Mausi Hase Häschen Spatz Baby Darling Honey Meinung Ansicht Auffassung
+    Überzeugung Hoffnung Ansicht Mieter Mieterin Vermieterin Eigentümer Eigentümerin Besitzer Kunde Kundin
+    Nächste Nächster Erste Erster Letzte Letzter Einzige Einziger Richtige Falsche Pass Ausweis Schlüssel
+    Deutscher Deutsche Türke Türkin Italiener Italienerin Spanier Spanierin Franzose Französin Pole Polin Russe Russin
+    Ukrainer Ukrainerin Amerikaner Amerikanerin Kanadier Kanadierin Engländer Engländerin Brite Britin Österreicher
+    Österreicherin Schweizer Schweizerin Grieche Griechin Rumäne Rumänin Syrer Syrerin Iraker Irakerin Afghane Afghanin
+    Vietnamese Vietnamesin Chinese Chinesin Japaner Japanerin Inder Inderin Araber Araberin Kurde Kurdin Student
+    Studentin Schüler Schülerin Rentner Rentnerin Single Vater Mutter""".split()}
 FAMILY = {"mama", "papa", "mami", "papi", "mutti", "vati", "oma", "opa", "omi", "opi", "tante", "onkel"}
 
 # Whisper "hears" these in silence or noise (training-data subtitles). They are removed, never shown.
@@ -197,7 +205,7 @@ AFTER_ROLE = (rf"(?:\s+(?:von|vom|from)\s+(?:(?:der|dem|den|the)\s+)?(?P<org>{OR
               r"(?=\s*(?:$|[,.!?;:–-]|für\b|hier\b|ist da\b|sind da\b|mit\b|for\b|here\b|is here\b))")
 # a courier saying what they bring, anywhere in the utterance ("ich habe ein Paket für Sie", "isch habe Paket für Nachbar")
 BRING = (r"\b(?:ich|isch|wir)\s+(?:habe|hab|hätte|bringe|bring|haben|bringen)\s+(?:(?:ein|eine|einen|zwei|drei|vier|\d+)\s+)?"
-         r"(?P<what>pakete?|päckchen|sendung(?:en)?|lieferung|einschreiben|brief)\w*\s+(?:für|abzugeben|bringen)\b"
+         r"(?P<what>pakete?|päckchen|sendung(?:en)?|lieferung|einschreiben)\w*\s+(?:für|abzugeben|bringen)\b"
          r"(?![^,.!?]*\b(?:angenommen|bekommen|abgeholt|verloren)\b)"
          r"|\b(?:ich|isch)\s+(?:pakete?|päckchen)\s+(?:bringen|bringe|abgeben|liefern)\b")
 
@@ -211,7 +219,7 @@ def lead(text: str) -> tuple[str, str, str, str]:
     if not m:
         return "", "", "", ""
     w1, w2 = m.group("w1"), m.group("w2") or ""
-    for cand in (f"{w1} {w2}", w1):                      # a company up front is an announcement
+    for cand in (f"{w1} {w2}", w1, w1.split("-")[0]):   # a company up front is an announcement ("Amazon-Lieferung")
         org, rid = org_of(cand)
         if org:
             return rid, org, cand, ""
@@ -246,7 +254,7 @@ def brings(text: str) -> tuple[str, str]:
     return rid, ""
 
 
-AS_SAID = {"trades", "care", "property", "officials", "ambulance", "chimney", "utility"}   # "Hausmeister", "Gerichtsvollzieher", "Notarzt"
+AS_SAID = {"trades", "care", "property", "officials", "ambulance", "chimney", "utility", "telecom", "mail", "fire"}   # "Hausmeister", "Gerichtsvollzieher", "Notarzt"
 
 
 def role_label(rid: str, matched: str = "") -> str:
@@ -282,7 +290,27 @@ def clean(text: str) -> str:
     text = strip_captions(text)
     text = re.sub(FILLERS, "", text, flags=re.I)
     text = re.sub(r"(?<!\w)d['’](?=[" + UP + "])", "", text)          # Swiss/Alemannic "d'Frau Huber"
+    text = re.sub(r"\b(und|oder)\s*,\s*", r"\1 ", text, flags=re.I)  # "Yusuf und, äh, Can" → "Yusuf und Can"
     return re.sub(r"\s+([,.!?])", r"\1", " ".join(text.split()))
+
+
+# a speaker correcting themselves: "DPD, äh, nee, GLS", "Mar... Marion", "Jens hier, Jan! Jan, sorry"
+CORRECTION = r"(?:\.\.\.|…|\b(?:nee|nein|quatsch|sorry|ich meine|also|pardon)\b)[\s,.!]*"
+
+
+def corrected(text: str) -> str:
+    """If the speaker corrects a name/company right at the start, keep only the correction."""
+    m = re.match(rf"(?P<pre>.{{0,60}}?)(?:{CORRECTION})+(?P<rest>(?!(?:nee|nein|quatsch|sorry|also|pardon)\b)\S.*)",
+                 text, re.I | re.S)
+    if m and re.search(rf"(?-i:[{UP}])\w*", m.group("pre")) and len(re.findall(WORD, m.group("pre"))) <= 6:
+        lead_words = re.findall(WORD, m.group("rest"))[:1]
+        if re.match(r"(?:hier ist|hier sind|ich bin|mein name ist|ich heiße)\b", m.group("rest"), re.I):
+            return (re.match(r"\s*" + LEAD, m.group("pre"), re.I).group(0) + m.group("rest")).strip()   # "Nein, ich bin's, Jonas"
+        if lead_words and (org_of(lead_words[0])[0] or role_of(lead_words[0]) or lead_words[0][0].isupper()):
+            greet = re.match(r"\s*" + LEAD, m.group("pre"), re.I).group(0)
+            intro = re.search(r"\b(?:hier ist|hier sind|ich bin|mein name ist|ich heiße)\b", m.group("pre"), re.I)
+            return (greet + (intro.group(0) + " " if intro else "") + m.group("rest")).strip()
+    return text
 
 
 def _message(text: str, span: tuple[int, int] | None) -> str:
@@ -335,6 +363,7 @@ def parse_who(text: str, pos: int, known: dict) -> _Who | None:
     def cap(k):
         return word(k) and toks[k][0][0].isupper() and toks[k][0].lower() not in STOP
 
+    possessive = word(i) and re.fullmatch(r"mein|meine|dein|deine|ihr|ihre|euer|eure|unser|unsere|your|my", toks[i][0], re.I)
     if word(i) and re.fullmatch(ARTICLE, toks[i][0], re.I):
         i += 1
     for _ in range(2):                                       # "der neue Vermieter", "die zuständige Hebamme"
@@ -353,6 +382,8 @@ def parse_who(text: str, pos: int, known: dict) -> _Who | None:
             org, org_rid = org_of(f"{matched} {toks[i + 1][0]}"); i += 1
         rid = role_of(matched) or org_rid
         end = toks[i][2]; i += 1
+        if not org and i + 1 < n and toks[i][0] == "," and word(i + 1) and org_of(toks[i + 1][0])[0]:
+            org = org_of(toks[i + 1][0])[0]; end = toks[i + 1][2]; i += 2            # "Paketbote, Hermes"
         k = i + 1 if i < n and toks[i][0] == "," else i                                    # "Nachbar, Klaus"
         while cap(k) and len(names) < 2 and not role_of(toks[k][0]) and toks[k][0].lower() not in NOT_NAMES:
             names.append(toks[k][0]); end = toks[k][2]; k += 1
@@ -370,6 +401,10 @@ def parse_who(text: str, pos: int, known: dict) -> _Who | None:
                 names += ["und"] + more; end = toks[k - 1][2]; i = k
         if names and names[0].lower() in NOT_NAMES and not titles:
             return None
+        if names and len(names) == 1 and not titles and re.search(r"(?:ung|heit|keit|schaft|tion|tät|ismus)$", names[0]):
+            return None                                      # "ich bin der Meinung": an abstract noun, not a name
+        if names and possessive and names[0].lower() not in FAMILY:
+            return None                                      # "Hier ist mein Pass" (but "Hier ist dein Papa")
         if names and len(names) == 1 and len(names[0]) < 2:
             return None                                      # "ich bin M, …": a stray letter is no name
         if not names and titles:
@@ -383,8 +418,8 @@ def parse_who(text: str, pos: int, known: dict) -> _Who | None:
             rid = rid or "neighbour"; end = toks[k][2]
         elif cap(k):
             words = [toks[k][0]]
-            if cap(k + 1) and not org_of(toks[k][0])[0]:
-                words.append(toks[k + 1][0])
+            while cap(k + len(words)) and len(words) < 3 and not org_of(toks[k][0])[0]:
+                words.append(toks[k + len(words)][0])
             phrase = " ".join(words)
             o, orid = org_of(phrase)
             if not o and len(words) > 1:
@@ -407,6 +442,15 @@ def parse_who(text: str, pos: int, known: dict) -> _Who | None:
 
 def by_rules(text: str, known_names=(), side: str = "door") -> Identity:
     text = clean(text)
+    fixed = corrected(text)
+    if fixed != text:                                  # the speaker corrected themselves: try the correction first
+        ident = _rules(fixed, known_names, side)
+        if ident.speaker:
+            return ident
+    return _rules(text, known_names, side)
+
+
+def _rules(text: str, known_names=(), side: str = "door") -> Identity:
     known = {n.lower(): n for n in known_names}
     found = []                                                   # (strength, -start, _Who, start)
     for pat, strength in PHRASES:
@@ -423,7 +467,8 @@ def by_rules(text: str, known_names=(), side: str = "door") -> Identity:
     if m and side == "door":
         who = parse_who(text, m.start("w"), known)
         if who and who.name and not who.rid and not who.org and \
-                (len(who.name.split()) == 2 or who.name.lower() in FAMILY or re.match(r"\s+ist da\b", text[who.end:], re.I)):
+                (len(who.name.split()) == 2 or who.name.lower() in FAMILY or re.match(r"\s+ist da\b", text[who.end:], re.I)
+                 or len(re.findall(WORD, text)) <= 3):
             if re.match(r"\s+i?st da\b", text[who.end:], re.I):
                 who.end = m.start("w")                           # keep "Omi ist da!" as the message
             found.append((1, -m.start(), who, m.start()))
@@ -431,7 +476,7 @@ def by_rules(text: str, known_names=(), side: str = "door") -> Identity:
     for m in re.finditer(rf"(?:^|(?<=[,.!?]\s)|(?<=^\w{{0}}))(?:{GREETING}[\s,]+)?(?P<w>(?:von|van|de|zu)\s+{CAP})\s+hier(?!\w)", text, re.I):
         found.append((2, -m.start(), _Who(m.group("w"), "", "", "", m.end()), m.start("w")))
     # "Anna hier", "DHL hier" — not in a question ("Wohnt hier Herr Özdemir?")
-    for m in re.finditer(rf"(?:^|(?<=[,.!?]\s))(?P<w>(?:{ARTICLE}\s+)?{WORD}(?:\s+{WORD}){{0,2}})\s+hier(?!\w)", text, re.I):
+    for m in re.finditer(rf"(?:^|(?<=[,.!?]\s))(?P<w>(?:{ARTICLE}\s+)?{WORD}(?:\s+{WORD}){{0,2}})\s+hier(?=\s*(?:[,.!:;–-]|$))", text, re.I):
         clause_end = re.search(r"[.!?]|$", text[m.end():])
         if text[m.end() + clause_end.start():m.end() + clause_end.end()] == "?":
             continue
@@ -442,7 +487,7 @@ def by_rules(text: str, known_names=(), side: str = "door") -> Identity:
             who.end = m.end()
             found.append((2, -m.start(), who, m.start()))
     # "Kowalski mein Name", "Weber ist mein Name"
-    for m in re.finditer(rf"(?:^|(?<=[,.!?]\s))(?P<w>{WORD}(?:\s+{WORD})?),?\s+(?:ist\s+)?mein\s+name(?!\w)", text, re.I):
+    for m in re.finditer(rf"(?:^|(?<=[,.!?]\s))(?P<w>{WORD}(?:\s+(?!ist\b){WORD})?),?\s+(?:ist\s+)?mein\s+name(?!\w)", text, re.I):
         who = parse_who(text, m.start("w"), known)
         if who and who.end == m.end("w"):
             who.end = m.end()
@@ -558,6 +603,22 @@ def by_llm(text: str, url: str, model: str, timeout: float = 8.0, side: str = "d
     if re.match(rf"\s+(?:{THIRD_PERSON})\b", after, re.I) and not re.search(r"(?:hier ist|ich bin|hier spricht)\s+(?:\w+\s+)?$",
                                                                             before, re.I):
         return None                                                   # "Tom hat gesagt", "Die Hebamme kommt um zehn"
+    clause_end = re.search(r"[,.!?]|$", after)
+    clause = before[max(before.rfind(c) for c in ",.!?") + 1:] + speaker + after[:clause_end.end()]
+    intro_here = re.search(r"\b(?:ich bin|hier ist|hier sind|wir sind|mein name|ich heiße|ich komme)\b", clause, re.I)
+    if clause.rstrip().endswith("?") and not intro_here:
+        return None                                                   # "Haben Sie Internet von der Telekom?"
+    if re.search(r"\b(?:ob|dass|weil|wenn|falls)\b[^,.!?]*$", before, re.I):
+        return None                                                   # "…, ob das Ordnungsamt bei Ihnen war"
+    if re.search(r"\bnicht\s+(?:(?:der|die|das|ein|eine|ihr|ihre)\s+)?$", before, re.I):
+        return None                                                   # "Ich bin nicht der Postbote"
+    if re.search(r"\bbin\s+$", before, re.I) and re.match(r"\s+(?-i:[a-zäöüß])\w*en\b", after):
+        return None                                                   # "Ich bin Oma besuchen" = I'm off visiting Oma
+    sentence_start = before[max(before.rfind(c) for c in ".!?") + 1:]
+    if not intro_here and re.fullmatch(r"\s*" + LEAD + r"(?:\w+\?\s*)?", sentence_start, re.I) and re.match(r"\s*[,?!]", after) and (
+            side == "room" or re.search(r"\b(?:du|dich|dir|ihr|euch|mach|komm|kannst|hast|bist|schau|guck|you|me in|open|let me)\b",
+                                        after, re.I)):
+        return None                                                   # "Lukas? Lukas, mach auf", "Sophie, welchen Knopf…"
     if (speaker.lower() in FAMILY or re.match(r"(?:frau|herr|herrn)\s", speaker, re.I)) and \
             not re.search(r"\b(?:ich bin|hier ist|mein name|ich heiße)\b[^.!?]*$", before, re.I) and \
             (side == "room" or (re.search(r",\s*$", before) and re.match(r"\s*,", after))):
@@ -568,7 +629,10 @@ def by_llm(text: str, url: str, model: str, timeout: float = 8.0, side: str = "d
     if re.search(r"\bist\s+$", before, re.I) and re.match(r"\s+(?:da|zu hause|daheim|dahoam|zuhause)\b", after, re.I) or \
             re.match(r"\s+da\s+m[ıi]\b", after, re.I):
         return None                                                   # "Ist Ayşe zu Hause?", "Ayşe da mı?"
-    if re.search(r"\b(?:für|zur|zum|wegen|über|an|beim|bei|nach|mit|um|grüße von|gruß von|for|about|to|at)\s+"
+    if re.search(r",\s*$", before) and re.fullmatch(r"\s*[.!?]*\s*", after[:3]) and \
+            not re.search(r"(?:ich bin['’]?s|ich bin es|hier ist|hier spricht|das ist|it['’]s|this is)\s*,\s*$", before, re.I):
+        return None                                                   # "Ich bin zu Hause, Tom." addresses Tom
+    if re.search(r"\b(?:für|zur|zum|wegen|über|an|auf|beim|bei|nach|mit|um|statt|anstatt|ohne|grüße von|gruß von|for|about|to|at)\s+"
                  r"(?:(?:der|die|das|den|dem|ein|eine|einen|einem)\s+)?$", before, re.I):
         return None
     if kind == "name" and re.search(r"\bvon\s+$", before, re.I) and not re.search(r"(?:ich bin|wir sind|komme)\b", before, re.I):
@@ -672,6 +736,22 @@ CASES = [  # text, speaker, message   (door side unless the text starts with "ro
     ("Guten Tag, Physiotherapie Hausbesuch, ich bin Tim.", "Tim · Physiotherapie", "Physiotherapie Hausbesuch."),
     ("Hier, delivery for Schmidt.", "Paketdienst", "Hier, delivery for Schmidt."),
     ("Hallo, ich bin der neue Vermieter, Herr Schäfer, ich wollte mich kurz vorstellen.", "Herr Schäfer · Vermieter", "Ich wollte mich kurz vorstellen."),
+    ("Hallo, DPD, äh, nee, Quatsch, GLS. Paket für Sie.", "Paketdienst · GLS", "Hallo, GLS. Paket für Sie."),
+    ("Hier ist Mar... äh, Marion. Entschuldigung, ich bin total erkältet.", "Marion", "Entschuldigung, ich bin total erkältet."),
+    ("Amazon-Lieferung, ich lege es vor die Tür, okay?", "Paketdienst · Amazon", "Amazon-Lieferung, ich lege es vor die Tür, okay?"),
+    ("Guten Tag, wir sind vom Deutschen Roten Kreuz und sammeln Spenden.", "Deutschen Roten Kreuz", "Und sammeln Spenden."),
+    ("Jen dobry, guten Tag, ich bin Paketbote, Hermes, bitte aufmachen.", "Paketdienst · Hermes", "Jen dobry, guten Tag, bitte aufmachen."),
+    ("Hier sind Yusuf und, äh, Can. Wir holen die Umzugskartons ab.", "Yusuf und Can", "Wir holen die Umzugskartons ab."),
+    ("Hallo, also meine Frau hat gesagt, dass der Herr Dr. Lang hier irgendwo wohnen soll.", "", "Hallo, also meine Frau hat gesagt, dass der Herr Dr. Lang hier irgendwo wohnen soll."),
+    ("Die Tanja.", "Tanja", ""),
+    ("room:Ich bin der Meinung, dass Sie hier falsch sind.", "", "Ich bin der Meinung, dass Sie hier falsch sind."),
+    ("Wohnt hier ein Herr Schulz? Ich hab einen Brief für ihn, der lag bei mir.", "", "Wohnt hier ein Herr Schulz? Ich hab einen Brief für ihn, der lag bei mir."),
+    ("Tom ist mein Name.", "Tom", ""),
+    ("Hier ist mein Pass.", "", "Hier ist mein Pass."),
+    ("Hier ist dein Papa!", "Papa", ""),
+    ("Ich bin Kanadier.", "", "Ich bin Kanadier."),
+    ("Ich bin der Nächste.", "", "Ich bin der Nächste."),
+    ("Raus hier, oder ich rufe die Polizei!", "", "Raus hier, oder ich rufe die Polizei!"),
 ]
 
 

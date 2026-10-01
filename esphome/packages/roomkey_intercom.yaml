@@ -33,6 +33,15 @@ esphome:
               roomkey::audio().end_session();
             };
 
+script:
+  - id: rk_apply_door
+    then:
+      - lambda: |-
+          const std::string &d = id(door_address).state;
+          size_t p = d.rfind(':');
+          if (p != std::string::npos && p > 0 && roomkey::audio().active())
+            roomkey::audio().set_peer(d.substr(0, p), (uint16_t) atoi(d.c_str() + p + 1));
+
 api:
   actions:
     - action: set_intercom_peer
@@ -48,7 +57,10 @@ interval:
       - lambda: |-
           auto &a = roomkey::audio();
           if (!a.active()) {
-            if (network::is_connected() && a.begin(${intercom_port})) a.set_tap(id(transcriber).state);
+            if (network::is_connected() && a.begin(${intercom_port})) {
+              a.set_tap(id(transcriber).state);
+              id(rk_apply_door).execute();
+            }
             return;
           }
           auto &c = roomkey::ctl();
@@ -56,8 +68,27 @@ interval:
           a.loop();
           if (c.in_call()) c.set_level(a.rx_level);
           else if (a.tx() && !c.test_recording()) a.end_session();   // call ended elsewhere (door hung up)
+          // push-to-talk only (owner, 30.09.): no hang-up; a conversation ends after 2 min without audio
+          static bool was_in_call = false;
+          if (c.in_call() && !was_in_call) a.touch();           // the 2 min start with the conversation
+          was_in_call = c.in_call();
+          if (c.in_call() && !c.talking() && a.idle_ms() > 120000) c.call_state("ended");
 
 text:
+  # Where the door talk computer listens (host:port). Holding the key talks to it even without a ring;
+  # a ring sets the same peer through HA anyway. Empty = only after a ring.
+  - platform: template
+    id: door_address
+    name: "Door address"
+    icon: mdi:door
+    entity_category: config
+    mode: text
+    optimistic: true
+    restore_value: true
+    initial_value: ""
+    max_length: 64
+    on_value:
+      - script.execute: rk_apply_door
   - platform: template
     id: transcriber
     name: "Transcriber address"

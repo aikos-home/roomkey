@@ -30,7 +30,7 @@ Alarmanlage und Licht, einen Tastendruck entfernt. Gebaut mit ESP32-C6, ESPHome 
 - **Lokal und standardkonform.** ESPHome-API: Home Assistant findet das Gerät automatisch, mit
   ganz normalen Entitäten, Ereignissen und Aktionen. Keine Cloud, keine eigene Integration.
 
-RoomKey ist das Gegenstück im Haus zur [Klingelbox](https://github.com/martinkadauke/intercom),
+RoomKey ist das Gegenstück im Haus zur [Klingelbox](https://github.com/aikos-home/intercom),
 der Open-Hardware-Türsprechanlage.
 
 ## Stand
@@ -83,7 +83,7 @@ stehen in der [englischen README](README.md#hardware).
 
 ## Sicherheit
 
-- Alles an 230 V – das Netzteil in der Dose, das Relais für das Zimmerlicht – ist Sache einer
+- Alles an 230 V – das Kleinspannungs-Netzteil und das Relais für das Zimmerlicht, beide als zertifizierte Geräte außerhalb des Einsatzes – ist Sache einer
   Elektrofachkraft. Der Tisch-Prototyp läuft nur über USB.
 - In vielen älteren Schalterdosen fehlt der Neutralleiter; das vor jeder Netzteil-Planung prüfen.
 

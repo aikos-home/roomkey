@@ -135,10 +135,13 @@ class AudioLink {
 
   // Transmit gate (push-to-talk). On: a fresh start (stale samples are dropped). Off: take no
   // new samples, but still send what is buffered (≤ 256 ms), so the last word is not cut off.
-  void set_tx(bool on) {
+  // to_peer = false: only the transcriber tap gets it (the test recording after a ring must never reach
+  // the door; room audio goes to the door only while the key is held).
+  void set_tx(bool on, bool to_peer = true) {
     if (on) {
       tail_.store(head_.load(std::memory_order_acquire));  // consumer-side drop of stale samples
       closing_ = false;
+      to_peer_ = to_peer;
       tx_ = true;
     } else if (tx_) {
       closing_ = true;
@@ -197,7 +200,7 @@ class AudioLink {
       overruns++;
     }
     // ── transmit ──
-    while (tx_ && (has_peer_ || has_tap_) && avail_() >= FRAME) {
+    while (tx_ && ((has_peer_ && to_peer_) || has_tap_) && avail_() >= FRAME) {
       uint8_t pkt[12 + FRAME * 2];
       pkt[0] = 0x80;
       pkt[1] = PT_L16 | (first_ ? 0x80 : 0);  // marker bit on the first packet of a talk spurt
@@ -210,15 +213,16 @@ class AudioLink {
         pkt[12 + 2 * i] = (uint16_t) v >> 8;  // L16 is network byte order
         pkt[13 + 2 * i] = v & 0xFF;
       }
-      if (has_peer_ && ::sendto(sock_, pkt, sizeof(pkt), 0, (sockaddr *) &peer_, sizeof(peer_)) < 0) tx_err++;
-      if (has_tap_ && !(has_peer_ && same_(tap_, peer_)) &&   // the test recorder may BE the transcriber
+      last_tx_ms_ = esphome::millis();
+      if (has_peer_ && to_peer_ && ::sendto(sock_, pkt, sizeof(pkt), 0, (sockaddr *) &peer_, sizeof(peer_)) < 0) tx_err++;
+      if (has_tap_ && !(has_peer_ && to_peer_ && same_(tap_, peer_)) &&   // the test recorder may BE the transcriber
           ::sendto(sock_, pkt, sizeof(pkt), 0, (sockaddr *) &tap_, sizeof(tap_)) < 0)
         tx_err++;
       seq_++;
       ts_ += FRAME;
       tx_pkts++;
     }
-    if (closing_ && (avail_() < FRAME || !(has_peer_ || has_tap_))) {  // buffer sent: now really off
+    if (closing_ && (avail_() < FRAME || !((has_peer_ && to_peer_) || has_tap_))) {  // buffer sent: now really off
       end_of_speech_();
       tx_ = closing_ = false;
       if (clear_after_drain_) has_peer_ = latched_ = clear_after_drain_ = false;
@@ -259,6 +263,13 @@ class AudioLink {
   }
 
   bool active() const { return sock_ >= 0; }
+  // A conversation starts: count its idle time from now, not from the last audio of an older one.
+  void touch() { last_tx_ms_ = esphome::millis(); }
+  // ms since audio last went out or came in (a call without audio for long ends by itself)
+  uint32_t idle_ms() const {
+    uint32_t last = last_tx_ms_ > last_rx_ms_ ? last_tx_ms_ : last_rx_ms_;
+    return esphome::millis() - last;
+  }
   uint32_t tx_pkts = 0, rx_pkts = 0, rx_dropped = 0, tx_err = 0, overruns = 0;
   float rx_level = 0;
 
@@ -272,8 +283,8 @@ class AudioLink {
                      (uint8_t) (ts_ >> 8), (uint8_t) ts_, (uint8_t) (ssrc_ >> 24), (uint8_t) (ssrc_ >> 16),
                      (uint8_t) (ssrc_ >> 8), (uint8_t) ssrc_, 127};
     seq_++;
-    if (has_peer_) ::sendto(sock_, k, sizeof(k), 0, (sockaddr *) &peer_, sizeof(peer_));
-    if (has_tap_ && !(has_peer_ && same_(tap_, peer_))) ::sendto(sock_, k, sizeof(k), 0, (sockaddr *) &tap_, sizeof(tap_));
+    if (has_peer_ && to_peer_) ::sendto(sock_, k, sizeof(k), 0, (sockaddr *) &peer_, sizeof(peer_));
+    if (has_tap_ && !(has_peer_ && to_peer_ && same_(tap_, peer_))) ::sendto(sock_, k, sizeof(k), 0, (sockaddr *) &tap_, sizeof(tap_));
   }
   void keepalive_() {
     if (sock_ < 0) return;
@@ -308,7 +319,8 @@ class AudioLink {
   sockaddr_in peer_{}, tap_{};
   bool has_tap_ = false;
   bool has_peer_ = false, latched_ = false, first_ = true, accept_ = false;
-  volatile bool tx_ = false, closing_ = false;
+  volatile bool tx_ = false, closing_ = false, to_peer_ = true;
+  uint32_t last_tx_ms_ = 0;
   bool clear_after_drain_ = false;
   volatile bool voice_ = false;
   volatile uint32_t last_voice_ms_ = 0;

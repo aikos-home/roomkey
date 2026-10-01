@@ -3,7 +3,7 @@
     python tools/privacy_scan.py --denylist PATH
     (or set ROOMKEY_DENYLIST=PATH; KLINGELBOX_DENYLIST works too)
 
-Taken from the sibling project Klingelbox (github.com/martinkadauke/intercom, MIT) with one
+Taken from the sibling project Klingelbox (github.com/aikos-home/intercom, MIT) with one
 addition: RoomKey's documented example entity ids, its own `roomkey_test_*` DEV stand-ins and
 service verbs (input_boolean.turn_on …) are allowed.
 
