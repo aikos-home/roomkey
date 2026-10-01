@@ -15,6 +15,8 @@ Publishes (contract: aikos vertraege.md §6):
       attributes: text, message, speaker, speaker_kind, speaker_role, speaker_org, speaker_method,
                   side, device, key_id, duration_s, language, model, created, source, transcribe_s
   event  aikos_talk_transcript  with the same data
+Test senders (--test-sources, e.g. 127.0.0.1 for tools/rtp_play.py) never reach the live entities: they go to
+  sensor.talk_transcript_test / sensor.talk_transcript_door_test and event aikos_talk_transcript_test.
 Utterances without words (noise, music, Whisper's silence hallucinations) are not published.
 
 Local only: audio goes to the Whisper server on this computer, never to a cloud.
@@ -204,8 +206,13 @@ def main():
     ap.add_argument("--delete-wav", action="store_true", help="delete the recording when done (privacy; for the service)")
     ap.add_argument("--echo-ref", default="sensor.talk_transcript", help="door side: the room transcript to filter echoes against")
     ap.add_argument("--activity-file", default="", help="door side: touched by the room receiver while a resident talks")
+    ap.add_argument("--test-sources", default="", help="comma-separated IPs of test senders → *_test entities and event")
     a = ap.parse_args()
     entity = a.entity or ("sensor.talk_transcript" if a.side == "room" else "sensor.talk_transcript_door")
+    test = a.source_ip in {s.strip() for s in a.test_sources.split(",") if s.strip()}
+    sfx = "_test" if test else ""                      # tests never write into live entities (qualitaet.md §3.8)
+    entity, event = entity + sfx, "aikos_talk_transcript" + sfx
+    echo_ref, activity_file = a.echo_ref + sfx, a.activity_file + sfx if a.activity_file else ""
     token = a.token_file.expanduser().read_text().strip()
 
     with wave.open(str(a.wav)) as w:
@@ -241,7 +248,7 @@ def main():
         took = time.time() - t0
     if a.side == "door":
         end = a.wav.stat().st_mtime
-        text = drop_echo(text, a.ha_url, token, (end - duration, end), a.activity_file, ref_entity=a.echo_ref)
+        text = drop_echo(text, a.ha_url, token, (end - duration, end), activity_file, ref_entity=echo_ref)
         if not text:
             print(f"· door: only an echo of the resident in {a.wav.name}, not published", flush=True)
             return
@@ -258,14 +265,14 @@ def main():
             "language_probability": round(lang_p, 2) if lang_p is not None else None,
             "text_original": original, "model": "whisper.cpp large-v3 (local)", "created": created,
             "source": "roomkey-test", "transcribe_s": round(took, 1)}
-    name = "Talk transcript (TEST)" if a.side == "room" else "Talk transcript door (TEST)"
+    name = ("Talk transcript (TEST)" if a.side == "room" else "Talk transcript door (TEST)") + (" test senders" if test else "")
     extra = {"friendly_name": name, "icon": "mdi:text-box-outline"}
     ha(a.ha_url, token, "POST", f"/api/states/{entity}", {"state": created, "attributes": {**data, **extra}})
     shown = time.time() - t0
     print(f"✎ {a.side} {device or '?'}: “{text}”  → speaker “{who.speaker or '–'}” ({who.method or 'none'}), "
           f"message “{who.message}”  ({duration:.1f} s audio, in HA after {shown:.1f} s) → {entity}", flush=True)
     if detected is not None:                               # foreign: everything went out together already
-        ha(a.ha_url, token, "POST", "/api/events/aikos_talk_transcript", data)
+        ha(a.ha_url, token, "POST", f"/api/events/{event}", data)
         print(f"  language {lang} ({lang_p:.2f}), translated: “{original}”", flush=True)
         return
     try:                                                   # pass 2: the language is a bonus, the text is out already
@@ -279,7 +286,7 @@ def main():
                  "language_name_en": LANGUAGES.get(lang, (None, lang))[1], "language_probability": round(lang_p, 2),
                  "text_original": strip_captions(detected.get("text", "")) if lang != "de" else ""})
     ha(a.ha_url, token, "POST", f"/api/states/{entity}", {"state": created, "attributes": {**data, **extra}})
-    ha(a.ha_url, token, "POST", "/api/events/aikos_talk_transcript", data)
+    ha(a.ha_url, token, "POST", f"/api/events/{event}", data)
     print(f"  language {lang} ({lang_p:.2f}) after {time.time() - t0:.1f} s"
           + (f": “{data['text_original']}”" if lang != "de" else ""), flush=True)
 

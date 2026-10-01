@@ -76,9 +76,13 @@ class Live:
         threading.Thread(target=self._run, daemon=True).start()
 
     # ── called from the recorder (main thread) ──
-    def start(self, rec):
+    def start(self, rec, test: bool = False):
+        """A new utterance. test = from a test sender: published to <entity>_test, compared with test residents only."""
+        sfx = "_test" if test else ""
         with self.lock:
             self.rec, self.text, self.speaker, self.seq, self.done_len = rec, "", "", 0, 0
+            self.cur_entity, self.cur_ref = self.entity + sfx, self.echo_ref + sfx
+            self.cur_quiet = self.quiet_file + sfx if self.quiet_file else ""
             self.vtype, self.urgent, self.warned, self.overlap = "", False, False, False
             self.started = dt.datetime.now().astimezone().isoformat(timespec="seconds")
 
@@ -87,9 +91,9 @@ class Live:
             if self.rec is not rec:
                 return
             self.rec = None
-            text, speaker, started, seq = self.text, self.speaker, self.started, self.seq
+            text, speaker, started, seq, entity = self.text, self.speaker, self.started, self.seq, self.cur_entity
         if text:
-            self._publish(started, text, speaker, True, seq + 1)
+            self._publish(entity, started, text, speaker, True, seq + 1)
 
     # ── worker ──
     def _run(self):
@@ -100,16 +104,16 @@ class Live:
                 if rec is None:
                     continue
                 pcm = bytes(rec.pcm)
-                started, done_len = self.started, self.done_len
+                started, done_len, entity, quiet, ref = self.started, self.done_len, self.cur_entity, self.cur_quiet, self.cur_ref
             if len(pcm) - done_len < int(0.3 * RATE) * 2 or not has_speech_pcm(pcm):
                 continue
-            began, active = resident_talk(self.quiet_file) if self.quiet_file else (0.0, 0.0)
+            began, active = resident_talk(quiet) if quiet else (0.0, 0.0)
             if time.time() - active < 0.8:
                 self.overlap = True             # a resident is talking: the door mic hears the door speaker
                 continue
             said = None
             if self.overlap:                    # this utterance overlapped the resident: wait for the resident's text
-                said = self._resident_text(began, active)
+                said = self._resident_text(ref, began, active)
                 if said is None:
                     continue
             try:
@@ -136,11 +140,11 @@ class Live:
                 self.vtype = who.vtype or getattr(self, "vtype", "")
                 self.urgent = who.urgent or getattr(self, "urgent", False)
                 speaker, seq = self.speaker, self.seq
-            self._publish(started, text, speaker, False, seq)
+            self._publish(entity, started, text, speaker, False, seq)
 
-    def _resident_text(self, began: float, active: float):
+    def _resident_text(self, ref: str, began: float, active: float):
         """The resident's transcript of the talk that began at `began`; None while it is still being made."""
-        req = urllib.request.Request(f"{self.ha_url}/api/states/{self.echo_ref}", headers={"Authorization": f"Bearer {self.token}"})
+        req = urllib.request.Request(f"{self.ha_url}/api/states/{ref}", headers={"Authorization": f"Bearer {self.token}"})
         try:
             with urllib.request.urlopen(req, timeout=5) as r:
                 st = json.loads(r.read())
@@ -162,13 +166,14 @@ class Live:
         with urllib.request.urlopen(req, timeout=20) as r:
             return " ".join(json.loads(r.read())["text"].split())
 
-    def _publish(self, started: str, text: str, speaker: str, final: bool, seq: int):
+    def _publish(self, entity: str, started: str, text: str, speaker: str, final: bool, seq: int):
         body = {"state": started, "attributes": {
             "text": text, "speaker": speaker, "speaker_role": getattr(self, "vtype", ""), "urgent": getattr(self, "urgent", False),
             "final": final, "side": self.side, "seq": seq,
             "updated": dt.datetime.now().astimezone().isoformat(timespec="milliseconds"),
-            "friendly_name": "Talk live " + self.side + " (TEST)", "icon": "mdi:text-recognition"}}
-        req = urllib.request.Request(f"{self.ha_url}/api/states/{self.entity}", data=json.dumps(body).encode(), method="POST",
+            "friendly_name": "Talk live " + self.side + (" (test senders)" if entity.endswith("_test") else " (TEST)"),
+            "icon": "mdi:text-recognition"}}
+        req = urllib.request.Request(f"{self.ha_url}/api/states/{entity}", data=json.dumps(body).encode(), method="POST",
                                      headers={"Authorization": f"Bearer {self.token}", "Content-Type": "application/json"})
         try:
             urllib.request.urlopen(req, timeout=5).read()

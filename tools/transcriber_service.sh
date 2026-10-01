@@ -21,6 +21,8 @@
 #   AIKOS_LIVE          1 = publish partial text while talking (sensor.talk_live_door / sensor.talk_live);
 #                       default 1 for the door side, 0 for the room side
 #   AIKOS_STATE_DIR     default ~/Library/Application Support/aikos/transcriber (shared by both sides: "a resident talks")
+#   AIKOS_TEST_SOURCES  comma-separated IPs of test senders (default 127.0.0.1 = tools/rtp_play.py on this Mac): their text
+#                       goes to sensor.talk_transcript*_test / talk_live*_test, never into the live entities
 #   AIKOS_SPLIT         door side: 1 = cut the door audio into utterances at pauses. Default 0 (voice v1: the door
 #                       talks push-to-talk). Set 1 when the door runs voice v2 (mic on for the whole call).
 # If the port is taken (e.g. another receiver still runs), the script exits; launchd starts it again.
@@ -37,6 +39,7 @@ llm="${AIKOS_LLM_URL:-http://127.0.0.1:11434}"
 rec="${AIKOS_RECORDINGS:-$HOME/Library/Application Support/aikos/transcriber/recordings}"
 py="${AIKOS_PYTHON:-/usr/bin/python3}"
 names="${AIKOS_KNOWN_NAMES:-}"
+tests="${AIKOS_TEST_SOURCES-127.0.0.1}"
 [ -r "$token" ] || { echo "token file not readable: $token" >&2; exit 2; }
 
 q() { printf '%q' "$1"; }   # quote for the --exec command line
@@ -58,7 +61,7 @@ else
   extra+=(--live-quiet-file "$active")
   echo_args="--activity-file $(q "$active")"
 fi
-exec "$py" -u tools/rtp_recorder.py --port "$port" --out "$rec" ${extra[@]+"${extra[@]}"} \
+exec "$py" -u tools/rtp_recorder.py --port "$port" --out "$rec" --test-sources "$tests" ${extra[@]+"${extra[@]}"} \
   --on-start "curl -s -m 30 $(q "$llm")/api/generate -d '{\"model\":\"qwen3:8b\",\"keep_alive\":-1}' >/dev/null" \
   --exec "$(q "$py") -u tools/transcribe_publish.py {wav} --side $side --source-ip {src} --ha-url $(q "$ha") \
---token-file $(q "$token") --whisper-url $(q "$whisper") --llm-url $(q "$llm") --known-names $(q "$names") --delete-wav $echo_args"
+--token-file $(q "$token") --whisper-url $(q "$whisper") --llm-url $(q "$llm") --known-names $(q "$names") --delete-wav --test-sources $(q "$tests") $echo_args"

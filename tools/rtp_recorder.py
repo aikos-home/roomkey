@@ -116,6 +116,8 @@ def main():
     ap.add_argument("--known-names", default="")
     ap.add_argument("--activity-file", default="", help="touched while audio arrives (room side: tells the door side 'a resident talks')")
     ap.add_argument("--live-quiet-file", default="", help="no live partials while this file was touched < 0.8 s ago")
+    ap.add_argument("--test-sources", default="", help="comma-separated IPs of test senders: their activity and live text "
+                                                        "go to *_test files/entities, never into live ones")
     a = ap.parse_args()
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind(("0.0.0.0", a.port))
@@ -126,7 +128,11 @@ def main():
         from talk_live import Live
         live = Live(a.ha_url, a.token_file.expanduser().read_text().strip(), a.live, a.live_side, a.whisper_url,
                     [n.strip() for n in a.known_names.split(",") if n.strip()], quiet_file=a.live_quiet_file)
-    last_touch = 0.0
+    test_ips = {s.strip() for s in a.test_sources.split(",") if s.strip()}
+    last_touch: dict = {}
+
+    def activity(src) -> str:                                            # a test sender never marks a real resident
+        return a.activity_file + ("_test" if src[0] in test_ips else "") if a.activity_file else ""
 
     def finish(rec, **kw):
         if live:
@@ -148,9 +154,10 @@ def main():
             continue
         if not data or len(data) <= 12 or data[0] >> 6 != 2 or data[1] & 0x7F != PT_L16:
             continue                                                     # ≤ 12 bytes = keepalive
-        if a.activity_file and time.time() - last_touch > 0.25:
-            Path(a.activity_file).touch()
-            last_touch = time.time()
+        act = activity(src)
+        if act and time.time() - last_touch.get(act, 0.0) > 0.25:
+            Path(act).touch()
+            last_touch[act] = time.time()
         hdr = 12 + 4 * (data[0] & 0x0F)
         seq = struct.unpack(">H", data[2:4])[0]
         payload = data[hdr:]
@@ -167,10 +174,10 @@ def main():
                 preroll[src].append((seq, payload))
                 continue
             rec = recs[src] = Recording(a.out, src)
-            if a.activity_file:
-                Path(a.activity_file).write_text(f"{time.time():.3f}\n")   # when this resident began (see talk_live)
+            if act:
+                Path(act).write_text(f"{time.time():.3f}\n")              # when this resident began (see talk_live)
             if live:
-                live.start(rec)
+                live.start(rec, test=src[0] in test_ips)
             if a.on_start:
                 subprocess.Popen(a.on_start, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             for pseq, pp in preroll.pop(src, ()):
