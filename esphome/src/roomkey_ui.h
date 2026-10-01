@@ -555,6 +555,7 @@ class Controller {
   struct ChatMsg {
     std::string id, who, role, text, lang;
     bool door = false, urgent = false;
+    bool identified = false;   // `who` is somebody who said who they are (spk, or held for the call: sticky), not "Besucher"
   };
   static constexpr size_t CHAT_N = 10;
   // R22: never the last call's chat, not even for a moment. aikos' call log counts only while it says a call is
@@ -589,9 +590,23 @@ class Controller {
       if (chat_.back().door) live_text_.clear(), live_shown_ = 0;  // the visitor's final words are in the chat now
     }
     chat_back_ = 0;
+    adopt_visitor_();
     if (built_) {
       build_chat_();
       render();
+    }
+  }
+  // R25: the visitor's identity holds for the whole call. Transcripts without a speaker keep it (set_visitor), and a
+  // key that joins later, or restarts, takes it from the call log, which carries it on every door message (sticky).
+  void adopt_visitor_() {
+    if (!visitor_.empty() || (!ringing_ && !in_call_)) return;
+    for (auto m = chat_.rbegin(); m != chat_.rend(); ++m) {
+      if (!m->door || !m->identified || m->who.empty()) continue;
+      visitor_ = m->who;
+      if (visitor_role_.empty()) visitor_role_ = m->role;
+      for (const ChatMsg &u : chat_) visitor_urgent_ = visitor_urgent_ || (u.door && u.urgent);
+      render_door_labels_();
+      return;
     }
   }
   // From the door (voice v2): someone answered (R19: no more listening before an answer) and another key has the
@@ -1487,6 +1502,7 @@ class Controller {
     talking_ = false;
     call_since_ = millis();
     menu_open_ = info_open_ = false;
+    adopt_visitor_();   // joined a running call: who is at the door, from its log (R25)
     render();
   }
   void clear_chat_() {
