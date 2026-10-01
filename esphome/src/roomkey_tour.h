@@ -136,6 +136,10 @@ class Tour {
         {300, key(true), nullptr},
         {90, key(false), nullptr},
         {300, nullptr, "16_offline_toast"},
+        // R21: a call nobody rang for (another room started it) → the same offer, titled "Call at the door"
+        {2000, []() { ctl().set_online(true); ctl().end_call_for_tour(); ctl().set_door_call(false); ctl().set_door_call(true); }, nullptr},
+        {400, nullptr, "16b_call_nobody_rang_for_join"},
+        {200, []() { ctl().set_door_call(false); }, nullptr},
         // R19: it rings, another room answers → this key offers to join; one press joins (listening, chat)
         {2000, []() { ctl().set_online(true); ctl().ring_start(); }, nullptr},
         {1100, nullptr, "17_ringing_again"},

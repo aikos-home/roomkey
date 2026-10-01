@@ -132,6 +132,7 @@ struct Strings {
   const char *speaks;  // printf: the visitor's language
   const char *answered, *join_hint, *a_join, *hold_here;  // another room answered (R19); touch: hold below the chat
   const char *busy;                                       // another room has the floor (R17.14)
+  const char *door_call;                                  // a call at the door this key is not in (R21)
 };
 
 static const Strings STR_EN = {
@@ -147,6 +148,7 @@ static const Strings STR_EN = {
     "Speaks %s",
     "Answered", "Press to listen in", "Listen", "Hold here to talk",
     "Busy · another room talks",
+    "Call at the door",
 };
 
 static const Strings STR_DE = {
@@ -162,6 +164,7 @@ static const Strings STR_DE = {
     "Spricht %s",
     "Angenommen", "Drücken: mithören", "Mithören", "Hier halten: sprechen",
     "Besetzt · anderer Raum spricht",
+    "Gespräch an der Tür",
 };
 
 // ── Model ────────────────────────────────────────────────────────────────────
@@ -587,8 +590,9 @@ class Controller {
   bool sends() const { return talking_ && !floor_busy_; }   // the mic goes to the door and the transcriber only then
   // The door has a call (aikos binary_sensor.aikos_intercom_talk_in_call; with voice v2 straight from the door).
   void set_door_call(bool on) {
+    if (on && door_call_ != 1) join_dismissed_ = false;          // a new call at the door: offer to join again
     door_call_ = on ? 1 : 0;
-    if (!on) answered_elsewhere_ = false, door_answered_ = false, floor_busy_ = false;
+    if (!on) answered_elsewhere_ = false, door_answered_ = false, floor_busy_ = false, join_dismissed_ = false;
     if (built_) render();
   }
   bool in_call() const { return in_call_; }
@@ -1265,8 +1269,8 @@ class Controller {
     render_live_();
     lv_label_set_text(ring_icon_, ringing_ ? icon::BELL_RING : icon::PHONE_TALK);
     if (!ringing_) for (lv_obj_t *r : ripples_) lv_obj_add_flag(r, LV_OBJ_FLAG_HIDDEN);   // no ringing waves
-    lv_label_set_text(ring_title_, ringing_ ? S->doorbell : S->answered);
-    if (!ringing_) {   // answered in another room: press = listen in, hold = talk (R19)
+    lv_label_set_text(ring_title_, ringing_ ? S->doorbell : answered_elsewhere_ ? S->answered : S->door_call);
+    if (!ringing_) {   // answered in another room (R19) or a call nobody rang for (R21): press = listen in, hold = talk
       lv_label_set_text(ring_sub_, S->join_hint);
       return;
     }
@@ -1444,14 +1448,18 @@ class Controller {
     if (hooks.answer && !cfg.demo) hooks.answer();
     begin_call_();
   }
-  void dismiss_ring_() {   // the user waved the ring (or the join offer) away: no join view
+  void dismiss_ring_() {   // the user waved the ring (or the join offer) away: no join view for this call
     ring_stop();
     answered_elsewhere_ = false;
+    join_dismissed_ = true;
     render();
   }
+  // The join offer ("Drücken: mithören"): a call runs at the door and this key is not in it. R19: it rang here and another
+  // room answered; R21: a call nobody rang for (another room started it). Door state unknown after an answer: 2 min.
   bool joinable_() const {
-    return answered_elsewhere_ && !in_call_ && door_call_ != 0 &&
-           (door_call_ == 1 || age_(answered_ms_) < (int32_t) JOIN_UNKNOWN_MS);   // door state unknown: 2 min
+    if (in_call_ || join_dismissed_) return false;
+    if (door_call_ == 1) return true;
+    return answered_elsewhere_ && door_call_ != 0 && age_(answered_ms_) < (int32_t) JOIN_UNKNOWN_MS;
   }
   void begin_call_() {
     call_seen_ms_ = millis();
@@ -1701,7 +1709,7 @@ class Controller {
   void apply_led_() {
     if (!hooks.led || led_hold_until_) return;
     switch (view()) {
-      case View::RING: hooks.led(pal::CYAN, "pulse"); break;
+      case View::RING: hooks.led(pal::CYAN, ringing_ ? "pulse" : "off"); break;   // a join offer stays dark (night)
       case View::CALL: hooks.led(talking_ ? pal::GREEN : pal::CYAN, "solid"); break;
       case View::ALARM:
         if (disarming_) hooks.led(pal::RED, "pulse");
@@ -1798,7 +1806,7 @@ class Controller {
   uint32_t call_seen_ms_ = 0, talk_since_ms_ = 0;
   bool pending_press_ = false, double_ = false;
   uint32_t pending_press_ms_ = 0;
-  bool answered_elsewhere_ = false, door_answered_ = false, floor_busy_ = false;
+  bool answered_elsewhere_ = false, door_answered_ = false, floor_busy_ = false, join_dismissed_ = false;
   int door_call_ = -1;                                  // -1 unknown, 0 no call at the door, 1 call
   uint32_t answered_ms_ = 0;
   static constexpr uint32_t JOIN_UNKNOWN_MS = 120000;
