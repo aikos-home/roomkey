@@ -219,7 +219,7 @@ def main():
         duration = w.getnframes() / w.getframerate()
     t0 = time.time()
     names = [n.strip() for n in a.known_names.split(",") if n.strip()]
-    # household names as a plain list (not "Hier ist Martin." — on silence Whisper answers with such a sentence)
+    # household names as a plain list (not "Hier ist Anna." — on silence Whisper answers with such a sentence)
     prompt = "" if a.no_prompt else WHISPER_PROMPT + (" Namen: " + ", ".join(names) + "." if names else "")
     if not has_speech(a.wav):                     # key pressed, nothing said: never let Whisper "hear" its hint
         print(f"· {a.side}: no speech in {a.wav.name} (level), not transcribed", flush=True)

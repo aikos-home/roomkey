@@ -3,11 +3,11 @@
   "id": "adv-001",
   "category": "family_room",
   "side": "room",
-  "say": "Hier ist Martin, ich komme gleich runter.",
-  "text": "Hier ist Martin, ich komme gleich runter.",
+  "say": "Hier ist Felix, ich komme gleich runter.",
+  "text": "Hier ist Felix, ich komme gleich runter.",
   "expect_speaker_any": [
    [
-    "Martin"
+    "Felix"
    ]
   ],
   "expect_message_contains": "komme gleich runter",
@@ -81,25 +81,25 @@
   "id": "adv-008",
   "category": "family_room",
   "side": "room",
-  "say": "Mama hier. Lena, zieh bitte die Schuhe aus, bevor du reinkommst.",
-  "text": "Mama hier. Lena, zieh bitte die Schuhe aus, bevor du reinkommst.",
+  "say": "Mama hier. Greta, zieh bitte die Schuhe aus, bevor du reinkommst.",
+  "text": "Mama hier. Greta, zieh bitte die Schuhe aus, bevor du reinkommst.",
   "expect_speaker_any": [
    [
     "Mama"
    ]
   ],
   "expect_message_contains": "Schuhe aus",
-  "notes": "vocative 'Lena' after the intro must not become the speaker"
+  "notes": "vocative 'Greta' after the intro must not become the speaker"
  },
  {
   "id": "adv-009",
   "category": "family_room",
   "side": "room",
-  "say": "Hallo Oma, hier ist die Lena, ich mach dir auf.",
-  "text": "Hallo Oma, hier ist die Lena, ich mach dir auf.",
+  "say": "Hallo Oma, hier ist die Greta, ich mach dir auf.",
+  "text": "Hallo Oma, hier ist die Greta, ich mach dir auf.",
   "expect_speaker_any": [
    [
-    "Lena"
+    "Greta"
    ]
   ],
   "expect_message_contains": "mach dir auf",
@@ -263,11 +263,11 @@
   "id": "adv-023",
   "category": "friends_relatives",
   "side": "door",
-  "say": "Hallo Martin, hier ist Lena, machst du mal auf?",
-  "text": "Hallo Martin, hier ist Lena, machst du mal auf?",
+  "say": "Hallo Felix, hier ist Greta, machst du mal auf?",
+  "text": "Hallo Felix, hier ist Greta, machst du mal auf?",
   "expect_speaker_any": [
    [
-    "Lena"
+    "Greta"
    ]
   ],
   "expect_message_contains": "machst du mal auf",
@@ -277,8 +277,8 @@
   "id": "adv-024",
   "category": "friends_relatives",
   "side": "door",
-  "say": "Martin, mach auf, ich bin's!",
-  "text": "Martin, mach auf, ich bin's!",
+  "say": "Felix, mach auf, ich bin's!",
+  "text": "Felix, mach auf, ich bin's!",
   "expect_speaker_any": [],
   "expect_message_contains": "mach auf",
   "notes": "vocative only; \"ich bin's\" without a name"
@@ -355,10 +355,10 @@
   "id": "adv-030",
   "category": "friends_relatives",
   "side": "door",
-  "say": "Hallo, ist Lena da? Wir wollten zusammen zur Schule.",
-  "text": "Hallo, ist Lena da? Wir wollten zusammen zur Schule.",
+  "say": "Hallo, ist Greta da? Wir wollten zusammen zur Schule.",
+  "text": "Hallo, ist Greta da? Wir wollten zusammen zur Schule.",
   "expect_speaker_any": [],
-  "expect_message_contains": "Lena da",
+  "expect_message_contains": "Greta da",
   "notes": "asking for someone"
  },
  {
@@ -1877,11 +1877,11 @@
   "id": "adv-135",
   "category": "lost_silly",
   "side": "door",
-  "say": "Hi, hier ist Martin. Ich muss noch 1000 Drachen bekämpfen.",
-  "text": "Hi, hier ist Martin. Ich muss noch 1000 Drachen bekämpfen.",
+  "say": "Hi, hier ist Felix. Ich muss noch 1000 Drachen bekämpfen.",
+  "text": "Hi, hier ist Felix. Ich muss noch 1000 Drachen bekämpfen.",
   "expect_speaker_any": [
    [
-    "Martin"
+    "Felix"
    ]
   ],
   "expect_message_contains": "1000 Drachen",
@@ -2634,8 +2634,8 @@
   "id": "adv-190",
   "category": "names",
   "side": "door",
-  "say": "Hallo, hier ist Jean-Pierre, der Kollege von Martin.",
-  "text": "Hallo, hier ist Jean-Pierre, der Kollege von Martin.",
+  "say": "Hallo, hier ist Jean-Pierre, der Kollege von Felix.",
+  "text": "Hallo, hier ist Jean-Pierre, der Kollege von Felix.",
   "expect_speaker_any": [
    [
     "Jean-Pierre"
@@ -2648,11 +2648,11 @@
   "id": "adv-191",
   "category": "names",
   "side": "door",
-  "say": "Hier ist Lena Maria Hoffmann, ich komme wegen des Zimmers.",
-  "text": "Hier ist Lena Maria Hoffmann, ich komme wegen des Zimmers.",
+  "say": "Hier ist Greta Maria Hoffmann, ich komme wegen des Zimmers.",
+  "text": "Hier ist Greta Maria Hoffmann, ich komme wegen des Zimmers.",
   "expect_speaker_any": [
    [
-    "Lena",
+    "Greta",
     "Hoffmann"
    ]
   ],
@@ -2736,11 +2736,11 @@
   "id": "adv-197",
   "category": "whisper_artefacts",
   "side": "door",
-  "say": "Hallo, hier ist Lena, ich hab meinen Schlüssel vergessen.",
-  "text": "hallo hier ist lena ich hab meinen schlüssel vergessen",
+  "say": "Hallo, hier ist Greta, ich hab meinen Schlüssel vergessen.",
+  "text": "hallo hier ist greta ich hab meinen schlüssel vergessen",
   "expect_speaker_any": [
    [
-    "Lena"
+    "Greta"
    ]
   ],
   "expect_message_contains": "schlüssel vergessen",
@@ -3132,20 +3132,20 @@
   "id": "adv-230",
   "category": "negatives",
   "side": "door",
-  "say": "Hallo, schöne Grüße von Martin, ich soll hier den Schlüssel abholen.",
-  "text": "Hallo, schöne Grüße von Martin, ich soll hier den Schlüssel abholen.",
+  "say": "Hallo, schöne Grüße von Felix, ich soll hier den Schlüssel abholen.",
+  "text": "Hallo, schöne Grüße von Felix, ich soll hier den Schlüssel abholen.",
   "expect_speaker_any": [],
   "expect_message_contains": "Schlüssel abholen",
-  "notes": "'Grüße von Martin': Martin sent them, he is not speaking"
+  "notes": "'Grüße von Felix': Felix sent them, he is not speaking"
  },
  {
   "id": "adv-231",
   "category": "negatives",
   "side": "door",
-  "say": "Hallo, Martin hat gesagt, ich soll mal klingeln.",
-  "text": "Hallo, Martin hat gesagt, ich soll mal klingeln.",
+  "say": "Hallo, Felix hat gesagt, ich soll mal klingeln.",
+  "text": "Hallo, Felix hat gesagt, ich soll mal klingeln.",
   "expect_speaker_any": [],
-  "expect_message_contains": "Martin hat gesagt",
+  "expect_message_contains": "Felix hat gesagt",
   "notes": "name as subject of a report"
  },
  {
@@ -3232,8 +3232,8 @@
   "id": "adv-240",
   "category": "family_room",
   "side": "room",
-  "say": "Lena, da ist jemand für dich an der Tür!",
-  "text": "Lena, da ist jemand für dich an der Tür!",
+  "say": "Greta, da ist jemand für dich an der Tür!",
+  "text": "Greta, da ist jemand für dich an der Tür!",
   "expect_speaker_any": [],
   "expect_message_contains": "jemand für dich",
   "notes": "vocative name up front (room to room)"
@@ -3302,8 +3302,8 @@
   "id": "adv-247",
   "category": "family_room",
   "side": "room",
-  "say": "Hier ist Besuch für dich, Lena!",
-  "text": "Hier ist Besuch für dich, Lena!",
+  "say": "Hier ist Besuch für dich, Greta!",
+  "text": "Hier ist Besuch für dich, Greta!",
   "expect_speaker_any": [],
   "expect_message_contains": "Besuch für dich",
   "notes": "'hier ist' + capitalised noun 'Besuch'"

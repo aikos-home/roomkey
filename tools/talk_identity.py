@@ -173,7 +173,7 @@ def prompt_echo(text: str, prompt: str = WHISPER_PROMPT) -> bool:
     ps = [w.lower() for w in re.findall(rf"{WORD}", prompt)]
     if len(set(ws) & PROMPT_WORDS) >= 4 or "sprechanlage" in text.lower():
         return True
-    if len(ws) >= 2 and " ".join(ws) in " ".join(ps):  # the whole "transcript" is a piece of the hint ("Martin, Lena.")
+    if len(ws) >= 2 and " ".join(ws) in " ".join(ps):  # the whole "transcript" is a piece of the hint ("Jonas, Anna.")
         return True
     grams = {tuple(ps[i:i + 4]) for i in range(len(ps) - 3)}
     return any(tuple(ws[i:i + 4]) in grams for i in range(len(ws) - 3))

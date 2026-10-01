@@ -103,7 +103,7 @@ class Tour {
            std::vector<M> chat;
            M a; a.id = "door-1"; a.door = true; a.who = "Paketdienst · DHL"; a.role = "parcel";
            a.text = "Guten Tag, ich habe ein Paket für Sie, passt nicht in den Briefkasten."; chat.push_back(a);
-           M b; b.id = "room-1"; b.who = "Martin"; b.text = "Ich komme gleich runter."; chat.push_back(b);
+           M b; b.id = "room-1"; b.who = "Jonas"; b.text = "Ich komme gleich runter."; chat.push_back(b);
            M c; c.id = "door-2"; c.door = true; c.who = "Paketdienst · DHL"; c.role = "parcel"; c.lang = "Polish";
            c.text = "Alles klar, ich warte."; chat.push_back(c);
            ctl().set_chat(chat);
