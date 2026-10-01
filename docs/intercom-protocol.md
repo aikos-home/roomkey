@@ -15,7 +15,7 @@ interoperates: **plain RTP**, with signalling done by Home Assistant.
 
 | Concern | Where | How |
 |---|---|---|
-| Doorbell ring | HA → key | `binary_sensor.doorbell_button` turns on, **or** HA calls `esphome.<key>_ring` |
+| Doorbell ring | HA → key | the doorbell's binary sensor (substitution `doorbell_entity`) turns on, **or** HA calls `esphome.<key>_ring` |
 | Answer / dismiss / hang up / talk | key → HA | event `esphome.roomkey` `{room, node, type}` |
 | Door ended the call | HA → key | `esphome.<key>_call_state` `{state: ended}` |
 | Where to send audio | key | latched from the first RTP stream received, or `esphome.<key>_set_intercom_peer {peer_host, peer_port}` |
