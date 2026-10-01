@@ -1,0 +1,33 @@
+# Simulator for the screenshot TOUR only (RK_TOUR=1): the same UI, but cut off from the house — no link to the door
+# or the bell (no key_state, no direct ring), its own name and its own RTP port. Never add it to Home Assistant.
+#   esphome compile sim_tour.yaml && RK_TOUR=1 RK_SHOTS=dir RK_TOUR_EXIT=1 .esphome/build/roomkey-tour/.pioenvs/roomkey-tour/program
+# (01.10.: a tour run of the HA simulator's firmware talked to the real door as a second "roomkey-sim".)
+substitutions:
+  node_name: roomkey-tour
+  intercom_port: "5014"                          # not the door's port
+  room_name: Office
+  door_name: Front door
+  language: en
+  timezone: Europe/Berlin
+  light_entity: light.all_lights
+  alarm_entity: alarm_control_panel.house
+  doorbell_entity: binary_sensor.doorbell_button
+  visitor_entity: sensor.talk_transcript_door    # who is at the door (transcript attribute "speaker")
+  disarm_action: script.roomkey_disarm
+
+esphome:
+  name: ${node_name}
+  friendly_name: RoomKey Tour
+
+packages:
+  board: !include packages/board_sim.yaml
+  core: !include packages/roomkey_core.yaml
+  ha: !include packages/roomkey_ha.yaml
+  intercom: !include packages/roomkey_intercom.yaml
+  voice: !include packages/sim_voice.yaml
+  test_record: !include packages/roomkey_test_record.yaml
+
+logger:
+  level: DEBUG
+  logs:
+    lvgl: INFO

@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # Board: desktop simulator (ESPHome host platform + SDL2)
 #   mouse = touchscreen · SPACE = mechanical key
-#   RK_TOUR=1 RK_SHOTS=dir RK_TOUR_EXIT=1 ./program   → screenshot every state
+#   tour: build sim_tour.yaml (cut off from the house), RK_TOUR=1 RK_SHOTS=dir RK_TOUR_EXIT=1 → every state
 # ─────────────────────────────────────────────────────────────────────────────
 
 substitutions:
