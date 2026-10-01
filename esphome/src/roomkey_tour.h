@@ -20,6 +20,19 @@
 namespace roomkey {
 namespace sim {
 
+// The running call's log as aikos sends it (R17.6; R22: only while the log says a call is active).
+inline void tour_chat() {
+  using M = Controller::ChatMsg;
+  std::vector<M> chat;
+  M a; a.id = "door-1"; a.door = true; a.who = "Paketdienst · DHL"; a.role = "parcel";
+  a.text = "Guten Tag, ich habe ein Paket für Sie, passt nicht in den Briefkasten."; chat.push_back(a);
+  M b; b.id = "room-1"; b.who = "Jonas"; b.text = "Ich komme gleich runter."; chat.push_back(b);
+  M c; c.id = "door-2"; c.door = true; c.who = "Paketdienst · DHL"; c.role = "parcel"; c.lang = "Polish";
+  c.text = "Alles klar, ich warte."; chat.push_back(c);
+  ctl().set_chat_active(true);
+  ctl().set_chat(chat);
+}
+
 #ifdef USE_HOST
 inline bool write_bmp(const std::string &path) {
   lv_obj_t *scr = lv_screen_active();
@@ -99,14 +112,7 @@ class Tour {
         {400, key(false), nullptr},
         {900, nullptr, "07_call_listening"},
         {300, []() {
-           using M = Controller::ChatMsg;
-           std::vector<M> chat;
-           M a; a.id = "door-1"; a.door = true; a.who = "Paketdienst · DHL"; a.role = "parcel";
-           a.text = "Guten Tag, ich habe ein Paket für Sie, passt nicht in den Briefkasten."; chat.push_back(a);
-           M b; b.id = "room-1"; b.who = "Jonas"; b.text = "Ich komme gleich runter."; chat.push_back(b);
-           M c; c.id = "door-2"; c.door = true; c.who = "Paketdienst · DHL"; c.role = "parcel"; c.lang = "Polish";
-           c.text = "Alles klar, ich warte."; chat.push_back(c);
-           ctl().set_chat(chat);
+           tour_chat();
            ctl().set_live_text("Kann ich es auch beim Nachbarn");
          }, nullptr},
         {2500, nullptr, "07c_call_chat"},
@@ -146,7 +152,7 @@ class Tour {
         {300, []() { ctl().set_door_call(true); ctl().ring_stop(false); }, nullptr},
         {600, nullptr, "18_answered_elsewhere_join"},
         {200, key(true), nullptr},
-        {90, key(false), nullptr},
+        {90, []() { ctl().key(false); tour_chat(); }, nullptr},   // joined: aikos sends the running call's log
         {800, nullptr, "19_joined_chat_touch"},
         // a hold the timer never saw (the loop was late): key down and up in one go, 400 ms apart → still talk/join
         {300, []() { ctl().end_call_for_tour(); }, nullptr},
@@ -158,9 +164,10 @@ class Tour {
         {100, []() { ctl().set_live_text("Alles klar, ich habe hier ein Paket für Sie, es passt leider nicht in den Briefkasten. Kann"); }, nullptr},
         {120, nullptr, "22_live_revision_shown_at_once"},
         // T12: the talk clock runs only while talking and starts at 0:00 on every hold, also within one call
-        {300, []() { ctl().set_floor_busy(false); ctl().end_call_for_tour(); ctl().set_door_call(false); }, nullptr},
+        {300, []() { ctl().set_floor_busy(false); ctl().end_call_for_tour(); ctl().set_door_call(false);
+                     ctl().door_call_id(0); ctl().set_chat_active(false); }, nullptr},
         {300, key(true), nullptr},
-        {2600, nullptr, "T12a_talking_clock_runs"},
+        {2600, nullptr, "T12a_talking_clock_runs"},   // R22: a new call, no chat of the last one
         {100, key(false), nullptr},
         {600, nullptr, "T12b_listening_no_clock"},
         {5000, key(true), nullptr},

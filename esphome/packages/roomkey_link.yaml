@@ -58,8 +58,10 @@ sensor:
     internal: true
     on_value:
       - lambda: |-
-          roomkey::ctl().set_door_call(x != 0);
-          id(rk_door_msg).execute(x != 0, (uint32_t) (std::isnan(x) ? 0 : x), id(rk_door_answered).state);
+          const uint32_t call_id = std::isnan(x) ? 0 : (uint32_t) x;
+          roomkey::ctl().set_door_call(call_id != 0);
+          roomkey::ctl().door_call_id(call_id);   // R22: a new call (or none) empties the chat
+          id(rk_door_msg).execute(call_id != 0, call_id, id(rk_door_answered).state);
   - platform: packet_transport
     id: rk_floor_key
     provider: aikos-intercom-talk

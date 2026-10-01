@@ -561,7 +561,25 @@ class Controller {
     bool door = false, urgent = false;
   };
   static constexpr size_t CHAT_N = 10;
+  // R22: never the last call's chat, not even for a moment. aikos' call log counts only while it says a call is
+  // active, and the key empties it itself when the door's call changes or ends, whatever HA still holds.
   void set_chat(std::vector<ChatMsg> msgs) {
+    chat_in_ = std::move(msgs);
+    show_chat_();
+  }
+  void set_chat_active(bool on) {
+    if (on == chat_active_) return;
+    chat_active_ = on;
+    if (!on) chat_in_.clear();
+    show_chat_();
+  }
+  void door_call_id(uint32_t id) {   // from the door's broadcast: a new id (or 0) = a new call (or none)
+    if (call_id_known_ && id != call_id_) clear_chat_();
+    call_id_ = id;
+    call_id_known_ = true;
+  }
+  void show_chat_() {
+    std::vector<ChatMsg> msgs = chat_active_ ? chat_in_ : std::vector<ChatMsg>{};
     if (msgs.size() > CHAT_N) msgs.erase(msgs.begin(), msgs.end() - CHAT_N);
     bool same = msgs.size() == chat_.size();
     for (size_t i = 0; same && i < msgs.size(); i++)
@@ -1475,10 +1493,15 @@ class Controller {
     menu_open_ = info_open_ = false;
     render();
   }
+  void clear_chat_() {
+    chat_in_.clear();
+    show_chat_();
+  }
   void end_call_(bool local) {
     if (!in_call_) return;
     if (talking_) set_talk_(false);
     in_call_ = false;
+    if (door_call_ != 1) clear_chat_();   // R22: the call is over here and at the door
     visitor_.clear();
     visitor_lang_.clear();
     visitor_role_.clear();
@@ -1815,7 +1838,10 @@ class Controller {
   uint32_t answered_ms_ = 0;
   static constexpr uint32_t JOIN_UNKNOWN_MS = 120000;
   std::string visitor_, visitor_lang_, visitor_role_, live_started_;
-  std::vector<ChatMsg> chat_;
+  std::vector<ChatMsg> chat_, chat_in_;   // shown; as received from aikos' call log
+  bool chat_active_ = false;              // the call log's "active" (R22: no chat without it)
+  uint32_t call_id_ = 0;
+  bool call_id_known_ = false;
   std::vector<lv_obj_t *> chat_rows_;
   lv_obj_t *chat_box_ = nullptr, *talk_zone_ = nullptr;
   int chat_back_ = 0;            // 1 = scrolled back (a press moves 100 px up; at the top it returns to the newest)
