@@ -38,6 +38,7 @@ substitutions:
   visitor_entity: sensor.talk_transcript_door   # device files may override
   visitor_language_attr: language_name_en        # language_name = German names (for language: de)
   live_entity: sensor.talk_live_door             # partial text while the visitor talks
+  call_log_entity: sensor.aikos_call_log         # the conversation as a chat (aikos; tests: sensor.aikos_call_log_test)
 
 api:
   encryption:
@@ -102,7 +103,33 @@ switch:
           c.set_lights_state(id(ha_light_state).state);
           c.set_alarm_state(id(ha_alarm_state).state);
 
+json:
+
 text_sensor:
+  # The conversation as a chat (R17.6): aikos keeps the log, the key only draws it (the one source for both screens).
+  - platform: homeassistant
+    id: ha_call_log
+    entity_id: ${call_log_entity}
+    attribute: messages_json
+    internal: true
+    on_value:
+      - lambda: |-
+          std::vector<roomkey::Controller::ChatMsg> msgs;
+          if (!x.empty() && x[0] == '[') {
+            JsonDocument doc = json::parse_json(x);
+            for (JsonObject m : doc.as<JsonArray>()) {
+              roomkey::Controller::ChatMsg c;
+              c.id = (const char *) (m["id"] | "");
+              c.who = (const char *) (m["who"] | "");
+              c.role = (const char *) (m["role"] | "");
+              c.text = (const char *) (m["text"] | "");
+              c.lang = (const char *) (m["lang"] | "");
+              c.door = std::string((const char *) (m["side"] | "")) == "door";
+              c.urgent = m["urgent"] | false;
+              if (!c.text.empty()) msgs.push_back(std::move(c));
+            }
+          }
+          roomkey::ctl().set_chat(std::move(msgs));
   # Who is at the door, as the visitor introduced themselves (door-side transcript, aikos vertraege.md §6).
   - platform: homeassistant
     id: ha_visitor

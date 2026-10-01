@@ -20,6 +20,7 @@
 #include <cstring>
 #include <functional>
 #include <string>
+#include <vector>
 
 #include "esphome/core/hal.h"
 #include "esphome/core/log.h"
@@ -121,7 +122,7 @@ inline bool self_declared(const std::string &role) {
 struct Strings {
   const char *press, *hold;
   const char *lights_on, *lights_off, *lights_unknown;
-  const char *a_lights, *a_menu, *a_disarm, *a_answer, *a_talk, *a_end, *a_next, *a_select, *a_back, *a_cancel;
+  const char *a_lights, *a_menu, *a_disarm, *a_answer, *a_talk, *a_end, *a_next, *a_select, *a_back, *a_cancel, *a_older;
   const char *doorbell, *listening, *talking, *connecting;
   const char *alarm, *entry_delay, *hold_to_disarm, *disarming, *disarmed, *not_confirmed;
   const char *armed_home, *armed_away, *armed_night, *armed_vacation, *armed_custom, *arming;
@@ -134,7 +135,7 @@ struct Strings {
 static const Strings STR_EN = {
     "PRESS", "HOLD",
     "Lights on", "Lights off", "Lights",
-    "Lights", "Menu", "Disarm", "Answer", "Talk", "End", "Next", "Select", "Back", "Cancel",
+    "Lights", "Menu", "Disarm", "Answer", "Talk", "End", "Next", "Select", "Back", "Cancel", "Older",
     "Doorbell", "Listening", "Talking", "Connecting",
     "ALARM", "ENTRY DELAY", "Hold to disarm", "Disarming", "Disarmed", "Not confirmed",
     "Armed · Home", "Armed · Away", "Armed · Night", "Armed · Vacation", "Armed", "Arming",
@@ -147,7 +148,7 @@ static const Strings STR_EN = {
 static const Strings STR_DE = {
     "DRÜCKEN", "HALTEN",
     "Licht an", "Licht aus", "Licht",
-    "Licht", "Menü", "Unscharf", "Annehmen", "Sprechen", "Auflegen", "Weiter", "Wählen", "Zurück", "Abbruch",
+    "Licht", "Menü", "Unscharf", "Annehmen", "Sprechen", "Auflegen", "Weiter", "Wählen", "Zurück", "Abbruch", "Früher",
     "Klingel", "Hören", "Sprechen", "Verbinde",
     "ALARM", "VORALARM", "Halten = entschärfen", "Entschärfe", "Entschärft", "Nicht bestätigt",
     "Scharf · Zuhause", "Scharf · Abwesend", "Scharf · Nacht", "Scharf · Urlaub", "Scharf", "Schärfe",
@@ -384,6 +385,10 @@ class Controller {
     // a timestamp *after* `now`, and unsigned `now - later` would underflow.
     if (ringing_ && age_(ring_since_) > (int32_t) cfg.ring_timeout_ms) ring_stop(true);
     if (in_call_ && !talking_ && age_(call_since_) > (int32_t) cfg.call_max_ms) end_call_(false);
+    if (chat_back_ > 0 && age_(chat_back_ms_) > 8000) {   // scrolled back: return to the newest message
+      chat_back_ = 0;
+      scroll_chat_(true);
+    }
     if (menu_open_ && age_(last_input_ms_) > 9000) { ESP_LOGD(TAG, "menu timeout"); menu_open_ = false; render(); }
     if (info_open_ && age_(last_input_ms_) > 15000) { info_open_ = false; render(); }
     if (disarming_ && age_(disarm_since_) > 8000) {
@@ -510,6 +515,31 @@ class Controller {
     visitor_lang_ = lang;
     render_door_labels_();
     if (built_) render_ring_();
+  }
+  // The conversation as a chat (aikos sensor.aikos_call_log, R17.6): the last CHAT_N messages, oldest first.
+  struct ChatMsg {
+    std::string id, who, role, text, lang;
+    bool door = false, urgent = false;
+  };
+  static constexpr size_t CHAT_N = 10;
+  void set_chat(std::vector<ChatMsg> msgs) {
+    if (msgs.size() > CHAT_N) msgs.erase(msgs.begin(), msgs.end() - CHAT_N);
+    bool same = msgs.size() == chat_.size();
+    for (size_t i = 0; same && i < msgs.size(); i++)
+      same = msgs[i].id == chat_[i].id && msgs[i].text == chat_[i].text && msgs[i].who == chat_[i].who &&
+             msgs[i].lang == chat_[i].lang;
+    if (same) return;
+    const bool grew = !msgs.empty() && (chat_.empty() || msgs.back().id != chat_.back().id);
+    chat_ = std::move(msgs);
+    if (in_call_ && grew) {
+      call_seen_ms_ = millis();                                   // a new message brings the call view back
+      if (chat_.back().door) live_text_.clear(), live_shown_ = 0;  // the visitor's final words are in the chat now
+    }
+    chat_back_ = 0;
+    if (built_) {
+      build_chat_();
+      render();
+    }
   }
   bool in_call() const { return in_call_; }
   bool talking() const { return talking_; }
@@ -745,7 +775,16 @@ class Controller {
     call_timer_ = label_(v_call_, fonts.big, pal::TEXT, "0:00");
     lv_obj_align(call_timer_, LV_ALIGN_TOP_MID, 0, 48);
     call_disc_ = hero_(v_call_, 152, &call_icon_, nullptr);
-    call_live_ = live_label_(v_call_, 84, 136);
+    // the chat (R17.6) replaces the ear while listening; the visitor's words in progress are its last row
+    chat_box_ = box_(v_call_);
+    lv_obj_set_size(chat_box_, 164, 160);
+    lv_obj_align(chat_box_, LV_ALIGN_TOP_MID, 0, 58);
+    lv_obj_add_flag(chat_box_, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_scrollbar_mode(chat_box_, LV_SCROLLBAR_MODE_OFF);
+    lv_obj_set_scroll_dir(chat_box_, LV_DIR_VER);
+    lv_obj_add_flag(chat_box_, LV_OBJ_FLAG_HIDDEN);
+    call_live_ = live_label_(chat_box_, 0, 0);
+    lv_obj_align(call_live_, LV_ALIGN_TOP_LEFT, 0, 0);
     if (cfg.has_touch) {  // press-and-hold the disc = talk (same as the key)
       lv_obj_add_flag(call_disc_, LV_OBJ_FLAG_CLICKABLE);
       lv_obj_add_event_cb(call_disc_, &Controller::on_call_disc_cb_, LV_EVENT_ALL, this);
@@ -1086,14 +1125,71 @@ class Controller {
     bool show = !live_text_.empty();
     std::string tail = live_tail_();
     for (lv_obj_t *l : {ring_live_, call_live_}) lv_label_set_text(l, tail.c_str());
-    // ring view: the text replaces the bell; call view: replaces the ear (the mic still shows while you talk)
-    bool ring_text = show, call_text = show && !talking_;
+    // ring view: the text replaces the bell; call view: the chat + text in progress replace the ear (the mic
+    // still shows while you talk)
+    bool ring_text = show, call_text = (show || !chat_rows_.empty()) && !talking_;
     if (ring_text) lv_obj_remove_flag(ring_live_, LV_OBJ_FLAG_HIDDEN); else lv_obj_add_flag(ring_live_, LV_OBJ_FLAG_HIDDEN);
     for (lv_obj_t *o : {ring_disc_, ripples_[0], ripples_[1]}) {
       if (ring_text) lv_obj_add_flag(o, LV_OBJ_FLAG_HIDDEN); else lv_obj_remove_flag(o, LV_OBJ_FLAG_HIDDEN);
     }
-    if (call_text) lv_obj_remove_flag(call_live_, LV_OBJ_FLAG_HIDDEN); else lv_obj_add_flag(call_live_, LV_OBJ_FLAG_HIDDEN);
+    if (show) lv_obj_remove_flag(call_live_, LV_OBJ_FLAG_HIDDEN); else lv_obj_add_flag(call_live_, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_set_style_text_align(call_live_, chat_rows_.empty() ? LV_TEXT_ALIGN_CENTER : LV_TEXT_ALIGN_LEFT, 0);
+    if (call_text) lv_obj_remove_flag(chat_box_, LV_OBJ_FLAG_HIDDEN); else lv_obj_add_flag(chat_box_, LV_OBJ_FLAG_HIDDEN);
     if (call_text) lv_obj_add_flag(call_disc_, LV_OBJ_FLAG_HIDDEN); else lv_obj_remove_flag(call_disc_, LV_OBJ_FLAG_HIDDEN);
+    if (call_text && chat_back_ == 0) scroll_chat_(false);
+  }
+
+  // One bubble per message, laid out by hand (no flex in this LVGL build): visitor left with type icon + who
+  // (cyan), this house right (green), red frame for an emergency; the words in progress follow below.
+  void build_chat_() {
+    for (lv_obj_t *r : chat_rows_) lv_obj_delete(r);
+    chat_rows_.clear();
+    const int W = 156, TEXT_MAX = 134, PAD_X = 6, PAD_Y = 3, HEAD_H = 16, GAP = 5;
+    int y = 0;
+    for (const ChatMsg &m : chat_) {
+      const uint32_t col = m.urgent ? pal::RED : m.door ? pal::CYAN : pal::GREEN;
+      const std::string who = m.who + (m.lang.empty() ? "" : " · " + m.lang);
+      lv_point_t ts, ws;
+      lv_text_get_size(&ts, m.text.c_str(), fonts.small, 0, 0, TEXT_MAX, LV_TEXT_FLAG_NONE);
+      lv_text_get_size(&ws, who.c_str(), fonts.small, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
+      const int icon_w = m.door ? 19 : 0;
+      const int who_w = std::min<int>(ws.x + 2, TEXT_MAX - icon_w);
+      const int inner_w = std::max<int>(std::min<int>(ts.x + 2, TEXT_MAX), icon_w + who_w);
+      const int bw = inner_w + 2 * PAD_X, bh = HEAD_H + ts.y + 2 * PAD_Y;
+      lv_obj_t *b = box_(chat_box_);
+      lv_obj_set_size(b, bw, bh);
+      lv_obj_set_pos(b, m.door ? 0 : W - bw, y);
+      lv_obj_set_style_radius(b, 8, 0);
+      lv_obj_set_style_bg_opa(b, LV_OPA_COVER, 0);
+      lv_obj_set_style_bg_color(b, lv_color_hex(m.door ? pal::RAISED : pal::SURFACE), 0);
+      if (m.urgent) {
+        lv_obj_set_style_border_width(b, 1, 0);
+        lv_obj_set_style_border_color(b, lv_color_hex(pal::RED), 0);
+      }
+      if (m.door) {
+        lv_obj_t *ic = label_(b, fonts.icon_sm, col,
+                              icon::visitor(m.urgent && (m.role.empty() || m.role == "name") ? "emergency" : m.role));
+        lv_obj_set_pos(ic, PAD_X, PAD_Y - 1);
+      }
+      lv_obj_t *w = label_(b, fonts.small, col, who.c_str());
+      lv_label_set_long_mode(w, LV_LABEL_LONG_DOT);
+      lv_obj_set_size(w, who_w, HEAD_H);   // one line, "…" when too long
+      lv_obj_set_pos(w, PAD_X + icon_w, PAD_Y);
+      lv_obj_t *t = label_(b, fonts.small, pal::TEXT, m.text.c_str());
+      lv_label_set_long_mode(t, LV_LABEL_LONG_WRAP);
+      lv_obj_set_width(t, std::min<int>(ts.x + 2, TEXT_MAX));
+      lv_obj_set_pos(t, PAD_X, PAD_Y + HEAD_H);
+      chat_rows_.push_back(b);
+      y += bh + GAP;
+    }
+    chat_end_y_ = y;
+    lv_obj_align(call_live_, LV_ALIGN_TOP_LEFT, 0, y);   // the words in progress below the last message
+  }
+  void scroll_chat_(bool anim) {   // to the newest: the words in progress, else the last message
+    lv_obj_update_layout(chat_box_);
+    lv_obj_t *target = !lv_obj_has_flag(call_live_, LV_OBJ_FLAG_HIDDEN) ? call_live_
+                       : chat_rows_.empty() ? nullptr : chat_rows_.back();
+    if (target) lv_obj_scroll_to_view(target, anim ? LV_ANIM_ON : LV_ANIM_OFF);
   }
 
   void render_ring_() {
@@ -1168,7 +1264,11 @@ class Controller {
       case View::MENU: press = S->a_next; hold = S->a_select; break;
       case View::INFO: press = S->a_back; break;
       case View::RING: press = S->a_answer; hold = S->a_talk; hold_col = pal::GREEN; break;
-      case View::CALL: hold = S->a_talk; hold_col = pal::GREEN; break;   // push-to-talk only: no hang-up
+      case View::CALL:   // push-to-talk only: no hang-up
+        press = chat_rows_.empty() ? nullptr : S->a_older;
+        hold = S->a_talk;
+        hold_col = pal::GREEN;
+        break;
       case View::ALARM: hold = disarming_ ? nullptr : S->a_disarm; hold_col = pal::RED; break;
     }
     const char *acts[2] = {press, hold};
@@ -1195,7 +1295,16 @@ class Controller {
         break;
       case View::INFO: info_open_ = false; render(); break;
       case View::RING: answer_(); break;
-      case View::CALL: break;  // push-to-talk only: a short press does nothing, the call ends after 2 min quiet
+      case View::CALL:  // push-to-talk only, no hang-up. A press scrolls the chat one message back.
+        if (!chat_rows_.empty()) {
+          lv_obj_update_layout(chat_box_);
+          chat_back_ = lv_obj_get_scroll_top(chat_box_) > 0;   // at the oldest already: back to the newest
+          chat_back_ms_ = millis();
+          call_seen_ms_ = millis();
+          if (chat_back_) lv_obj_scroll_by_bounded(chat_box_, 0, 100, LV_ANIM_ON);
+          else scroll_chat_(true);
+        }
+        break;
       case View::ALARM:
         if (!disarming_) { shake_(alarm_disc_); show_toast_(S->hold_to_disarm, 1400); }
         break;
@@ -1590,6 +1699,12 @@ class Controller {
   bool pending_press_ = false, double_ = false;
   uint32_t pending_press_ms_ = 0;
   std::string visitor_, visitor_lang_, visitor_role_;
+  std::vector<ChatMsg> chat_;
+  std::vector<lv_obj_t *> chat_rows_;
+  lv_obj_t *chat_box_ = nullptr;
+  int chat_back_ = 0;            // 1 = scrolled back (a press moves 100 px up; at the top it returns to the newest)
+  int chat_end_y_ = 0;
+  uint32_t chat_back_ms_ = 0;
   bool visitor_urgent_ = false;
   uint32_t visitor_text_n_ = 0;
   lv_obj_t *ring_door_ = nullptr, *call_door_ = nullptr;

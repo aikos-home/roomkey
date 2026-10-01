@@ -98,7 +98,25 @@ class Tour {
         {700, nullptr, "06_call_talking_hold"},
         {400, key(false), nullptr},
         {900, nullptr, "07_call_listening"},
-        {10500, nullptr, "07b_call_over_after_silence"},   // R17.8: "Call silence end" 10 s without speech
+        {300, []() {
+           using M = Controller::ChatMsg;
+           std::vector<M> chat;
+           M a; a.id = "door-1"; a.door = true; a.who = "Paketdienst · DHL"; a.role = "parcel";
+           a.text = "Guten Tag, ich habe ein Paket für Sie, passt nicht in den Briefkasten."; chat.push_back(a);
+           M b; b.id = "room-1"; b.who = "Martin"; b.text = "Ich komme gleich runter."; chat.push_back(b);
+           M c; c.id = "door-2"; c.door = true; c.who = "Paketdienst · DHL"; c.role = "parcel"; c.lang = "Polish";
+           c.text = "Alles klar, ich warte."; chat.push_back(c);
+           ctl().set_chat(chat);
+           ctl().set_live_text("Kann ich es auch beim Nachbarn");
+         }, nullptr},
+        {2500, nullptr, "07c_call_chat"},
+        {200, key(true), nullptr},
+        {90, key(false), nullptr},
+        {700, nullptr, "07d_chat_older"},
+        {200, key(true), nullptr},
+        {90, key(false), nullptr},
+        {700, nullptr, "07e_chat_oldest_then_newest"},
+        {11000, nullptr, "07b_call_over_after_silence"},   // R17.8: "Call silence end" 10 s without speech
         {200, key(true), nullptr},
         {90, key(false), nullptr},
         {500, key(true), nullptr},
