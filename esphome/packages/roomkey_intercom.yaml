@@ -29,7 +29,7 @@ esphome:
             auto prev_talk = c.hooks.talk;
             c.hooks.talk = [prev_talk](bool on) {
               if (prev_talk) prev_talk(on);
-              roomkey::audio().set_tx(on);
+              roomkey::audio().set_tx(on && !roomkey::ctl().floor_busy());   // a busy key sends nothing
             };
             auto prev_hangup = c.hooks.hangup;
             c.hooks.hangup = [prev_hangup]() {
@@ -68,7 +68,9 @@ interval:
             }
           } else {
             // audio in only during a call, or before an answer if this room wants to hear the visitor (R17.13)
-            a.set_accept(c.in_call() || (c.ringing() && id(rk_hear_before_now).state));
+            // ... and only until someone answered (R19: then join with a press)
+            a.set_accept(c.in_call() || (c.ringing() && !c.door_answered() && id(rk_hear_before_now).state));
+            if (c.talking() && c.sends() != a.tx()) a.set_tx(c.sends());   // the floor came free / was taken
             a.loop();
             if (c.in_call()) c.set_level(a.rx_level);
             else if (a.tx() && !c.test_recording()) a.end_session();   // call ended elsewhere (door hung up)

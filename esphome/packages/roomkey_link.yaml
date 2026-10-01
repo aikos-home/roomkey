@@ -1,10 +1,11 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# RoomKey → door, device to device (voice v2, WIP; aikos features/sprechen.md §4b, contract by the door thread):
-#   talk_held  this key's talk button is held: the door plays this key only then
-#   in_call    this key takes part in the call: the door's call ends when no key is in it any more
-# packet_transport over UDP 18511, unicast to the door talk computer, encrypted with key_link_key (one key for
-# all RoomKeys), rolling code, sent on change and every second. Provider name = node name.
-# The door listens for it from voice v2 on; until then Home Assistant forwards talk_start/talk_stop.
+# RoomKey ⇄ door, device to device (voice v2, WIP; aikos features/sprechen.md §4b, contract in aikos_voice README #11):
+#   key → door   key_state      0 idle, 1 in the call, 2 holding (talks). A sensor, not binaries: the door's call
+#                               model needs the refresh every second, and a remote binary only fires on change.
+#   door → keys  door_call_id   the door's call (0 = none), door_answered (someone answered, R19), floor_key (last
+#                               octet of the key that has the floor, 0 = none → "besetzt" when another key holds)
+# packet_transport over UDP 18511, encrypted with key_link_key (one key for all RoomKeys and the door), rolling code.
+# The key sends unicast to the door talk computer (sent on change + every second); the door broadcasts.
 # The key is compiled in (secrets.yaml). Owner's decision 01.10.: voice v2 runs on this; afterwards pairing in the
 # HA GUI with a shared aikos_link block replaces this package (aikos features/kopplung.md).
 # secrets.yaml: key_link_key, door_talk_host (IP of the door talk computer).
@@ -15,24 +16,63 @@ udp:
 
 packet_transport:
   - platform: udp
+    id: rk_link
     udp_id: rk_link_udp
     update_interval: 1s
     rolling_code_enable: true
     encryption: !secret key_link_key
-    binary_sensors:
-      - talk_held
-      - in_call
+    sensors:
+      - key_state
+    providers:
+      - name: aikos-intercom-talk
+        encryption: !secret key_link_key
 
-binary_sensor:
+sensor:
   - platform: template
-    id: talk_held
-    name: Talk held
-    icon: mdi:microphone
-    entity_category: diagnostic
-    lambda: return roomkey::ctl().talking();
-  - platform: template
-    id: in_call
-    name: In call
+    id: key_state
+    name: Key state                        # 0 idle, 1 in the call, 2 holding
     icon: mdi:phone-in-talk
     entity_category: diagnostic
-    lambda: return roomkey::ctl().in_call();
+    accuracy_decimals: 0
+    update_interval: never                 # published on change below; the transport resends it every second
+  - platform: packet_transport
+    id: rk_door_call_id
+    provider: aikos-intercom-talk
+    remote_id: door_call_id
+    internal: true
+    on_value:
+      - lambda: roomkey::ctl().set_door_call(x != 0);
+  - platform: packet_transport
+    id: rk_floor_key
+    provider: aikos-intercom-talk
+    remote_id: floor_key
+    internal: true
+    on_value:
+      - lambda: |-
+          // another key has the floor: this key's hold is "besetzt" (and sends nothing, see roomkey_intercom.yaml)
+          int own = 0;
+          for (auto &ip : network::get_ip_addresses()) {
+            if (!ip.is_ip4()) continue;
+            char buf[network::IP_ADDRESS_BUFFER_SIZE];
+            const char *dot = strrchr(ip.str_to(buf), '.');
+            if (dot != nullptr) own = atoi(dot + 1);
+            break;
+          }
+          roomkey::ctl().set_floor_busy(x > 0 && (int) x != own);
+
+binary_sensor:
+  - platform: packet_transport
+    id: rk_door_answered
+    provider: aikos-intercom-talk
+    remote_id: door_answered
+    internal: true
+    on_state:
+      - lambda: roomkey::ctl().set_door_answered(x);
+
+interval:
+  - interval: 20ms
+    then:
+      - lambda: |-
+          auto &c = roomkey::ctl();
+          const float s = c.talking() ? 2 : c.in_call() ? 1 : 0;
+          if (id(key_state).state != s) id(key_state).publish_state(s);   // NaN at boot → published once

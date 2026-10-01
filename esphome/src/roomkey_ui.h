@@ -131,6 +131,7 @@ struct Strings {
   const char *tap_hint;
   const char *speaks;  // printf: the visitor's language
   const char *answered, *join_hint, *a_join, *hold_here;  // another room answered (R19); touch: hold below the chat
+  const char *busy;                                       // another room has the floor (R17.14)
 };
 
 static const Strings STR_EN = {
@@ -145,6 +146,7 @@ static const Strings STR_EN = {
     "Press the key for lights",
     "Speaks %s",
     "Answered", "Press to listen in", "Listen", "Hold here to talk",
+    "Busy · another room talks",
 };
 
 static const Strings STR_DE = {
@@ -159,6 +161,7 @@ static const Strings STR_DE = {
     "Taste drücken für Licht",
     "Spricht %s",
     "Angenommen", "Drücken: mithören", "Mithören", "Hier halten: sprechen",
+    "Besetzt · anderer Raum spricht",
 };
 
 // ── Model ────────────────────────────────────────────────────────────────────
@@ -548,10 +551,22 @@ class Controller {
       render();
     }
   }
+  // From the door (voice v2): someone answered (R19: no more listening before an answer) and another key has the
+  // floor ("besetzt": this key's hold sends nothing until the floor is free).
+  void set_door_answered(bool on) { door_answered_ = on; }
+  bool door_answered() const { return door_answered_; }
+  void set_floor_busy(bool busy) {
+    if (busy == floor_busy_) return;
+    floor_busy_ = busy;
+    if (!busy && talking_) talk_since_ms_ = millis();   // the floor came free: the talk clock starts now
+    if (built_) render();
+  }
+  bool floor_busy() const { return floor_busy_; }
+  bool sends() const { return talking_ && !floor_busy_; }   // the mic goes to the door and the transcriber only then
   // The door has a call (aikos binary_sensor.aikos_intercom_talk_in_call; with voice v2 straight from the door).
   void set_door_call(bool on) {
     door_call_ = on ? 1 : 0;
-    if (!on) answered_elsewhere_ = false;
+    if (!on) answered_elsewhere_ = false, door_answered_ = false, floor_busy_ = false;
     if (built_) render();
   }
   bool in_call() const { return in_call_; }
@@ -1244,12 +1259,17 @@ class Controller {
     // Walkie-talkie, not a phone call: the clock shows how long you are talking right now, nothing while listening
     // (a conversation stays open for minutes in the background; its total length would look like a long call).
     char t[12] = "";
-    if (talking_) {
+    if (talking_ && !floor_busy_) {   // busy: nothing goes out, so no talk clock
       uint32_t s = (millis() - talk_since_ms_) / 1000;
       snprintf(t, sizeof(t), "%u:%02u", (unsigned) (s / 60), (unsigned) (s % 60));
     }
     lv_label_set_text(call_timer_, t);
-    if (talking_) {
+    if (talking_ && floor_busy_) {   // holding, but another room has the floor: nothing is sent (R17.14)
+      lv_label_set_text(call_icon_, icon::MIC);
+      style_disc_(call_disc_, call_icon_, pal::ORANGE, LV_OPA_20, 3, false);
+      lv_label_set_text(call_state_, S->busy);
+      lv_obj_set_style_text_color(call_state_, lv_color_hex(pal::ORANGE), 0);
+    } else if (talking_) {
       lv_label_set_text(call_icon_, icon::MIC);
       style_disc_(call_disc_, call_icon_, pal::GREEN, LV_OPA_30, 4, true);
       lv_label_set_text(call_state_, S->talking);
@@ -1262,7 +1282,7 @@ class Controller {
       lv_obj_set_style_text_color(call_state_, lv_color_hex(pal::CYAN), 0);
     }
     for (int i = 0; i < METER_N; i++)
-      lv_obj_set_style_bg_color(meter_[i], lv_color_hex(talking_ ? pal::GREEN : pal::CYAN), 0);
+      lv_obj_set_style_bg_color(meter_[i], lv_color_hex(talking_ ? (floor_busy_ ? pal::ORANGE : pal::GREEN) : pal::CYAN), 0);
   }
 
   void render_alarm_() {
@@ -1756,7 +1776,7 @@ class Controller {
   uint32_t call_seen_ms_ = 0, talk_since_ms_ = 0;
   bool pending_press_ = false, double_ = false;
   uint32_t pending_press_ms_ = 0;
-  bool answered_elsewhere_ = false;
+  bool answered_elsewhere_ = false, door_answered_ = false, floor_busy_ = false;
   int door_call_ = -1;                                  // -1 unknown, 0 no call at the door, 1 call
   uint32_t answered_ms_ = 0;
   static constexpr uint32_t JOIN_UNKNOWN_MS = 120000;

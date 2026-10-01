@@ -144,6 +144,13 @@ class Tour {
         {200, key(true), nullptr},
         {90, key(false), nullptr},
         {800, nullptr, "19_joined_chat_touch"},
+        // R17.14: holding while another room has the floor → "besetzt", nothing is sent
+        {200, []() { ctl().set_floor_busy(true); }, nullptr},
+        {200, key(true), nullptr},
+        {900, nullptr, "20_busy_another_room_talks"},
+        {200, []() { ctl().set_floor_busy(false); }, nullptr},
+        {300, nullptr, "21_floor_free_talking"},
+        {200, key(false), nullptr},
     };
     timer_ = lv_timer_create(&Tour::tick_cb_, 20, this);
     next_at_ = esphome::millis() + 1500;  // let the UI settle
