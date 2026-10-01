@@ -34,6 +34,7 @@ import wave
 from pathlib import Path
 
 from talk_identity import WHISPER_PROMPT, identify, is_noise, prompt_echo, strip_captions, strip_echo
+from talk_live import resident_talk
 
 
 def has_speech(wav: Path, min_s: float = 0.3) -> bool:
@@ -147,28 +148,24 @@ def spoken_language(d: dict) -> tuple[str, float]:
     return (code, p) if p >= (LANG_MIN_P_EN if code == "en" else LANG_MIN_P) else ("de", p)
 
 
-def drop_echo(text: str, ha_url: str, token: str, window_s: float = 30.0, ref_entity: str = "sensor.talk_transcript",
-              activity_file: str = "", wait_s: float = 4.0) -> str:
-    """The door mic hears the resident through the door speaker (voice v2: door mic always on). Drop door sentences that
-    mostly repeat what a RoomKey transcript said in the last window_s seconds. If a resident talked after the last room
-    transcript (activity_file, touched by the room receiver), that transcript is still being made: wait up to wait_s."""
+def drop_echo(text: str, ha_url: str, token: str, door_span: tuple[float, float], activity_file: str,
+              ref_entity: str = "sensor.talk_transcript", wait_s: float = 4.0) -> str:
+    """The door mic hears the resident through the door speaker (voice v2: door mic on for the whole call). If a
+    resident talked while this door audio was recorded (door_span = start, end), drop the door sentences that mostly
+    repeat the resident's transcript, waiting up to wait_s for it. No overlap: nothing to drop (and no delay)."""
+    began, last = resident_talk(activity_file)
+    if not began or min(last, door_span[1]) - max(began, door_span[0]) < 0.5:
+        return text                                    # < 0.5 s together: not even a word of echo
     deadline = time.time() + wait_s
     while True:
         try:
             room = ha(ha_url, token, "GET", f"/api/states/{ref_entity}")
             made = dt.datetime.fromisoformat(room["state"]).timestamp()
-            said = room["attributes"].get("text", "")
         except Exception:
             return text
-        try:
-            active = os.path.getmtime(activity_file) if activity_file else 0.0
-        except OSError:
-            active = 0.0
-        if active - 1.0 > made and time.time() - active < 15 and time.time() < deadline:
-            time.sleep(0.3)
-            continue
-        break
-    return strip_echo(text, said) if time.time() - made <= window_s else text
+        if made >= began - 0.2 or time.time() >= deadline:
+            return strip_echo(text, room["attributes"].get("text", ""))
+        time.sleep(0.3)
 
 
 def ha(url: str, token: str, method: str, path: str, body=None):
@@ -243,7 +240,8 @@ def main():
             text = (to_german(original, LANGUAGES.get(lang, (lang,))[0], a.llm_url, a.llm_model) if not a.no_llm else "") or text
         took = time.time() - t0
     if a.side == "door":
-        text = drop_echo(text, a.ha_url, token, ref_entity=a.echo_ref, activity_file=a.activity_file)
+        end = a.wav.stat().st_mtime
+        text = drop_echo(text, a.ha_url, token, (end - duration, end), a.activity_file, ref_entity=a.echo_ref)
         if not text:
             print(f"· door: only an echo of the resident in {a.wav.name}, not published", flush=True)
             return

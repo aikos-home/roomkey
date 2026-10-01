@@ -21,7 +21,8 @@
 #   AIKOS_LIVE          1 = publish partial text while talking (sensor.talk_live_door / sensor.talk_live);
 #                       default 1 for the door side, 0 for the room side
 #   AIKOS_STATE_DIR     default ~/Library/Application Support/aikos/transcriber (shared by both sides: "a resident talks")
-#   AIKOS_SPLIT         door side: 1 = cut the always-on door mic into utterances at pauses (default 1)
+#   AIKOS_SPLIT         door side: 1 = cut the door audio into utterances at pauses. Default 0 (voice v1: the door
+#                       talks push-to-talk). Set 1 when the door runs voice v2 (mic on for the whole call).
 # If the port is taken (e.g. another receiver still runs), the script exits; launchd starts it again.
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
@@ -53,7 +54,7 @@ if [ "$side" = room ]; then
 else
   # voice v2: the door mic may stay on for the whole call → cut it into utterances at pauses; no live text while a
   # resident talks, and door sentences that only repeat the resident are dropped (the door mic hears the door speaker)
-  if [ "${AIKOS_SPLIT:-1}" = 1 ]; then extra+=(--split-on-silence); fi
+  if [ "${AIKOS_SPLIT:-0}" = 1 ]; then extra+=(--split-on-silence); fi
   extra+=(--live-quiet-file "$active")
   echo_args="--activity-file $(q "$active")"
 fi

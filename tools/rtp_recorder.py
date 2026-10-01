@@ -167,6 +167,8 @@ def main():
                 preroll[src].append((seq, payload))
                 continue
             rec = recs[src] = Recording(a.out, src)
+            if a.activity_file:
+                Path(a.activity_file).write_text(f"{time.time():.3f}\n")   # when this resident began (see talk_live)
             if live:
                 live.start(rec)
             if a.on_start:

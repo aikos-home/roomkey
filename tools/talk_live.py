@@ -44,6 +44,17 @@ def has_speech_pcm(pcm: bytes, min_s: float = 0.3) -> bool:
     return sum(1 for d in db if d > max(floor + 12.0, -50.0)) * 0.02 >= min_s
 
 
+def resident_talk(activity_file: str) -> tuple[float, float]:
+    """(start, last audio) of the latest resident talk, from the room receiver's activity file; (0, 0) if unknown."""
+    try:
+        last = os.path.getmtime(activity_file)
+        with open(activity_file) as f:
+            start = float(f.read().strip() or last)
+        return min(start, last), last
+    except (OSError, ValueError):
+        return 0.0, 0.0
+
+
 def wav_bytes(pcm: bytes) -> bytes:
     b = io.BytesIO()
     with wave.open(b, "wb") as w:
@@ -92,16 +103,13 @@ class Live:
                 started, done_len = self.started, self.done_len
             if len(pcm) - done_len < int(0.3 * RATE) * 2 or not has_speech_pcm(pcm):
                 continue
-            try:
-                active = os.path.getmtime(self.quiet_file) if self.quiet_file else 0.0
-            except OSError:
-                active = 0.0
+            began, active = resident_talk(self.quiet_file) if self.quiet_file else (0.0, 0.0)
             if time.time() - active < 0.8:
                 self.overlap = True             # a resident is talking: the door mic hears the door speaker
                 continue
             said = None
             if self.overlap:                    # this utterance overlapped the resident: wait for the resident's text
-                said = self._resident_text(active)
+                said = self._resident_text(began, active)
                 if said is None:
                     continue
             try:
@@ -130,8 +138,8 @@ class Live:
                 speaker, seq = self.speaker, self.seq
             self._publish(started, text, speaker, False, seq)
 
-    def _resident_text(self, active: float):
-        """The resident's last transcript once it covers the talk that ended at `active`; None while it is still made."""
+    def _resident_text(self, began: float, active: float):
+        """The resident's transcript of the talk that began at `began`; None while it is still being made."""
         req = urllib.request.Request(f"{self.ha_url}/api/states/{self.echo_ref}", headers={"Authorization": f"Bearer {self.token}"})
         try:
             with urllib.request.urlopen(req, timeout=5) as r:
@@ -139,7 +147,7 @@ class Live:
             made = dt.datetime.fromisoformat(st["state"]).timestamp()
         except Exception:
             return ""                           # no reference: show the partials unfiltered (the final text is filtered)
-        if made < active - 1.0 and time.time() - active < 5:
+        if made < began - 0.2 and time.time() - active < 5:
             return None
         return st["attributes"].get("text", "") if time.time() - made < 30 else ""
 
