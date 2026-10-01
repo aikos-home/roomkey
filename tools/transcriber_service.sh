@@ -1,4 +1,6 @@
 #!/bin/bash
+# MOVED to aikos-home/aikos services/transcriber (tag transcriber-v1.0.0). This copy is frozen: the Mac service
+# runs it until it switches to that tag, then it is removed here. Changes only there (PR + RoomKey review).
 # ─────────────────────────────────────────────────────────────────────────────
 # aikos transcriber (WIP): one receiver per side, meant to run under launchd.
 #   side "room": RoomKeys → UDP 5006 → sensor.talk_transcript        (shown at the door)

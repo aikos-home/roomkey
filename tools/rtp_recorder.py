@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# MOVED to aikos-home/aikos services/transcriber (tag transcriber-v1.0.0). This copy is frozen: the Mac service
+# runs it until it switches to that tag, then it is removed here. Changes only there (PR + RoomKey review).
 """
 rtp_recorder.py — save RoomKey audio streams (RTP / L16 / 16 kHz mono) as WAV files.
 

@@ -73,7 +73,7 @@ answered). Nothing leaves the house; when the transcriber is off, calls work as 
 
 ```
 key (talking) ── RTP copy ──▶ transcriber :5006  (side "room")  ─┐   Whisper (local)
-door (mic)    ── RTP copy ──▶ transcriber :5008  (side "door")  ─┤─▶ tools/talk_identity.py ─▶ Home Assistant
+door (mic)    ── RTP copy ──▶ transcriber :5008  (side "door")  ─┤─▶ who is speaking      ─▶ Home Assistant
                                                                   │     sensor.talk_transcript       (room → shown at the door)
                                                                   └──   sensor.talk_transcript_door  (door → shown on the keys)
 ```
@@ -82,12 +82,12 @@ door (mic)    ── RTP copy ──▶ transcriber :5008  (side "door")  ─┤
   (push-to-talk) every RTP packet also goes there. Only its own microphone, never the door's.
 * **Door station:** sends a copy of its microphone to port 5008 while ringing and during a call;
   the transcriber cuts a continuous stream into utterances at pauses (`--split-on-silence`).
-* **Transcriber** (`tools/rtp_recorder.py` + `tools/transcribe_publish.py`, e.g. on a Mac with
-  whisper.cpp): one WAV per utterance → text → who is speaking → HA state + event
+* **Transcriber** (aikos building block [`services/transcriber`](https://github.com/aikos-home/aikos/tree/main/services/transcriber),
+  tag `transcriber-v1.0.0`; it started here in `tools/`. E.g. on a Mac with whisper.cpp): one WAV per utterance → text → who is speaking → HA state + event
   `aikos_talk_transcript`. Attributes: `text`, `message` (without greeting and introduction),
   `speaker` ("Anna", "Paketdienst · DHL", "Polizei", "" if nobody introduced themselves),
   `speaker_kind`, `speaker_role`, `speaker_org`, `speaker_method`, `side`, `device`, …
-* **Who is speaking** (`tools/talk_identity.py`): rules first (self-introductions like "hier ist …",
+* **Who is speaking** (`aikos_transcriber.identity`): rules first (self-introductions like "hier ist …",
   "ich bin …", "… mein Name", "… hier", and roles or companies said up front), a local LLM through
   Ollama only when the rules find nobody; its answer counts only if the words are in the transcript.
   A role word later in a sentence is a topic, not an introduction ("beim Nachbarn abgeben").
@@ -102,18 +102,14 @@ door (mic)    ── RTP copy ──▶ transcriber :5008  (side "door")  ─┤
   visitor's `speaker`, and a foreign language shows as "Speaks Chinese"; both are cleared on the next ring
   and when the call ends. From a room only a name counts as a speaker (residents mention couriers as topics).
 * **Test recording** (WIP switch "TEST record after ring"): ends ~1.2 s after the last word (speech =
-  12 dB above the quietest level of the last 1.5 s), at most "TEST record length" seconds.
+  11 dB above the 5th percentile of the last 1.5 s, held for a third of 120 ms; `VoiceGate`, the same as
+  `aikos_voice` `level.h`), at most "TEST record length" seconds.
 
 ### Measuring it
 
-`tools/talk_eval.py` speaks test cases with macOS voices (German, and foreign voices reading German =
-accented German), degrades them (street noise, voices in the background, distance and echo, shouting,
-telephone band, the key's 120 Hz high-pass), transcribes them and scores who was recognised.
-`tools/talk_eval_cases.json` has 101 cases; an adversarial set of 308 more was used during development.
-
-Run it (example, both sides, German):
-
-```bash
-python3 tools/rtp_recorder.py --port 5006 --exec "python3 tools/transcribe_publish.py {wav} --side room --language de --source-ip {src} --ha-url http://<ha>:8123 --token-file <token>"
-python3 tools/rtp_recorder.py --port 5008 --split-on-silence --exec "python3 tools/transcribe_publish.py {wav} --side door --language de --source-ip {src} --ha-url http://<ha>:8123 --token-file <token>"
-```
+The eval moved with the transcriber: `services/transcriber/tools/talk_eval.py` in aikos-home/aikos speaks test cases
+with macOS voices (German, and foreign voices reading German = accented German), degrades them (street noise, voices in
+the background, distance and echo, shouting, telephone band, the key's 120 Hz high-pass), transcribes them and scores
+who was recognised. 716 cases (`services/transcriber/tests/eval/`): 98.9 % on the ideal transcripts with the local
+LLM; CI checks every case of the rules against a frozen snapshot. Running the transcriber: see its README
+(`python3 -m aikos_transcriber`, configuration from `AIKOS_*` environment variables).

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# MOVED to aikos-home/aikos services/transcriber (tag transcriber-v1.0.0). This copy is frozen: the Mac service
+# runs it until it switches to that tag, then it is removed here. Changes only there (PR + RoomKey review).
 """
 transcribe_publish.py — TEST (WIP): transcribe one intercom utterance with a local Whisper
 server, find out who is speaking (tools/talk_identity.py) and publish it in Home Assistant,

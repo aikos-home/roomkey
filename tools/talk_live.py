@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# MOVED to aikos-home/aikos services/transcriber (tag transcriber-v1.0.0). This copy is frozen: the Mac service
+# runs it until it switches to that tag, then it is removed here. Changes only there (PR + RoomKey review).
 """
 talk_live.py — live text while somebody is still talking (WIP). Used by tools/rtp_recorder.py --live.
 
