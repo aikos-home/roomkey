@@ -14,6 +14,7 @@
 //   gesture in progress, so one physical press never fires twice.
 // ─────────────────────────────────────────────────────────────────────────────
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -72,6 +73,48 @@ constexpr const char *CLOSE = "\U000F1398";         // mdi:close-thick
 constexpr const char *INFO = "\U000F02FD";          // mdi:information-outline
 constexpr const char *TIMER = "\U000F051F";         // mdi:timer-sand
 constexpr const char *DOOR = "\U000F081A";          // mdi:door
+
+// Visitor types (speaker_role from the door transcriber; aikos features/sprechen.md §2c). Small icon font only.
+inline const char *visitor(const std::string &role) {
+  static const struct { const char *role, *glyph; } MAP[] = {
+      {"emergency", "\U000F0026"},       // alert
+      {"parcel", "\U000F03D7"},          // package-variant-closed
+      {"mail", "\U000F01F0"},            // email-outline
+      {"food", "\U000F025A"},            // food
+      {"shopping", "\U000F0111"},        // cart-outline
+      {"pharmacy", "\U000F03F1"},        // mortar-pestle-plus (MDI has no "pharmacy" any more)
+      {"flowers", "\U000F024A"},         // flower
+      {"freight", "\U000F053D"},         // truck
+      {"police", "\U000F1167"},          // police-badge
+      {"fire", "\U000F08AB"},            // fire-truck
+      {"ambulance", "\U000F002F"},       // ambulance
+      {"officials", "\U000F0991"},       // office-building
+      {"utility", "\U000F1A57"},         // meter-electric
+      {"telecom", "\U000F0469"},         // router-wireless
+      {"trades", "\U000F1323"},          // hammer-wrench
+      {"chimney", "\U000F112B"},         // home-roof
+      {"waste", "\U000F0A7A"},           // trash-can-outline
+      {"care", "\U000F06EF"},            // medical-bag
+      {"property", "\U000F1574"},        // key-chain
+      {"household_help", "\U000F00E2"},  // broom
+      {"neighbour", "\U000F0826"},       // home-account
+      {"family", "\U000F02D1"},          // heart
+      {"kids_friend", "\U000F02E7"},     // human-child
+      {"taxi", "\U000F04FF"},            // taxi
+      {"sales", "\U000F0A38"},           // clipboard-text-outline
+      {"religion", "\U000F14F7"},        // book-open-variant
+      {"seasonal", "\U000F0AE2"},        // star-four-points
+      {"campaign", "\U000F0A1F"},        // vote
+      {"name", "\U000F0004"},            // account
+  };
+  for (const auto &m : MAP)
+    if (role == m.role) return m.glyph;
+  return "\U000F12E6";  // doorbell: nobody said who they are
+}
+// Types people claim at the door to get in ("laut Besucher"): shown with a "?" (§2c)
+inline bool self_declared(const std::string &role) {
+  return role == "police" || role == "officials" || role == "utility" || role == "trades";
+}
 }  // namespace icon
 
 // ── Strings ──────────────────────────────────────────────────────────────────
@@ -217,7 +260,8 @@ class Controller {
   }
   void ring_start() {
     if (in_call_) return;  // already talking to the door
-    if (!ringing_) visitor_.clear(), visitor_lang_.clear(), live_text_.clear(), live_shown_ = 0;  // a new visitor
+    if (!ringing_) visitor_.clear(), visitor_lang_.clear(), visitor_role_.clear(), visitor_urgent_ = false,
+                   live_text_.clear(), live_shown_ = 0;  // a new visitor
     ringing_ = true;
     ring_since_ = millis();
     menu_open_ = info_open_ = false;
@@ -430,6 +474,21 @@ class Controller {
     render_door_labels_();
   }
   const std::string &visitor() const { return visitor_; }
+  // The visitor's type (speaker_role: "parcel", "police", "name", …) for the icon in front of the name.
+  void set_visitor_role(const std::string &role) {
+    if (role.empty() || role == "unknown" || role == "unavailable") return;  // keep the last one said
+    if (!ringing_ && !in_call_) return;
+    visitor_role_ = role;
+    render_door_labels_();
+  }
+  // An emergency was said ("Hilfe", "Notfall", …): the visitor line turns red until this visitor is gone.
+  void set_visitor_urgent(const std::string &v) {
+    if (v != "True" && v != "true" && v != "on") return;
+    if (!ringing_ && !in_call_) return;
+    visitor_urgent_ = true;
+    wake();
+    render_door_labels_();
+  }
   // What the visitor is saying, while they say it (door transcriber, partial texts ~1/s, then the final one).
   // Shown in place of the bell / ear, typed in letter by letter.
   void set_live_text(const std::string &t) {
@@ -652,9 +711,9 @@ class Controller {
       lv_obj_set_style_border_color(r, lv_color_hex(pal::CYAN), 0);
       ripples_[i] = r;
     }
-    lv_obj_t *t = ring_door_ = door_label_(v_ring_);
+    lv_obj_t *t = ring_door_ = door_label_(v_ring_, ring_row_, 36);
     lv_obj_set_style_text_letter_space(t, 1, 0);
-    lv_obj_align(t, LV_ALIGN_TOP_MID, 0, 36);
+    layout_row_(ring_row_, cfg.door, nullptr, false, pal::CYAN);
     ring_disc_ = hero_(v_ring_, 140, &ring_icon_, nullptr);
     lv_label_set_text(ring_icon_, icon::BELL_RING);
     lv_obj_set_style_transform_pivot_x(ring_icon_, 30, 0);
@@ -679,8 +738,7 @@ class Controller {
   // ── build: call ───────────────────────────────────────────────────────────
   void build_call_() {
     v_call_ = view_box_();
-    lv_obj_t *t = call_door_ = door_label_(v_call_);
-    lv_obj_align(t, LV_ALIGN_TOP_MID, 0, 32);
+    call_door_ = door_label_(v_call_, call_row_, 32);
     call_timer_ = label_(v_call_, fonts.big, pal::TEXT, "0:00");
     lv_obj_align(call_timer_, LV_ALIGN_TOP_MID, 0, 48);
     call_disc_ = hero_(v_call_, 152, &call_icon_, nullptr);
@@ -948,18 +1006,57 @@ class Controller {
 
   }
 
-  lv_obj_t *door_label_(lv_obj_t *parent) {  // "Front door", or who is there
-    lv_obj_t *l = label_(parent, fonts.small, pal::CYAN, cfg.door.c_str());
-    lv_obj_set_width(l, 164);
+  // The visitor line at the top of the ring and call views: [type icon] "Front door" or who is there [?]
+  struct DoorRow {
+    lv_obj_t *icon = nullptr, *text = nullptr, *badge = nullptr;
+    int y = 0;
+  };
+  lv_obj_t *door_label_(lv_obj_t *parent, DoorRow &row, int y) {
+    row.y = y;
+    row.icon = label_(parent, fonts.icon_sm, pal::CYAN, "");
+    lv_obj_t *l = row.text = label_(parent, fonts.small, pal::CYAN, cfg.door.c_str());
     lv_label_set_long_mode(l, LV_LABEL_LONG_DOT);
-    lv_obj_set_style_text_align(l, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_set_style_text_align(l, LV_TEXT_ALIGN_LEFT, 0);
+    lv_obj_t *b = row.badge = box_(parent);           // "?": the visitor says so, nobody checked (§2c)
+    lv_obj_set_size(b, 14, 14);
+    lv_obj_set_style_radius(b, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_opa(b, LV_OPA_COVER, 0);
+    lv_obj_set_style_bg_color(b, lv_color_hex(pal::AMBER), 0);
+    lv_obj_t *q = label_(b, fonts.small, pal::BG, "?");
+    lv_obj_center(q);
+    lv_obj_add_flag(b, LV_OBJ_FLAG_HIDDEN);
+    layout_row_(row, cfg.door, nullptr, false, pal::CYAN);
     return l;
+  }
+  // Centre icon + text + badge as one line; the text is cut with "…" when it does not fit.
+  void layout_row_(DoorRow &r, const std::string &text, const char *glyph, bool badge, uint32_t color) {
+    const int ICON_W = glyph ? 20 : 0, BADGE_W = badge ? 18 : 0, MAX_W = 164;
+    lv_point_t sz;
+    lv_text_get_size(&sz, text.c_str(), fonts.small, lv_obj_get_style_text_letter_space(r.text, LV_PART_MAIN), 0, LV_COORD_MAX,
+                     LV_TEXT_FLAG_NONE);
+    const int tw = std::min<int>(sz.x + 2, MAX_W - ICON_W - BADGE_W);
+    const int x0 = (172 - (ICON_W + tw + BADGE_W)) / 2;
+    lv_label_set_text(r.icon, glyph ? glyph : "");
+    lv_obj_set_style_text_color(r.icon, lv_color_hex(color), 0);
+    lv_obj_align(r.icon, LV_ALIGN_TOP_LEFT, x0, r.y - 2);
+    lv_label_set_text(r.text, text.c_str());
+    lv_obj_set_style_text_color(r.text, lv_color_hex(color), 0);
+    lv_obj_set_width(r.text, tw);
+    lv_obj_align(r.text, LV_ALIGN_TOP_LEFT, x0 + ICON_W, r.y);
+    lv_obj_align(r.badge, LV_ALIGN_TOP_LEFT, x0 + ICON_W + tw + 4, r.y + 1);
+    if (badge) lv_obj_remove_flag(r.badge, LV_OBJ_FLAG_HIDDEN); else lv_obj_add_flag(r.badge, LV_OBJ_FLAG_HIDDEN);
   }
   void render_door_labels_() {
     if (!built_) return;
     const std::string t = visitor_.empty() ? cfg.door : visitor_;
-    lv_label_set_text(ring_door_, t.c_str());
-    lv_label_set_text(call_door_, (visitor_lang_.empty() ? t : t + " · " + visitor_lang_).c_str());
+    // an icon once the transcriber said something about the visitor; a red line for an emergency
+    const bool known = !visitor_role_.empty() || visitor_urgent_;
+    const std::string role = visitor_urgent_ && (visitor_role_.empty() || visitor_role_ == "name") ? "emergency" : visitor_role_;
+    const char *glyph = known ? icon::visitor(role) : nullptr;
+    const bool badge = icon::self_declared(visitor_role_);
+    const uint32_t color = visitor_urgent_ ? pal::RED : pal::CYAN;
+    layout_row_(ring_row_, t, glyph, badge, color);
+    layout_row_(call_row_, visitor_lang_.empty() ? t : t + " · " + visitor_lang_, glyph, badge, color);
   }
 
   lv_obj_t *live_label_(lv_obj_t *parent, int y, int h) {
@@ -1168,6 +1265,8 @@ class Controller {
     in_call_ = false;
     visitor_.clear();
     visitor_lang_.clear();
+    visitor_role_.clear();
+    visitor_urgent_ = false;
     live_text_.clear();
     live_shown_ = 0;
     render_door_labels_();
@@ -1487,8 +1586,10 @@ class Controller {
   uint32_t call_seen_ms_ = 0, talk_since_ms_ = 0;
   bool pending_press_ = false, double_ = false;
   uint32_t pending_press_ms_ = 0;
-  std::string visitor_, visitor_lang_;
+  std::string visitor_, visitor_lang_, visitor_role_;
+  bool visitor_urgent_ = false;
   lv_obj_t *ring_door_ = nullptr, *call_door_ = nullptr;
+  DoorRow ring_row_, call_row_;
   int menu_sel_ = 0, missed_ = 0;
   char missed_at_[8] = "";
   int hh_ = -1, mm_ = -1, rssi_ = 0;

@@ -118,6 +118,21 @@ text_sensor:
     internal: true
     on_value:
       - lambda: roomkey::ctl().set_visitor_language(x);
+  # Visitor type for the icon (parcel, police, name, …) and the emergency flag (voice v2, aikos features/sprechen.md §2c).
+  - platform: homeassistant
+    id: ha_visitor_role
+    entity_id: ${visitor_entity}
+    attribute: speaker_role
+    internal: true
+    on_value:
+      - lambda: roomkey::ctl().set_visitor_role(x);
+  - platform: homeassistant
+    id: ha_visitor_urgent
+    entity_id: ${visitor_entity}
+    attribute: urgent
+    internal: true
+    on_value:
+      - lambda: roomkey::ctl().set_visitor_urgent(x);
   # What the visitor is saying, live (partial texts while they hold the door's talk button), then the final transcript.
   - platform: homeassistant
     id: ha_live_text
@@ -133,6 +148,20 @@ text_sensor:
     internal: true
     on_value:
       - lambda: roomkey::ctl().set_visitor(x);
+  - platform: homeassistant
+    id: ha_live_role
+    entity_id: ${live_entity}
+    attribute: speaker_role
+    internal: true
+    on_value:
+      - lambda: roomkey::ctl().set_visitor_role(x);
+  - platform: homeassistant
+    id: ha_live_urgent
+    entity_id: ${live_entity}
+    attribute: urgent
+    internal: true
+    on_value:
+      - lambda: roomkey::ctl().set_visitor_urgent(x);
   - platform: homeassistant
     id: ha_visitor_text
     entity_id: ${visitor_entity}
@@ -199,6 +228,8 @@ script:
       - lambda: |-
           roomkey::ctl().set_visitor(id(ha_visitor).state);
           roomkey::ctl().set_visitor_language(id(ha_visitor_language).state);
+          roomkey::ctl().set_visitor_role(id(ha_visitor_role).state);
+          roomkey::ctl().set_visitor_urgent(id(ha_visitor_urgent).state);
   - id: ha_toggle_lights
     then:
       - homeassistant.action:

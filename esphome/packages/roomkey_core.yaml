@@ -150,6 +150,37 @@ font:
       - "\U000F051F"  # timer-sand
       - "\U000F0164"  # cloud-off-outline
       - "\U000F009E"  # bell-ring
+      # visitor types (roomkey_ui.h icon::visitor; aikos features/sprechen.md §2c)
+      - "\U000F0026"  # alert                   emergency
+      - "\U000F03D7"  # package-variant-closed  parcel
+      - "\U000F01F0"  # email-outline           mail
+      - "\U000F025A"  # food                    food
+      - "\U000F0111"  # cart-outline            shopping
+      - "\U000F03F1"  # mortar-pestle-plus      pharmacy
+      - "\U000F024A"  # flower                  flowers
+      - "\U000F053D"  # truck                   freight
+      - "\U000F1167"  # police-badge            police
+      - "\U000F08AB"  # fire-truck              fire
+      - "\U000F002F"  # ambulance               ambulance
+      - "\U000F0991"  # office-building         officials
+      - "\U000F1A57"  # meter-electric          utility
+      - "\U000F0469"  # router-wireless         telecom
+      - "\U000F1323"  # hammer-wrench           trades
+      - "\U000F112B"  # home-roof               chimney
+      - "\U000F0A7A"  # trash-can-outline       waste
+      - "\U000F06EF"  # medical-bag             care
+      - "\U000F1574"  # key-chain               property
+      - "\U000F00E2"  # broom                   household_help
+      - "\U000F0826"  # home-account            neighbour
+      - "\U000F02D1"  # heart                   family
+      - "\U000F02E7"  # human-child             kids_friend
+      - "\U000F04FF"  # taxi                    taxi
+      - "\U000F0A38"  # clipboard-text-outline  sales
+      - "\U000F14F7"  # book-open-variant       religion
+      - "\U000F0AE2"  # star-four-points        seasonal
+      - "\U000F0A1F"  # vote                    campaign
+      - "\U000F0004"  # account                 name
+      - "\U000F12E6"  # doorbell                unknown
   - id: f_icon_md
     file: fonts/materialdesignicons-webfont.ttf
     size: 24
