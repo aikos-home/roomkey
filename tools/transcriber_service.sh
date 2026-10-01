@@ -18,6 +18,8 @@
 #   AIKOS_LLM_URL       default http://127.0.0.1:11434   (Ollama; model qwen3:8b, kept loaded)
 #   AIKOS_RECORDINGS    default ~/Library/Application Support/aikos/transcriber/recordings
 #   AIKOS_PYTHON        default /usr/bin/python3
+#   AIKOS_LIVE          1 = publish partial text while talking (sensor.talk_live_door / sensor.talk_live);
+#                       default 1 for the door side, 0 for the room side
 # If the port is taken (e.g. another receiver still runs), the script exits; launchd starts it again.
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
@@ -35,7 +37,12 @@ names="${AIKOS_KNOWN_NAMES:-}"
 [ -r "$token" ] || { echo "token file not readable: $token" >&2; exit 2; }
 
 q() { printf '%q' "$1"; }   # quote for the --exec command line
-exec "$py" -u tools/rtp_recorder.py --port "$port" --out "$rec" \
+live=()
+if [ "${AIKOS_LIVE:-$([ "$side" = door ] && echo 1 || echo 0)}" = 1 ]; then
+  entity=sensor.talk_live; [ "$side" = door ] && entity=sensor.talk_live_door
+  live=(--live "$entity" --live-side "$side" --ha-url "$ha" --token-file "$token" --whisper-url "$whisper" --known-names "$names")
+fi
+exec "$py" -u tools/rtp_recorder.py --port "$port" --out "$rec" "${live[@]}" \
   --on-start "curl -s -m 30 $(q "$llm")/api/generate -d '{\"model\":\"qwen3:8b\",\"keep_alive\":-1}' >/dev/null" \
   --exec "$(q "$py") -u tools/transcribe_publish.py {wav} --side $side --source-ip {src} --ha-url $(q "$ha") \
 --token-file $(q "$token") --whisper-url $(q "$whisper") --llm-url $(q "$llm") --known-names $(q "$names") --delete-wav"

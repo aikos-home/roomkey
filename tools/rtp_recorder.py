@@ -40,6 +40,7 @@ class Recording:
         self.voiced_at = 0          # sample count at the last loud packet (RTP time, not wall-clock)
         self.voiced_pkts = 0
         self.pkts = self.lost = self.samples = 0
+        self.pcm = bytearray()      # the utterance so far (16-bit LE), for --live
         self.seq = None
         self.sumsq = 0.0
         self.peak = 0
@@ -58,11 +59,14 @@ class Recording:
                 self.lost += gap
                 fill = min(gap, 50)                                  # keep the timeline, but never add > 1 s
                 self.wav.writeframes(b"\x00\x00" * (320 * fill))
+                self.pcm += b"\x00\x00" * (320 * fill)
                 self.samples += 320 * fill
         self.seq = seq
         n = len(payload) // 2
         pcm = struct.unpack(f">{n}h", payload[: n * 2])            # L16 = big-endian
-        self.wav.writeframes(struct.pack(f"<{n}h", *pcm))
+        le = struct.pack(f"<{n}h", *pcm)
+        self.wav.writeframes(le)
+        self.pcm += le
         self.sumsq += sum(v * v for v in pcm)
         self.peak = max(self.peak, max((abs(v) for v in pcm), default=0))
         self.pkts += 1
@@ -104,11 +108,28 @@ def main():
     ap.add_argument("--vad-db", type=float, default=-50.0, help="speech is never quieter than this (dBFS)")
     ap.add_argument("--silence-s", type=float, default=1.5)
     ap.add_argument("--max-s", type=float, default=15.0)
+    ap.add_argument("--live", default="", metavar="ENTITY", help="publish partial text while talking (tools/talk_live.py)")
+    ap.add_argument("--live-side", default="door")
+    ap.add_argument("--ha-url", default="")
+    ap.add_argument("--token-file", type=Path)
+    ap.add_argument("--whisper-url", default="http://127.0.0.1:6667/v1/audio/transcriptions")
+    ap.add_argument("--known-names", default="")
     a = ap.parse_args()
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind(("0.0.0.0", a.port))
     sock.settimeout(0.2)
     print(f"listening for RTP/L16 16 kHz on UDP {a.port}, saving to {a.out}", flush=True)
+    live = None
+    if a.live:
+        from talk_live import Live
+        live = Live(a.ha_url, a.token_file.expanduser().read_text().strip(), a.live, a.live_side, a.whisper_url,
+                    [n.strip() for n in a.known_names.split(",") if n.strip()])
+
+    def finish(rec, **kw):
+        if live:
+            live.stop(rec)
+        rec.close(a.exec_tpl, **kw)
+
     recs: dict = {}                                                      # sender → Recording
     preroll = collections.defaultdict(lambda: collections.deque(maxlen=15))   # 0.3 s before speech starts
     levels = collections.defaultdict(lambda: collections.deque(maxlen=250))   # last 5 s of packet levels
@@ -118,9 +139,9 @@ def main():
         except socket.timeout:
             data = None
         for k in [k for k, r in recs.items() if time.time() - r.last > a.gap_s]:
-            recs.pop(k).close(a.exec_tpl)
+            finish(recs.pop(k))
         if data and len(data) >= 12 and data[0] >> 6 == 2 and data[1] & 0x7F == PT_CN and src in recs:
-            recs.pop(src).close(a.exec_tpl, min_voiced=15 if a.split_on_silence else 0)   # button released: done
+            finish(recs.pop(src), min_voiced=15 if a.split_on_silence else 0)   # button released: done
             continue
         if not data or len(data) <= 12 or data[0] >> 6 != 2 or data[1] & 0x7F != PT_L16:
             continue                                                     # ≤ 12 bytes = keepalive
@@ -140,13 +161,15 @@ def main():
                 preroll[src].append((seq, payload))
                 continue
             rec = recs[src] = Recording(a.out, src)
+            if live:
+                live.start(rec)
             if a.on_start:
                 subprocess.Popen(a.on_start, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             for pseq, pp in preroll.pop(src, ()):
                 rec.add(pseq, pp, voiced=False)
         rec.add(seq, payload, voiced)
         if a.split_on_silence and (rec.quiet_s() > a.silence_s or rec.samples / RATE >= a.max_s):
-            recs.pop(src).close(a.exec_tpl, min_voiced=15)             # ≥ 0.3 s of speech
+            finish(recs.pop(src), min_voiced=15)                      # ≥ 0.3 s of speech
 
 if __name__ == "__main__":
     main()

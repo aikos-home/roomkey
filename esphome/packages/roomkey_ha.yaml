@@ -37,6 +37,7 @@ esphome:
 substitutions:
   visitor_entity: sensor.talk_transcript_door   # device files may override
   visitor_language_attr: language_name_en        # language_name = German names (for language: de)
+  live_entity: sensor.talk_live_door             # partial text while the visitor talks
 
 api:
   encryption:
@@ -117,6 +118,28 @@ text_sensor:
     internal: true
     on_value:
       - lambda: roomkey::ctl().set_visitor_language(x);
+  # What the visitor is saying, live (partial texts while they hold the door's talk button), then the final transcript.
+  - platform: homeassistant
+    id: ha_live_text
+    entity_id: ${live_entity}
+    attribute: text
+    internal: true
+    on_value:
+      - lambda: roomkey::ctl().set_live_text(x);
+  - platform: homeassistant
+    id: ha_live_speaker
+    entity_id: ${live_entity}
+    attribute: speaker
+    internal: true
+    on_value:
+      - lambda: roomkey::ctl().set_visitor(x);
+  - platform: homeassistant
+    id: ha_visitor_text
+    entity_id: ${visitor_entity}
+    attribute: text
+    internal: true
+    on_value:
+      - lambda: roomkey::ctl().set_live_text(x);
   # HA only sends an attribute when it CHANGES — the same visitor or language twice would be missed. The state (a
   # timestamp) changes with every transcript: then re-apply the last values (after the attributes had time to arrive).
   - platform: homeassistant

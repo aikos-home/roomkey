@@ -217,7 +217,7 @@ class Controller {
   }
   void ring_start() {
     if (in_call_) return;  // already talking to the door
-    if (!ringing_) visitor_.clear(), visitor_lang_.clear();  // a new visitor (storm ringing keeps the current one)
+    if (!ringing_) visitor_.clear(), visitor_lang_.clear(), live_text_.clear(), live_shown_ = 0;  // a new visitor
     ringing_ = true;
     ring_since_ = millis();
     menu_open_ = info_open_ = false;
@@ -323,6 +323,15 @@ class Controller {
       }
     }
     if (built_ && view() != shown_) render();   // e.g. the call view hides 8 s after the last activity
+    if (built_ && live_shown_ < live_text_.size()) {   // type the live text in; catch up when far behind
+      int steps = 2 + (int) (live_text_.size() - live_shown_) / 12;
+      for (int k = 0; k < steps && live_shown_ < live_text_.size(); k++) {
+        live_shown_++;
+        while (live_shown_ < live_text_.size() && ((uint8_t) live_text_[live_shown_] & 0xC0) == 0x80) live_shown_++;
+      }
+      if (in_call_) call_seen_ms_ = millis();
+      render_live_();
+    }
     if (pending_press_ && age_(pending_press_ms_) >= (int32_t) DOUBLE_MS) {   // no second press came: lights
       pending_press_ = false;
       if (view() == View::HOME) toggle_lights_();
@@ -421,6 +430,19 @@ class Controller {
     render_door_labels_();
   }
   const std::string &visitor() const { return visitor_; }
+  // What the visitor is saying, while they say it (door transcriber, partial texts ~1/s, then the final one).
+  // Shown in place of the bell / ear, typed in letter by letter.
+  void set_live_text(const std::string &t) {
+    if (t.empty() || t == "unknown" || t == "unavailable") return;
+    if (!ringing_ && !in_call_) return;
+    size_t common = 0;  // Whisper may revise earlier words: keep what is still the same, retype the rest
+    while (common < t.size() && common < live_text_.size() && t[common] == live_text_[common]) common++;
+    while (common > 0 && common < t.size() && ((uint8_t) t[common] & 0xC0) == 0x80) common--;  // UTF-8 boundary
+    live_text_ = t;
+    if (live_shown_ > common) live_shown_ = common;
+    if (in_call_) call_seen_ms_ = millis();
+    if (built_) render();
+  }
   // The language the visitor speaks, when it is not German ("Chinese"), from the same transcript.
   void set_visitor_language(const std::string &lang) {
     if (lang.empty() || lang == "unknown" || lang == "unavailable" || lang == "German" || lang == "Deutsch") return;
@@ -640,6 +662,7 @@ class Controller {
     style_disc_(ring_disc_, ring_icon_, pal::CYAN, LV_OPA_20, 3, false);
     lv_obj_add_flag(ring_disc_, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_event_cb(ring_disc_, &Controller::on_tap_cb_, LV_EVENT_CLICKED, this);
+    ring_live_ = live_label_(v_ring_, 64, 136);
     ring_title_ = label_(v_ring_, fonts.title, pal::TEXT, S->doorbell);
     lv_obj_align(ring_title_, LV_ALIGN_TOP_MID, 0, 208);
     ring_sub_ = label_(v_ring_, fonts.small, pal::MUTED, "");
@@ -661,6 +684,7 @@ class Controller {
     call_timer_ = label_(v_call_, fonts.big, pal::TEXT, "0:00");
     lv_obj_align(call_timer_, LV_ALIGN_TOP_MID, 0, 48);
     call_disc_ = hero_(v_call_, 152, &call_icon_, nullptr);
+    call_live_ = live_label_(v_call_, 84, 136);
     if (cfg.has_touch) {  // press-and-hold the disc = talk (same as the key)
       lv_obj_add_flag(call_disc_, LV_OBJ_FLAG_CLICKABLE);
       lv_obj_add_event_cb(call_disc_, &Controller::on_call_disc_cb_, LV_EVENT_ALL, this);
@@ -938,7 +962,42 @@ class Controller {
     lv_label_set_text(call_door_, (visitor_lang_.empty() ? t : t + " · " + visitor_lang_).c_str());
   }
 
+  lv_obj_t *live_label_(lv_obj_t *parent, int y, int h) {
+    lv_obj_t *l = label_(parent, fonts.small, pal::TEXT, "");
+    lv_obj_set_width(l, 156);                     // fixed width, lines wrap; live_tail_() keeps it within h
+    lv_label_set_long_mode(l, LV_LABEL_LONG_WRAP);
+    (void) h;
+    lv_obj_set_style_text_align(l, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_align(l, LV_ALIGN_TOP_MID, 0, y);
+    lv_obj_add_flag(l, LV_OBJ_FLAG_HIDDEN);
+    return l;
+  }
+  // The visible part: the last ~120 characters (start at a word), with "..." in front when cut.
+  std::string live_tail_() const {
+    std::string t = live_text_.substr(0, live_shown_);
+    const size_t MAX = 120;
+    if (t.size() <= MAX) return t;
+    size_t cut = t.size() - MAX;
+    while (cut < t.size() && t[cut] != ' ') cut++;
+    return "..." + t.substr(cut);
+  }
+  void render_live_() {
+    if (!built_) return;
+    bool show = !live_text_.empty();
+    std::string tail = live_tail_();
+    for (lv_obj_t *l : {ring_live_, call_live_}) lv_label_set_text(l, tail.c_str());
+    // ring view: the text replaces the bell; call view: replaces the ear (the mic still shows while you talk)
+    bool ring_text = show, call_text = show && !talking_;
+    if (ring_text) lv_obj_remove_flag(ring_live_, LV_OBJ_FLAG_HIDDEN); else lv_obj_add_flag(ring_live_, LV_OBJ_FLAG_HIDDEN);
+    for (lv_obj_t *o : {ring_disc_, ripples_[0], ripples_[1]}) {
+      if (ring_text) lv_obj_add_flag(o, LV_OBJ_FLAG_HIDDEN); else lv_obj_remove_flag(o, LV_OBJ_FLAG_HIDDEN);
+    }
+    if (call_text) lv_obj_remove_flag(call_live_, LV_OBJ_FLAG_HIDDEN); else lv_obj_add_flag(call_live_, LV_OBJ_FLAG_HIDDEN);
+    if (call_text) lv_obj_add_flag(call_disc_, LV_OBJ_FLAG_HIDDEN); else lv_obj_remove_flag(call_disc_, LV_OBJ_FLAG_HIDDEN);
+  }
+
   void render_ring_() {
+    render_live_();
     char sub[48];
     if (!visitor_lang_.empty()) snprintf(sub, sizeof(sub), S->speaks, visitor_lang_.c_str());   // "Speaks Chinese"
     else snprintf(sub, sizeof(sub), "%02d:%02d", hh_, mm_);
@@ -946,6 +1005,7 @@ class Controller {
   }
 
   void render_call_() {
+    render_live_();
     // Walkie-talkie, not a phone call: the clock shows how long you are talking right now, nothing while listening
     // (a conversation stays open for minutes in the background; its total length would look like a long call).
     char t[12] = "";
@@ -1108,6 +1168,8 @@ class Controller {
     in_call_ = false;
     visitor_.clear();
     visitor_lang_.clear();
+    live_text_.clear();
+    live_shown_ = 0;
     render_door_labels_();
     if (local && hooks.hangup && !cfg.demo) hooks.hangup();
     render();
@@ -1450,7 +1512,9 @@ class Controller {
       *home_sub_;
   lv_obj_t *v_menu_, *menu_rows_[MENU_N], *menu_icons_[MENU_N], *menu_texts_[MENU_N];
   lv_obj_t *v_info_, *info_val_[7], *mic_bar_bg_, *mic_bar_;
-  lv_obj_t *v_ring_, *ripples_[2], *ring_disc_, *ring_icon_, *ring_title_, *ring_sub_;
+  lv_obj_t *v_ring_, *ripples_[2], *ring_disc_, *ring_icon_, *ring_title_, *ring_sub_, *ring_live_ = nullptr, *call_live_ = nullptr;
+  std::string live_text_;
+  size_t live_shown_ = 0;
   lv_obj_t *v_call_, *call_timer_, *call_disc_, *call_icon_, *call_state_, *meter_[METER_N];
   lv_obj_t *v_alarm_, *alarm_edge_[4], *alarm_head_, *alarm_disc_, *alarm_icon_, *alarm_arc_, *alarm_title_, *alarm_sub_;
   lv_obj_t *hints_, *hint_glyph_[2], *hint_verb_[2], *hint_act_[2];
