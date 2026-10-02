@@ -1,0 +1,40 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# RoomKey on the touch board (Waveshare ESP32-C6-Touch-LCD-1.47), the board the insert is designed for. The same
+# firmware as roomkey_v2.yaml; bench prototype (WIP: first hardware bring-up 02.10.).
+#   flash:  esphome run roomkey_touch.yaml   (first time over USB, then OTA)
+# ─────────────────────────────────────────────────────────────────────────────
+substitutions:
+  node_name: aikos-roomkey-touch    # network name (bench prototype; a room name once it has a room)
+  room_name: Bench
+  door_name: Front door
+  language: en                      # en | de
+  timezone: Europe/Berlin
+  # Home Assistant entities this key talks to (they may not exist yet — fine).
+  light_entity: light.all_lights
+  alarm_entity: alarm_control_panel.house
+  doorbell_entity: binary_sensor.doorbell_button
+  visitor_entity: sensor.talk_transcript_door    # who is at the door (transcript attribute "speaker")
+  disarm_action: script.roomkey_disarm
+
+esphome:
+  name: ${node_name}
+  friendly_name: aikos RoomKey ${room_name}
+  comment: "RoomKey · Waveshare ESP32-C6-Touch-LCD-1.47 (touch bench prototype)"
+  project:
+    name: aikos-home.roomkey          # lets the aikos integration recognise RoomKeys
+    version: "0.3.0"          # 0.3 = voice v2 (aikos_voice); 0.2 = own audio
+
+packages:
+  board: !include packages/board_c6_touch_lcd_147.yaml  # touch, I²S on IO7/8/16/17, glow ring IO4
+  net: !include packages/net_wifi.yaml
+  core: !include packages/roomkey_core.yaml
+  ha: !include packages/roomkey_ha.yaml
+  mic: !include packages/roomkey_mic.yaml         # INMP441 (not wired on this board yet) — safe to keep
+  voice: !include packages/roomkey_voice.yaml       # voice v2: the shared aikos_voice building block (room role)
+  voice_mic: !include packages/roomkey_voice_mic.yaml   # its microphone: the INMP441 above
+  call: !include packages/roomkey_call.yaml        # call settings, front door, door + transcriber address
+  link: !include packages/roomkey_link.yaml       # voice v2 (WIP): talk_held / in_call straight to the door
+  # speaker: !include packages/roomkey_voice_speaker.yaml  # WIP: enable once the MAX98357A + speaker are wired
+
+logger:
+  level: DEBUG                      # bring-up: touch and display events

@@ -261,7 +261,7 @@ class Controller {
     if (disarming_ && a == Alarm::DISARMED) {
       disarming_ = false;
       flash(icon::SHIELD_CHECK, S->disarmed, pal::GREEN, 1400);
-      if (hooks.led) hooks.led(pal::GREEN, "solid");
+      led_(pal::GREEN, "solid");
       led_hold_until_ = millis() + 1400;
     }
     if (a == Alarm::PENDING || a == Alarm::TRIGGERED) wake();
@@ -1749,20 +1749,29 @@ class Controller {
     if (want == screen_ && !force) return;
     screen_ = want;
     float b = want == Screen::ACTIVE ? cfg.bright : want == Screen::DIM ? cfg.bright_dim : 0.0f;
+    if (b == sent_bright_) return;   // render() runs with every door packet: send a change only
+    sent_bright_ = b;
     if (hooks.backlight) hooks.backlight(b);
   }
   void apply_led_() {
     if (!hooks.led || led_hold_until_) return;
     switch (view()) {
-      case View::RING: hooks.led(pal::CYAN, ringing_ ? "pulse" : "off"); break;   // a join offer stays dark (night)
-      case View::CALL: hooks.led(talking_ ? pal::GREEN : pal::CYAN, "solid"); break;
+      case View::RING: led_(pal::CYAN, ringing_ ? "pulse" : "off"); break;   // a join offer stays dark (night)
+      case View::CALL: led_(talking_ ? pal::GREEN : pal::CYAN, "solid"); break;
       case View::ALARM:
-        if (disarming_) hooks.led(pal::RED, "pulse");
-        else if (alarm_ == Alarm::TRIGGERED) hooks.led(pal::RED, "strobe");
-        else hooks.led(pal::ORANGE, "pulse");
+        if (disarming_) led_(pal::RED, "pulse");
+        else if (alarm_ == Alarm::TRIGGERED) led_(pal::RED, "strobe");
+        else led_(pal::ORANGE, "pulse");
         break;
-      default: hooks.led(0, "off"); break;
+      default: led_(0, "off"); break;
     }
+  }
+  void led_(uint32_t col, const char *fx) {   // to the LED / glow ring only when it changes (not with every render)
+    if (strcmp(fx, "off") == 0) col = 0;
+    if (col == sent_led_col_ && sent_led_fx_ == fx) return;
+    sent_led_col_ = col;
+    sent_led_fx_ = fx;
+    if (hooks.led) hooks.led(col, fx);
   }
 
   // ── touch ─────────────────────────────────────────────────────────────────
@@ -1882,6 +1891,9 @@ class Controller {
   bool key_down_ = false, hold_fired_ = false, key_consumed_ = false;
   uint32_t key_down_ms_ = 0, last_input_ms_ = 0;
   Screen screen_ = Screen::ACTIVE;
+  float sent_bright_ = -1.0f;                 // what the backlight / LED were last told (-1 / "" = nothing yet)
+  uint32_t sent_led_col_ = 0;
+  std::string sent_led_fx_;
   View shown_ = (View) 255;
   int anim_sig_ = -1;
   lv_obj_t *pressed_disc_ = nullptr;
