@@ -21,7 +21,7 @@ esphome:
   comment: "RoomKey · Waveshare ESP32-C6-LCD-1.47 (non-touch desk prototype)"
   project:
     name: aikos-home.roomkey          # lets the aikos integration recognise RoomKeys
-    version: "0.2.0"
+    version: "0.2.1"          # own audio (the fallback of roomkey_v2.yaml = 0.3)
 
 packages:
   board: !include packages/board_c6_lcd_147.yaml        # ← swap for board_c6_touch_lcd_147.yaml

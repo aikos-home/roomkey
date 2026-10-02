@@ -570,6 +570,7 @@ class Controller {
     chat_in_ = std::move(msgs);
     show_chat_();
   }
+  size_t chat_lines() const { return chat_.size(); }   // shown now (diagnostic sensor "Chat lines")
   void set_chat_active(bool on) {
     if (on == chat_active_) return;
     chat_active_ = on;

@@ -207,8 +207,8 @@ class Tour {
     if (s.shot) {
       lv_refr_now(nullptr);
       std::string p = dir_ + "/" + s.shot + ".bmp";
-      ESP_LOGI("tour", "%s %s (worst gap so far %u ms)", write_bmp(p) ? "shot" : "FAILED", p.c_str(),
-               (unsigned) worst_gap_);
+      ESP_LOGI("tour", "%s %s (worst gap so far %u ms, chat lines %u)", write_bmp(p) ? "shot" : "FAILED", p.c_str(),
+               (unsigned) worst_gap_, (unsigned) ctl().chat_lines());
       worst_gap_ = 0;
     }
     next_at_ = esphome::millis() + (idx_ < steps_.size() ? steps_[idx_].wait_ms : 0);

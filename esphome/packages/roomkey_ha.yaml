@@ -270,6 +270,18 @@ sensor:
     state_class: total_increasing
     update_interval: never
     lambda: return id(doorbell_rx_count);
+  # How many chat messages the key shows right now (R22/R27): 0 outside a call, at most 10 in one. Lets a test prove
+  # from HA what the small screen shows (aikos stack, W5 of the re-acceptance 02.10.).
+  - platform: template
+    id: rk_chat_lines
+    name: "Chat lines"
+    icon: mdi:message-text-outline
+    entity_category: diagnostic
+    accuracy_decimals: 0
+    update_interval: 1s
+    lambda: return (float) roomkey::ctl().chat_lines();
+    filters:
+      - delta: 0.5                  # sent when it changes (and on connect), not every second
 
 script:
   - id: rk_apply_visitor
