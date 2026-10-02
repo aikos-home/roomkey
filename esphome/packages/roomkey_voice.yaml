@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Voice v2 on the key with the shared building block aikos_voice (aikos-home/aikos, tag voice-v2.0.0), role room.
+# Voice v2 on the key with the shared building block aikos_voice (aikos-home/aikos, tag voice-v2.0.1), role room.
 # Replaces roomkey_intercom.yaml (the key's own audio). The call model (KeyCall) decides who hears what and when the
 # key leaves (silence, max length, the door ended or is unreachable, front door); the screen follows it.
 #   needs: roomkey_call.yaml (settings, addresses, front door), roomkey_link.yaml (door messages + key_state to the
@@ -8,7 +8,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 substitutions:
-  aikos_voice_ref: voice-v2.0.0   # a tag, never a branch (only a review build, sim_v2_check.yaml, sets a PR branch)
+  aikos_voice_ref: voice-v2.0.1   # a tag, never a branch (only a review build, sim_v2_check.yaml, sets a PR branch)
 
 external_components:
   - source:
