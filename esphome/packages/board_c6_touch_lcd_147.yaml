@@ -3,9 +3,9 @@
 #   ESP32-C6FH8 (8 MB, no PSRAM) · JD9853 172×320 IPS · AXS5106L cap. touch (0x63)
 #   QMI8658 IMU (0x6B) · TF slot · LiPo charger · no RGB LED (glow ring added on IO4)
 #
-#   NOT the board currently on the desk — prepared from Waveshare's schematic +
-#   official ESP-IDF BSP and a community-verified touch driver. Compiles; the
-#   JD9853 init sequence is Waveshare's own. Untested on hardware (WIP).
+#   Prepared from Waveshare's schematic + official ESP-IDF BSP and a community-verified touch driver; the JD9853
+#   init sequence is Waveshare's own. Bring-up 02.10. (bench key aikos-roomkey-touch): display, touch (0x63) and
+#   IMU (0x6B) work; picture, tap and swipe confirmed. Mic, amp and glow ring on this board: untested (WIP).
 #
 #   GPIO1/2  LCD+TF SCK/MOSI   GPIO14 LCD CS   GPIO15 LCD DC   GPIO22 LCD RST
 #   GPIO23   LCD BL            GPIO18/19 I²C SDA/SCL (touch + IMU)

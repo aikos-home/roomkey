@@ -44,7 +44,7 @@ open-hardware door intercom.
 | Microphone (INMP441) | ✅ **verified on hardware** — wired, recorded: 1 kHz test beep +30 dB, speech +18 dB over the room; 120 Hz high-pass removes knock/handling rumble. Test: `esphome/mic_test.yaml` + `tools/mic_check.py` |
 | Intercom audio, voice v2 (shared `aikos_voice` block: RTP/L16 16 kHz, push-to-talk, call model) | ✅ **desk key on v2 since 02.10.**: aikos re-acceptance with the door 71/71; simulator on the same block (`tools/voice_host_check.py`). The key's own audio path (`roomkey.yaml`) stays as the fallback. Listening needs the speaker (WIP, below) |
 | Speaker + ringtone (MAX98357A + Waveshare 2030 cavity speaker 8 Ω 2 W) | 🟡 **WIP / opt-in** — compiles, commented out; parts ordered |
-| Touch variant of the board (tap / swipe) | 🟡 **WIP** — required by the target design; 1× ordered; board package ready, touch logic tested in the simulator only |
+| Touch variant of the board (tap / swipe) | 🟡 **WIP** — required by the target design; arrived 02.10.: display, tap and swipe work on the board (`esphome/roomkey_touch.yaml`); chat swipe in a real call, mic, amp and glow ring on it still untested |
 | Intercom security | ✅ incoming audio accepted only during an active call; everything else is dropped unheard |
 | Door station side | ⬜ other milestone — spec in [docs/intercom-protocol.md](docs/intercom-protocol.md) |
 | Optional sensors: VEML7700 light, SHT31-D climate, LD2410C mmWave presence | 🟡 bought; light + climate on the shared I²C bus (no extra pins), radar on one pin — radar placement behind the rocker still open |
