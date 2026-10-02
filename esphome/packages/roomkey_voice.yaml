@@ -51,6 +51,7 @@ sensor:
       name: "Intercom TX packets"
       entity_category: diagnostic
     rx_packets:
+      id: rk_voice_rx            # also read by roomkey_voice_speaker.yaml
       name: "Intercom RX packets"
       entity_category: diagnostic
     tx_errors:

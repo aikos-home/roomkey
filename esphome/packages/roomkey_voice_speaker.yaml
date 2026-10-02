@@ -1,0 +1,79 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Speaker for voice v2 (WIP · opt-in · untested on hardware): MAX98357A I²S amp + 8 Ω speaker; aikos_voice plays the
+# door's audio on it (roomkey_voice.yaml), the ring screen its ringtone.
+#   MAX98357A  VIN→5V   GND→GND (the header has one GND: join it with the INMP441's)
+#              BCLK→${i2s_bclk}  LRC→${i2s_lrclk}  (parallel to the INMP441's SCK / WS)   DIN→${i2s_dout}
+#              SD, GAIN: leave open
+#   Speaker    the amp's + / − terminals (8 Ω)
+# Shares the I²S clocks with the INMP441, so strictly half-duplex: the call model never plays while this key holds
+# (R17.4), and a hold frees the bus for the mic first.
+# Requires roomkey_mic.yaml (the shared i2s bus) and roomkey_voice.yaml. The own audio path uses roomkey_speaker.yaml.
+# ─────────────────────────────────────────────────────────────────────────────
+
+substitutions:
+  ringtone: "roomkey:d=4,o=5,b=100:8e6,4c6,8p,8e6,4c6"
+  speaker_max: "0.9"          # volume cap (software volume of the speaker); tune on the real speaker
+
+speaker:
+  - platform: i2s_audio
+    id: spk
+    i2s_audio_id: i2s_bus
+    i2s_dout_pin: ${i2s_dout}
+    dac_type: external
+    channel: mono
+    sample_rate: 16000
+    bits_per_sample: 16bit
+    buffer_duration: 120ms
+    timeout: 400ms            # release the shared bus quickly so a hold can grab it for the mic
+
+aikos_voice:
+  speaker: spk
+
+rtttl:
+  id: ringer
+  speaker: spk
+  gain: 50%
+  on_finished_playback:
+    - if:
+        condition:
+          lambda: return roomkey::ctl().ringing();
+        then:
+          - delay: 700ms
+          - lambda: |-
+              // ring again, unless the door's audio plays (listening before answering, R17.13): it has the speaker
+              if (roomkey::ctl().ringing() && millis() - id(rk_door_audio_ms) > 2000) id(ringer).play("${ringtone}");
+
+globals:
+  - id: rk_door_audio_ms      # when the door's audio last arrived (rx packets moved)
+    type: uint32_t
+    initial_value: "0"
+
+interval:
+  - interval: 200ms
+    then:
+      - lambda: |-
+          // the door's audio arrives (rx packets of roomkey_voice.yaml move): it has the speaker, not the ringtone
+          static float last = -1;
+          const float rx = id(rk_voice_rx).state;
+          if (last >= 0 && rx > last) {
+            id(rk_door_audio_ms) = millis();
+            if (id(ringer).is_playing()) id(ringer).stop();
+          }
+          last = rx;
+
+esphome:
+  on_boot:
+    - priority: -180            # after roomkey_voice.yaml (-170) chained its hooks: wrap them
+      then:
+        - lambda: |-
+            id(spk).set_volume(${speaker_max});
+            auto &c = roomkey::ctl();
+            c.hooks.ringtone = [](bool on) {
+              if (on) id(ringer).play("${ringtone}");
+              else id(ringer).stop();
+            };
+            auto prev_talk = c.hooks.talk;
+            c.hooks.talk = [prev_talk](bool on) {
+              if (on) id(ringer).stop(), id(spk).stop();   // free the shared bus for the microphone first
+              if (prev_talk) prev_talk(on);
+            };
