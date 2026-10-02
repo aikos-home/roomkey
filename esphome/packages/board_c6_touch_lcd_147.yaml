@@ -10,7 +10,20 @@
 #   GPIO1/2  LCD+TF SCK/MOSI   GPIO14 LCD CS   GPIO15 LCD DC   GPIO22 LCD RST
 #   GPIO23   LCD BL            GPIO18/19 I²C SDA/SCL (touch + IMU)
 #   GPIO20   TP RST            GPIO21 TP INT   GPIO9  BOOT = mechanical key
-#   Header, used by RoomKey: IO7 IO8 IO16 IO17 (I²S), IO3 (mic L/R), IO4 (glow ring)
+#   Header H1 (2×11, 2.54 mm; Waveshare schematic), as RoomKey uses it:
+#      1 VBUS 5V   → amp, radar, glow ring          2 VBAT       (unused: no battery in aikos, E7)
+#      3 GND                                         4 GND
+#      5 TXD=IO16  → MAX98357A DIN                   6 GND
+#      7 RXD=IO17  ← INMP441 SD                      8 3V3        → mic, VEML7700, SHT31-D
+#      9 RST       (don't use)                      10 SCL=IO19   → VEML7700, SHT31-D (shared with touch + IMU)
+#     11 IO1       (LCD clock, don't use)           12 SDA=IO18   → VEML7700, SHT31-D
+#     13 IO2       (LCD data, don't use)            14 USB_P      (don't use)
+#     15 IO3       ← LD2410C TX                     16 USB_N      (don't use)
+#     17 IO4       → glow ring data (SK6812)        18 BOOT=IO9   the key
+#     19 IO5       → LD2410C RX (IMU INT1: high-Z   20 IO8        → I²S WS/LRC (mic + amp)
+#                    unless enabled, never done)
+#     21 IO6       (IMU INT2, free)                 22 IO7        → I²S SCK/BCLK (mic + amp)
+#   INMP441 L/R goes to GND (3 GND pins here), so no GPIO for it.
 # ─────────────────────────────────────────────────────────────────────────────
 
 substitutions:
@@ -20,7 +33,8 @@ substitutions:
   i2s_lrclk: GPIO8
   i2s_dout: GPIO16
   i2s_din: GPIO17
-  mic_lr: GPIO3       # → INMP441 L/R, held LOW (TF slot unused)
+  radar_rx: GPIO3     # ← LD2410C TX (H1-15; TF slot unused)
+  radar_tx: GPIO5     # → LD2410C RX (H1-19; the IMU's INT1 stays high-Z, it is never enabled)
 
 esp32:
   variant: esp32c6

@@ -123,6 +123,11 @@ switch:
     pin: ${key_switch_gnd}
     internal: true
     restore_mode: ALWAYS_OFF   # LOW: the key switch's return path (~50 µA through the pull-up)
+  - platform: gpio
+    id: mic_lr_select
+    pin: ${mic_lr}
+    internal: true
+    restore_mode: ALWAYS_OFF   # LOW → INMP441 outputs on the left slot (the header has only one GND)
 
 script:
   - id: rk_led

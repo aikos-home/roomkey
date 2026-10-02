@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # Microphone: INMP441 I²S MEMS mic (bottom port — the PCB hole faces the room).
 #   INMP441  VDD→3V3  GND→GND  SCK→${i2s_bclk}  WS→${i2s_lrclk}  SD→${i2s_din}
-#            L/R→${mic_lr} (driven LOW = left channel; saves the board's only GND pin)
+#            L/R→GND (left channel): to a GND pin (touch board), or a GPIO held LOW (desk board, its package)
 # Captures only while "Room info" is open (live dBFS meter) or while talking;
 # while talking the samples also go to the intercom link (roomkey_intercom.yaml).
 # Verified 2026-09-29: 1 kHz test beep 30 dB over the room floor, speech +18 dB.
@@ -33,13 +33,6 @@ globals:
   - id: mic_session
     type: uint32_t
     initial_value: "0"
-
-switch:
-  - platform: gpio
-    id: mic_lr_select
-    pin: ${mic_lr}
-    internal: true
-    restore_mode: ALWAYS_OFF   # LOW → INMP441 outputs on the left slot
 
 i2s_audio:
   - id: i2s_bus

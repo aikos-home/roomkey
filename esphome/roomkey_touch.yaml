@@ -29,12 +29,13 @@ packages:
   net: !include packages/net_wifi.yaml
   core: !include packages/roomkey_core.yaml
   ha: !include packages/roomkey_ha.yaml
-  mic: !include packages/roomkey_mic.yaml         # INMP441 (not wired on this board yet) — safe to keep
+  mic: !include packages/roomkey_mic.yaml         # INMP441, L/R to GND — safe to keep even if not wired
   voice: !include packages/roomkey_voice.yaml       # voice v2: the shared aikos_voice building block (room role)
   voice_mic: !include packages/roomkey_voice_mic.yaml   # its microphone: the INMP441 above
   call: !include packages/roomkey_call.yaml        # call settings, front door, door + transcriber address
   link: !include packages/roomkey_link.yaml       # voice v2 (WIP): talk_held / in_call straight to the door
-  # speaker: !include packages/roomkey_voice_speaker.yaml  # WIP: enable once the MAX98357A + speaker are wired
+  speaker: !include packages/roomkey_voice_speaker.yaml  # MAX98357A + 8 Ω speaker (WIP, wiring 02.10.)
+  sensors: !include packages/roomkey_sensors.yaml   # VEML7700, SHT31-D, LD2410C (WIP, wiring 02.10.)
 
 logger:
   level: DEBUG                      # bring-up: touch and display events
