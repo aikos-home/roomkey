@@ -1,11 +1,12 @@
-# Review build for aikos_voice on the simulator (aikos PR #24, v2.1): the key's voice package with push_samples()
-# instead of a mic. Cut off from the house like sim_tour.yaml: no link to the door or the bell, its own name, RTP port
+# Check build for aikos_voice on the simulator (since v2.1.0, aikos PR #24): the key's voice package with
+# push_samples() instead of a mic (sim_voice_v2.yaml). Cut off from the house like sim_tour.yaml: no link to the door or the bell, its own name, RTP port
 # and API port; its "door" is ../tools/voice_host_check.py on this machine (127.0.0.1), which runs it:
 #   esphome compile sim_v2_check.yaml && python3 ../tools/voice_host_check.py
 # Without RK_V2CHECK=1 it only idles. Never add it to Home Assistant.
 substitutions:
   node_name: roomkey-v2check
-  aikos_voice_ref: voice-v2.1                    # the PR branch, for this review build only (keys pin tags)
+  aikos_voice_ref: voice-v2.1.0                  # push_samples() (host support) since this tag
+  intercom_port: "5034"                          # its RTP port: not the door's 5004
   room_name: Office
   door_name: Front door
   language: en
@@ -33,6 +34,7 @@ packages:
   core: !include packages/roomkey_core.yaml
   ha: !include packages/roomkey_ha.yaml
   voice: !include packages/roomkey_voice.yaml
+  sim_mic: !include packages/sim_voice_v2.yaml
   call: !include packages/roomkey_call.yaml
 
 logger:
@@ -40,34 +42,6 @@ logger:
 
 api:
   port: 6063                                     # not the HA simulator's 6053
-
-aikos_voice:
-  port: 5034                                     # not the door's 5004
-
-interval:
-  # the simulator's "mic": a synthetic voice for the time that passed since the last call, in blocks of up to 800
-  # samples (the simulator's loop is slow while the call screen animates: 50 ms and more). aikos_voice takes them
-  # only while the call has the mic open, like a stopped mic otherwise.
-  - interval: 10ms
-    then:
-      - lambda: |-
-          static uint32_t last = 0, t = 0;
-          const uint32_t now = millis();
-          uint32_t n = last ? (now - last) * 16 : 0;   // 16 samples per ms
-          last = now;
-          if (n > 16000) n = 16000;                      // more than a second late: the rest is lost, as on a chip
-          static int16_t buf[800];
-          while (n > 0) {
-            const uint32_t m = n < 800 ? n : 800;
-            for (uint32_t i = 0; i < m; i++, t++) {
-              const float x = t / 16000.0f;
-              const float env = 0.55f + 0.45f * sinf(2 * 3.14159f * 3.0f * x);   // syllable-ish envelope
-              const float v = sinf(2 * 3.14159f * 440.0f * x) + 0.3f * sinf(2 * 3.14159f * 880.0f * x);
-              buf[i] = (int16_t) (v * env * 9000);
-            }
-            id(voice).push_samples(buf, m);
-            n -= m;
-          }
 
 script:
   # hold the key (case 2: no ring), the door takes the call, another key gets the floor ("besetzt"), it comes free,

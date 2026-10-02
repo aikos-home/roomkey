@@ -1,0 +1,24 @@
+# Simulator only, voice v2 (aikos_voice ≥ v2.1.0): a synthetic "voice" stands in for the microphone. It is generated
+# for the time that passed since the last call, in blocks of up to 800 samples: the simulator's loop slows to ~20/s
+# while the call screen animates. aikos_voice takes the samples only while the call has the mic open (while held).
+interval:
+  - interval: 10ms
+    then:
+      - lambda: |-
+          static uint32_t last = 0, t = 0;
+          const uint32_t now = millis();
+          uint32_t n = last ? (now - last) * 16 : 0;   // 16 samples per ms
+          last = now;
+          if (n > 16000) n = 16000;                      // more than a second late: the rest is lost, as on a chip
+          static int16_t buf[800];
+          while (n > 0) {
+            const uint32_t m = n < 800 ? n : 800;
+            for (uint32_t i = 0; i < m; i++, t++) {
+              const float x = t / 16000.0f;
+              const float env = 0.55f + 0.45f * sinf(2 * 3.14159f * 3.0f * x);   // syllable-ish envelope
+              const float v = sinf(2 * 3.14159f * 440.0f * x) + 0.3f * sinf(2 * 3.14159f * 880.0f * x);
+              buf[i] = (int16_t) (v * env * 9000);
+            }
+            id(voice).push_samples(buf, m);
+            n -= m;
+          }

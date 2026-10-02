@@ -12,6 +12,7 @@ substitutions:
   doorbell_entity: binary_sensor.doorbell_button
   visitor_entity: sensor.talk_transcript_door    # who is at the door (transcript attribute "speaker")
   disarm_action: script.roomkey_disarm
+  aikos_voice_ref: voice-v2.1.0                  # push_samples() (host support) since this tag
 
 esphome:
   name: ${node_name}
@@ -21,10 +22,9 @@ packages:
   board: !include packages/board_sim.yaml
   core: !include packages/roomkey_core.yaml
   ha: !include packages/roomkey_ha.yaml
-  intercom: !include packages/roomkey_intercom.yaml
+  voice: !include packages/roomkey_voice.yaml       # voice v2: the shared aikos_voice building block (room role)
+  sim_mic: !include packages/sim_voice_v2.yaml      # its "mic": a synthetic voice through push_samples()
   call: !include packages/roomkey_call.yaml        # call settings, front door, door + transcriber address
-  voice: !include packages/sim_voice.yaml
-  test_record: !include packages/roomkey_test_record.yaml
   link: !include packages/roomkey_link.yaml       # key_state ⇄ door, direct ring path from the bell (system test F3)
 
 logger:

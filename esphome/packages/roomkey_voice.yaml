@@ -3,12 +3,13 @@
 # Replaces roomkey_intercom.yaml (the key's own audio). The call model (KeyCall) decides who hears what and when the
 # key leaves (silence, max length, the door ended or is unreachable, front door); the screen follows it.
 #   needs: roomkey_call.yaml (settings, addresses, front door), roomkey_link.yaml (door messages + key_state to the
-#          door), and the mic: roomkey_voice_mic.yaml on a device; a simulator calls push_samples() (aikos_voice v2.1).
+#          door), and the mic: roomkey_voice_mic.yaml on a device; the simulator: sim_voice_v2.yaml (push_samples, v2.1).
 # Wire, rules and error cases: aikos-home/aikos esphome/components/aikos_voice/README.md.
 # ─────────────────────────────────────────────────────────────────────────────
 
 substitutions:
-  aikos_voice_ref: voice-v2.0.1   # a tag, never a branch (only a review build, sim_v2_check.yaml, sets a PR branch)
+  aikos_voice_ref: voice-v2.0.1   # a tag, never a branch (the simulator pins voice-v2.1.0: push_samples instead of a mic)
+  intercom_port: "5004"           # RTP here and at the door; roomkey_link.yaml's door address fallback uses it too
 
 external_components:
   - source:
@@ -21,6 +22,7 @@ external_components:
 aikos_voice:
   id: voice
   role: room
+  port: ${intercom_port}
   on_call_start:
     - lambda: roomkey::ctl().call_state("active");
   on_call_end:
