@@ -42,7 +42,7 @@ open-hardware door intercom.
 | Demo mode (everything works standalone, no HA needed) | ✅ on by default |
 | Status LED (WS2812 on the PoC board; glow ring on the touch board) | ✅ implemented — colours per state, not visually checked |
 | Microphone (INMP441) | ✅ **verified on hardware** — wired, recorded: 1 kHz test beep +30 dB, speech +18 dB over the room; 120 Hz high-pass removes knock/handling rumble. Test: `esphome/mic_test.yaml` + `tools/mic_check.py` |
-| Intercom audio (RTP/L16 16 kHz, push-to-talk) | 🟡 **WIP** — works simulator ⇄ fake door; hardware untested (needs Wi-Fi) |
+| Intercom audio, voice v2 (shared `aikos_voice` block: RTP/L16 16 kHz, push-to-talk, call model) | ✅ **desk key on v2 since 02.10.**: aikos re-acceptance with the door 71/71; simulator on the same block (`tools/voice_host_check.py`). The key's own audio path (`roomkey.yaml`) stays as the fallback. Listening needs the speaker (WIP, below) |
 | Speaker + ringtone (MAX98357A + Waveshare 2030 cavity speaker 8 Ω 2 W) | 🟡 **WIP / opt-in** — compiles, commented out; parts ordered |
 | Touch variant of the board (tap / swipe) | 🟡 **WIP** — required by the target design; 1× ordered; board package ready, touch logic tested in the simulator only |
 | Intercom security | ✅ incoming audio accepted only during an active call; everything else is dropped unheard |
@@ -105,7 +105,7 @@ behind a side wing of the 55 × 55 mm rocker — see the [fit check](docs/fit-ch
 
 ```bash
 cd esphome
-esphome run roomkey.yaml            # build + flash over USB (first time) or OTA
+esphome run roomkey_v2.yaml         # build + flash over USB (first time) or OTA (roomkey.yaml = own audio, the fallback)
 ```
 1. **Wi-Fi** (nothing is hardcoded): open https://web.esphome.io in Chrome → *Connect* →
    pick the board → enter Wi-Fi. Or join the hotspot `RoomKey Office` (password: `ap_password`
@@ -115,7 +115,7 @@ esphome run roomkey.yaml            # build + flash over USB (first time) or OTA
 3. Copy [homeassistant/roomkey_package.yaml](homeassistant/roomkey_package.yaml) into your HA packages.
 4. Turn off the key's **Demo mode** switch once the entities exist.
 
-One file per room: copy `roomkey.yaml`, change `node_name`, `room_name` and the entity ids.
+One file per room: copy `roomkey_v2.yaml`, change `node_name`, `room_name` and the entity ids.
 
 ## Home Assistant contract
 
@@ -137,8 +137,9 @@ HOME/NIGHT modes and a running entry delay/alarm, never AWAY. Decide that policy
 cd esphome
 esphome compile sim.yaml                                   # desktop simulator (SDL)
 .esphome/build/roomkey-sim/.pioenvs/roomkey-sim/program     # SPACE = key, mouse = touch
-RK_TOUR=1 RK_TOUR_EXIT=1 RK_SHOTS=shots .esphome/build/roomkey-sim/.pioenvs/roomkey-sim/program  # screenshot every state
-~/.local/share/uv/tools/esphome/bin/python ../tools/fake_home.py --host localhost --test   # HA + door contract test
+esphome compile sim_tour.yaml && RK_TOUR=1 RK_TOUR_EXIT=1 RK_SHOTS=shots .esphome/build/roomkey-tour/.pioenvs/roomkey-tour/program  # screenshot every state, cut off from the house
+esphome compile sim_v2_check.yaml && python3 ../tools/voice_host_check.py   # voice v2 on the simulator against a fake door
+~/.local/share/uv/tools/esphome/bin/python ../tools/fake_home.py --host localhost --test   # HA + door contract test (its audio checks: own audio path)
 ~/.local/share/uv/tools/esphome/bin/python ../tools/fake_home.py --host aikos-roomkey-desk.local  # interactive fake HA
 ```
 `tour_device.yaml` runs the same tour on the real board and logs frame timings.
@@ -147,7 +148,8 @@ RK_TOUR=1 RK_TOUR_EXIT=1 RK_SHOTS=shots .esphome/build/roomkey-sim/.pioenvs/room
 
 | Path | What |
 |---|---|
-| [`esphome/roomkey.yaml`](esphome/roomkey.yaml) | device entry, one per room |
+| [`esphome/roomkey_v2.yaml`](esphome/roomkey_v2.yaml) | device entry, one per room (voice v2, `aikos_voice`) |
+| [`esphome/roomkey.yaml`](esphome/roomkey.yaml) | the same with the key's own audio path (fallback) |
 | [`esphome/packages/`](esphome/packages/) | board contracts (PoC, touch, simulator) and feature packages: core UI, HA contract, mic, intercom, speaker |
 | [`esphome/src/roomkey_ui.h`](esphome/src/roomkey_ui.h) | UI, input grammar and state machine (LVGL 9) |
 | [`esphome/src/roomkey_audio.h`](esphome/src/roomkey_audio.h) | RTP/L16 audio link |
