@@ -551,7 +551,8 @@ class Controller {
     render_door_labels_();
     if (built_) render_ring_();
   }
-  // The conversation as a chat (aikos sensor.aikos_call_log, R17.6): the last CHAT_N messages, oldest first.
+  // The conversation as a chat (aikos sensor.aikos_call_log, R17.6): the last CHAT_N messages, oldest first. R27: the key
+  // holds only those, in RAM, for the running call; the full log of every call lives on the server (R23).
   struct ChatMsg {
     std::string id, who, role, text, lang;
     bool door = false, urgent = false;
@@ -561,6 +562,7 @@ class Controller {
   // R22: never the last call's chat, not even for a moment. aikos' call log counts only while it says a call is
   // active, and the key empties it itself when the door's call changes or ends, whatever HA still holds.
   void set_chat(std::vector<ChatMsg> msgs) {
+    if (msgs.size() > CHAT_N) msgs.erase(msgs.begin(), msgs.end() - CHAT_N);
     chat_in_ = std::move(msgs);
     show_chat_();
   }
@@ -577,7 +579,6 @@ class Controller {
   }
   void show_chat_() {
     std::vector<ChatMsg> msgs = chat_active_ ? chat_in_ : std::vector<ChatMsg>{};
-    if (msgs.size() > CHAT_N) msgs.erase(msgs.begin(), msgs.end() - CHAT_N);
     bool same = msgs.size() == chat_.size();
     for (size_t i = 0; same && i < msgs.size(); i++)
       same = msgs[i].id == chat_[i].id && msgs[i].text == chat_[i].text && msgs[i].who == chat_[i].who &&
