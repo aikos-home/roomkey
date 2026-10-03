@@ -33,6 +33,46 @@ globals:
   - id: mic_session
     type: uint32_t
     initial_value: "0"
+  - id: rk_mic_db                      # the last block's level (dBFS), written by the mic's on_data
+    type: float
+    initial_value: "-120"
+  - id: rk_mic_test_until              # mic test (action mic_test): millis() when it ends, 0 = none
+    type: uint32_t
+    initial_value: "0"
+
+# Mic test for hardware bring-up: the mic runs for some seconds (the screen says so), nothing is sent anywhere (no call,
+# no transcriber); "Mic level" (dBFS) once a second. Quiet room ≈ −60, music or speech nearby ≈ −40 … −20.
+api:
+  actions:
+    - action: mic_test
+      variables:
+        seconds: int
+      then:
+        - lambda: |-
+            const int s = seconds < 1 ? 1 : (seconds > 60 ? 60 : seconds);
+            id(rk_mic_test_until) = millis() + s * 1000;
+            roomkey::ctl().set_test_recording(true, s);
+
+sensor:
+  - platform: template
+    id: rk_mic_level
+    name: "Mic level"
+    icon: mdi:microphone
+    unit_of_measurement: dBFS
+    entity_category: diagnostic
+    accuracy_decimals: 0
+    update_interval: never
+
+interval:
+  - interval: 1s
+    then:
+      - lambda: |-
+          if (id(rk_mic_test_until) == 0) return;
+          id(rk_mic_level).publish_state(id(rk_mic_db));
+          if ((int32_t) (millis() - id(rk_mic_test_until)) >= 0) {
+            id(rk_mic_test_until) = 0;
+            roomkey::ctl().set_test_recording(false);
+          }
 
 i2s_audio:
   - id: i2s_bus
@@ -90,3 +130,4 @@ microphone:
           static float smooth = 0;
           smooth = lvl > smooth ? lvl : smooth * 0.88f + lvl * 0.12f;   // fast attack, slow release
           roomkey::ctl().set_mic_level(smooth, db);
+          id(rk_mic_db) = db;                // for "Mic level" (published from the main loop)
