@@ -20,10 +20,11 @@
 #     11 IO1       (LCD clock, don't use)           12 SDA=IO18   → VEML7700, SHT31-D
 #     13 IO2       (LCD data, don't use)            14 USB_P      (don't use)
 #     15 IO3       ← LD2410C TX                     16 USB_N      (don't use)
-#     17 IO4       → glow ring data (SK6812)        18 BOOT=IO9   the key
+#     17 IO4       → glow ring data (SK6812)        18 BOOT=IO9   ← key top (MX 1)
 #     19 IO5       → LD2410C RX (IMU INT1: high-Z   20 IO8        → I²S WS/LRC (mic + amp)
 #                    unless enabled, never done)
-#     21 IO6       (IMU INT2, free)                 22 IO7        → I²S SCK/BCLK (mic + amp)
+#     21 IO6       ← key bottom (MX 2; IMU INT2     22 IO7        → I²S SCK/BCLK (mic + amp)
+#                    high-Z, never enabled)
 #   INMP441 L/R goes to GND (3 GND pins here), so no GPIO for it.
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -166,9 +167,13 @@ touchscreen:
       mirror_x: true
 
 binary_sensor:
+  # The key is a rocker with two MX switches, read separately (Akte roomkey-einsatz §4, v0.6): top = BOOT (GPIO9; held at
+  # power-up → ROM download mode), bottom = IO6 (the IMU's INT2, never enabled). Until the UI gives the rocker its own
+  # meaning, both ends are the one key (key_raw); each end is visible on its own for tests.
   - platform: gpio
-    id: key_raw
-    internal: true
+    id: key_top
+    name: "Key top"
+    entity_category: diagnostic
     pin:
       number: GPIO9
       inverted: true
@@ -179,6 +184,23 @@ binary_sensor:
     filters:
       - delayed_on: 12ms
       - delayed_off: 12ms
+  - platform: gpio
+    id: key_bottom
+    name: "Key bottom"
+    entity_category: diagnostic
+    pin:
+      number: GPIO6
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+    filters:
+      - delayed_on: 12ms
+      - delayed_off: 12ms
+  - platform: template
+    id: key_raw
+    internal: true
+    lambda: return id(key_top).state || id(key_bottom).state;
 
 script:
   - id: rk_led
