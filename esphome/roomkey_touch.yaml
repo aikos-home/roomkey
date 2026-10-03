@@ -4,7 +4,7 @@
 #   flash:  esphome run roomkey_touch.yaml   (first time over USB, then OTA)
 # ─────────────────────────────────────────────────────────────────────────────
 substitutions:
-  node_name: aikos-roomkey-touch    # network name (bench prototype; a room name once it has a room)
+  node_name: aikos-roomkey-touch    # network name; "RoomKey Touch" is the product name (03.10.)
   room_name: Bench
   door_name: Front door
   language: en                      # en | de
@@ -18,7 +18,7 @@ substitutions:
 
 esphome:
   name: ${node_name}
-  friendly_name: aikos RoomKey ${room_name}
+  friendly_name: aikos RoomKey Touch    # one bench device; per room later: "aikos RoomKey Touch <room>"
   comment: "RoomKey · Waveshare ESP32-C6-Touch-LCD-1.47 (touch bench prototype)"
   project:
     name: aikos-home.roomkey          # lets the aikos integration recognise RoomKeys
