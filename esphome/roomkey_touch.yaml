@@ -39,3 +39,22 @@ packages:
 
 logger:
   level: DEBUG                      # bring-up: touch and display events
+
+# Bring-up diagnostics: why the key last restarted (a storm of 20 presses in 2.7 s restarted it once, 04.10. 20:15)
+debug:
+  update_interval: 30s
+
+text_sensor:
+  - platform: debug
+    reset_reason:
+      name: "Reset reason"
+      entity_category: diagnostic
+
+sensor:
+  - platform: debug
+    loop_time:
+      name: "Loop time"
+      entity_category: diagnostic
+    free:
+      name: "Heap free"
+      entity_category: diagnostic
