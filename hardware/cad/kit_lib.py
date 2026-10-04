@@ -50,25 +50,29 @@ def kit_chassis(v="S"):
 
 def back_carrier():
     """plate on the hub-post pins: amplifier area (the hub envelope) + radar area (lower left), trimmed to the box radius;
-    a window in front of the radar (open on the header edge for its solder joints); corner brackets for the radar and two
-    pins for the amplifier on the back face. Printed front face down, no supports."""
+    a window in front of the radar's antennas; v0.8: a closed TRAY wall round the radar (it was a floppy open U with corner
+    brackets); two pins for the amplifier on the back face. Printed front face down, no supports."""
     c0, c1 = P.KIT_CARRIER_D
     rx0, rx1, ry0, ry1, rd = P.KIT_RADAR
     hub = box(P.HUB[0] + 1.3, P.HUB[1] - 0.1, P.HUB[2] - 0.4, P.HUB[3] - 0.2, c0, c1)
     rad = box(rx0 - 0.6, rx1 + 0.3, ry0 - 0.6, ry1 + 0.6, c0, c1)
     pads = [cyl(x, y, P.KIT_POST_PIN[2] / 2 + P.KIT_PAD_WALL, c0, c1) for (x, y) in P.HUB_POSTS]   # wall round the holes
     plate = fuse([hub, rad] + pads).common(cyl(0, 0, R_BOX - 0.2, c0 - 1, c1 + 10))
-    keep_loop = box(-P.CABLE_W / 2 - 1.0, P.CABLE_W / 2 + 1.0, P.LOOP_Y[0] - 0.5, P.LOOP_Y[1] + 0.2, c0 - 1, c1 + 1)
+    keep_loop = box(-P.CABLE_W / 2 - 1.0, P.CABLE_W / 2 + 1.0, P.LOOP_Y[0] - 0.5, P.LOOP_Y[1] + 0.2, c0 - 1, c1 + 5)
     tools = [keep_loop]
     tools += [cyl(x, y, P.KIT_POST_PIN[2] / 2, c0 - 1, c1 + 1) for (x, y) in P.HUB_POSTS]
+    # v0.8 radar tray: closed perimeter wall round the board (outside its footprint), plate front → 0.3 behind the board
+    tw, tc = P.KIT_RADAR_TRAY
+    t1 = c1 + R.RADAR_T + 0.3
+    tray = box(rx0 - tc - tw, rx1 + tc + tw, ry0 - tc - tw, ry1 + tc + tw, c0, t1).cut(
+        box(rx0 - tc, rx1 + tc, ry0 - tc, ry1 + tc, c1 - EPS, t1 + 1))
+    plate = fuse([plate, tray]).common(cyl(0, 0, R_BOX - 0.2, c0 - 1, t1 + 1))
     wy1 = min(ry1 - 1.5, P.HUB_POSTS[0][1] - P.KIT_POST_PIN[2] / 2 - 0.8)          # stays below the hub-post pin
-    tools.append(box(rx0 - 1.5, rx1 - 1.5, ry0 + 1.5, wy1, c0 - 1, c1 + 1))          # window, cut cleanly open to the −x
-                                                                                      # edge (header side; no 0.1 skin)
+    tools.append(box(rx0 - tc, rx1 - 1.8, ry0 + 1.5, wy1, c0 - 1, c1 + 1).common(    # window for the antennas; its −x side
+        cyl(0, 0, R_BOX - 0.2 - 1.0, c0 - 2, c1 + 2)))                                # ends at the tray wall, ≥ 1.0 from the
+                                                                                      # box-radius trim (no skin)
     body = cut(plate, tools)
-    # radar corner brackets on the back face (board rests on the plate's back face around the window)
     parts = [body]
-    parts += [b for b in D._cradle(rx0, rx1, ry0, ry1, c1, 0.0, R.RADAR_T, leg=2.0, wall=1.0, clr=0.2, pad=0.01)
-              if b.BoundBox.ZLength > 0.02]
     # amplifier pins (its two mounting holes, top corners) on the back face
     ax, ay = P.KIT_AMP_C
     hy = ay + R.AMP_H / 2 - R.AMP_HOLE_C[1]

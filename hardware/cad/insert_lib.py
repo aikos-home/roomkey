@@ -163,12 +163,16 @@ def key_shell():
     # the switch plate (centre press: all four after KEY_TRAVEL; end press: the near pair after rock_angle())
     stops = [box(sx * P.STOP_X[0], sx * (P.STOP_X[1] + EPS), y - P.STOP_W_Y / 2, y + P.STOP_W_Y / 2, s["key_back"] - EPS,
                  P.STOP_END_D) for sx in (-1, 1) for y in P.STOP_YS]
+    # v0.8 key catch: a rigid nub at the free end of each side skirt (runs in the collar's groove; see collar())
+    yc, yl = P.KEY_CATCH_YC, P.KEY_CATCH_Y / 2
+    nubs = [box(sx * (P.KEY_W / 2 - EPS), sx * (P.KEY_W / 2 + P.KEY_CATCH_X), yc - yl, yc + yl, s["skirt_end"] - P.KEY_CATCH_D,
+                s["skirt_end"]) for sx in (-1, 1)]
     # cable strain relief: two lugs beside the slot (a cable tie / glue point)
     lug_x1 = min(P.CABLE_SLOT[0] / 2 + 1.2, R.TB_HEADER_PITCH_X / 2 - P.HEADER_SLOT_W / 2 - 0.1)
     relief = [box(sx * P.CABLE_SLOT[0] / 2, sx * lug_x1, P.CABLE_Y - 3.0, P.CABLE_Y + 3.0,
                   s["key_back"] - EPS, s["key_back"] + 1.2) for sx in (-1, 1)]
     # wire channel: a KEY_BACK_CHANNEL recess in the back's inner face between the header columns and the cable slot
-    return cut(fuse([shell] + skirts + [key_forks()] + stops + relief), [key_channel()])
+    return cut(fuse([shell] + skirts + nubs + [key_forks()] + stops + relief), [key_channel()])
 
 
 def key_forks():
@@ -243,7 +247,14 @@ def collar():
     at the short sides is set back over the first mm (room for the key's end when it is pressed at an end)."""
     c = ring(P.COLLAR_OUT_X, P.COLLAR_OUT_Y, P.COLLAR_OUT_R, P.WELL_IN_X, P.WELL_IN_Y, P.WELL_R, P.COLLAR_D0, P.COLLAR_D1)
     rl, rd = P.COLLAR_RELIEF
-    return cut(c, [rrect(P.WELL_IN_X, P.WELL_IN_Y + rl, P.WELL_R, P.COLLAR_D0 - 1, P.COLLAR_D0 + rd)])
+    # v0.8: a groove for the key's catch nub on each long side, open to the back face, closed towards the room
+    s = P.KS
+    gx = P.KEY_W / 2 + P.KEY_CATCH_X + P.GROOVE_CLEAR[0]
+    gy = P.KEY_CATCH_Y / 2 + P.GROOVE_CLEAR[1]
+    g0 = s["skirt_end"] - P.KEY_CATCH_D - P.KEY_CATCH_GAP
+    grooves = [box(sx * (P.WELL_IN_X - 0.5), sx * gx, P.KEY_CATCH_YC - gy, P.KEY_CATCH_YC + gy, g0, P.COLLAR_D1 + 1)
+               for sx in (-1, 1)]
+    return cut(c, [rrect(P.WELL_IN_X, P.WELL_IN_Y + rl, P.WELL_R, P.COLLAR_D0 - 1, P.COLLAR_D0 + rd)] + grooves)
 
 
 # ============================================================================ plate (L and S)
@@ -799,6 +810,24 @@ def build_variant(v):
         col += check_state(kr, f"key rocked ({lab} end pressed, {P.rock_angle():.2f}°)", exempt,
                            only=("key shell", "touch board", "antenna chip", near_stem(end)))
         rock_bodies[lab] = kr
+    # v0.8 key catch: the key pulled towards the room must hit the collar (groove front wall) — also when shifted sideways
+    # by its full side play; and it must NOT hit it before the catch play is used up
+    pulled = {}
+    for dx in (0.0, R.KEY_WELL_CLEAR, -R.KEY_WELL_CLEAR):
+        k = bodies["key shell"].copy()
+        k.translate(V(dx, 0, P.KEY_CATCH_GAP + 0.15))
+        pulled[dx] = overlap(k, bodies["collar"])
+    k = bodies["key shell"].copy()
+    k.translate(V(0, 0, P.KEY_CATCH_GAP - 0.05))
+    free = overlap(k, bodies["collar"])
+    ok = all(v > 0.01 for v in pulled.values()) and free < 0.01
+    report["states"]["key pulled (catch)"] = (f"v0.8: key pulled {P.KEY_CATCH_GAP + 0.15:.2f} towards the room (centred and "
+                                              f"shifted ±{R.KEY_WELL_CLEAR}) → collar hit {', '.join(f'{v:.2f}' for v in pulled.values())} mm³ "
+                                              f"(must be > 0); pulled {P.KEY_CATCH_GAP - 0.05:.2f} → {free:.2f} mm³ (must be 0) → "
+                                              f"{'CAPTIVE' if ok else 'NOT CAPTIVE'}")
+    print("  " + report["states"]["key pulled (catch)"])
+    if not ok:
+        col.append(("key catch", "fails", 0.0))
     report["states"]["key rocked"] = (f"v0.6 rocker: key + board turned {P.rock_angle():.2f}° about the far stem's top, near "
                                       f"stem down {P.rock_stem_travel():.2f}, far stem at its top stop; both ends; base exemptions")
     t_stop = stop_travel()

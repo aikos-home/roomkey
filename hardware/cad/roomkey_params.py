@@ -88,7 +88,10 @@ KEY_SOCKET_DEPTH = 3.4   # [FREE] key socket depth = stem top ↔ post end, so t
 # The full cross socket made the key a rigid frame on two stems (no rocking, end presses bind). Now each stem is held by a
 # FORK: two prongs pinch only the ends of the stem's x-arm (faces normal to x), so the key can turn about x on the stems
 # (pinch friction still holds it on) and rests on a rocking PAD (cylinder about x) on the stem top.
-FORK_GAP = MX_STEM_ARM_L     # [FREE] inner distance of the prongs = the x-arm length the old cross socket used (fit OK, 2026-10-01)
+FORK_GAP = 3.90              # [FREE] inner distance of the prongs. v0.6 used 4.10 (the cross SOCKET's slot length, which has
+                             #        play — that socket clamped through its 1.30 width) → the forks clamped nothing on the ≈ 4.0
+                             #        stem arm and the key fell out (owner, 2026-10-04). 3.90 [TBD coupon] gives a light pinch;
+                             #        what keeps the key in is the v0.8 catch in the collar (insert_params KEY_CATCH_*)
 FORK_PRONG_T = 0.8           # [FREE] prong thickness in x (2 perimeters)
 FORK_PRONG_W = 2.0           # [FREE] prong width in y (grips the 1.3 wide arm end; stays inside the housing window when rocked)
 FORK_PAD_R = 1.5             # [FREE] rocking pad on the stem top: cylinder about x, its lowest line at stem_top

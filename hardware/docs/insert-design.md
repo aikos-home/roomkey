@@ -1,4 +1,4 @@
-# RoomKey wall insert — v0.6 (Variant L and Variant S)
+# RoomKey wall insert — v0.8 (Variant L and Variant S)
 
 > **DRAFT / WIP. AI-assisted design. Not built, not tested, nothing certified.**
 > - The insert is a **SELV-only (class III) device**: it never carries 230 V.
@@ -10,10 +10,11 @@
 >   the round-4 findings but was **not** reviewed again — the remaining MAJOR items need real parts and measurements
 >   ([review log](../reviews/insert-v0-review-log.md)).
 >
-> - **v0.6** adds the owner's first fit test, the rocker key, wider wire slots and the kit v0.7 prototype (§0). It was
->   **not** reviewed either.
+> - **v0.6** adds the owner's first fit test, the rocker key, wider wire slots and the kit v0.7 prototype (§0). **v0.8**
+>   makes the rocker key captive after the first kit assembly (§0, §3). Neither was reviewed. (There is no insert v0.7;
+>   v0.7 is the kit.)
 >
-> Date: 2026-10-01, v0.6 2026-10-04. Licence: CERN-OHL-P-2.0 (hardware), CC BY 4.0 (this text).
+> Date: 2026-10-01, v0.6 and v0.8 2026-10-04. Licence: CERN-OHL-P-2.0 (hardware), CC BY 4.0 (this text).
 
 **What it is.** The insert replaces the 55 × 55 mm rocker of a German flush-mount switch (or socket) position and
 keeps the frame.
@@ -58,6 +59,14 @@ outside the chamber. Floating plate on 4 tactile switches; light-guide collar; m
 **v0.2 → v0.3 (round 2: no BLOCKER, ~28 MAJORs).** No foam gaskets between plate and chassis (mic carrier bonded to
 the plate, speaker sealed at its grille); glow = translucent plate rim; flange datum + tolerance chain + shims; 8 frame
 rims; stainless load plates; T0/T4 and the switch-box inventory; hub GPIO map from the vendor schematic.
+
+**v0.6 → v0.8 (the owner's first kit assembly, 2026-10-04; WIP, not reviewed).**
+
+| Input | v0.8 |
+|---|---|
+| "Nothing stops the rocker, with the ESP32 module, from simply falling out." | **Key catch:** a rigid nub on each side skirt runs in a groove in the collar's inner face. The groove is open to the back and closed towards the room, so the key is **captive**. The CAD check pulls the key and requires a hit, also when the key is shifted sideways. — §3 |
+| Why: the stem forks clamped nothing. Their gap of 4.10 was the cross socket's slot length, which has play; the stem arm is ≈ 4.0. Even a tight fork is a weak spring, so friction alone cannot hold the key | fork gap 3.90 [TBD coupon] for a light pinch; retention comes from the catch, not from friction — §3 |
+| The collar must come out for key service | **the collar is no longer glued**: the plate holds it. Assembly: key → collar → plate. The acoustic seam it used to seal is open (fallback: a thin foam ring) — §4, §11 |
 
 **v0.5 → v0.6 (the owner's first print and wishes, 2026-10-02 … 04; WIP, not reviewed).**
 
@@ -276,10 +285,28 @@ viewed from the side the key should be "funnel-shaped"; and "the press in the mi
   - firmware: centre = both switches within a window (≈ 100 ms, rig);
   - **an end press needs only ≈ 0.43 N** (one switch, lever 28/36.4), so touch test R13 is harder. Mitigation: a key
     event during a moving touch is dropped (firmware); fallback: heavier switches;
-  - the pull-off force of the fork pinch [coupon, target ≥ 10 N] (coupon v1 row E still tests the old posts → to update);
+  - ~~the pull-off force of the fork pinch~~ → v0.8: the key is held by the catch below, not by the pinch;
   - the real MX window shape (6.2 [TBD]).
 - **Test print** (owner, PETG, A1, 0.10): only the new key shell, on the 01.10. parts. File:
   `druck/roomkey-taste-v0.6-wippe/` with `DRUCKEN.md`.
+
+**Key catch — v0.8 (owner, 2026-10-04: "nothing stops the rocker, with the ESP32 module, from simply falling out"; WIP,
+modelled, not reviewed).**
+- *The cause (my error):* the forks had a 4.10 gap, the cross socket's slot length, which has play; the stem arm is ≈ 4.0.
+  So they clamped nothing. A tighter fork would still be a weak spring (0.8 × 2.0 × 4.3 prongs), good for tens of grams.
+- *The catch:*
+  - A rigid **nub** sits at the free end of each side skirt: 6.0 long, 1.0 high, 0.55 proud of the skirt, at y 0.
+  - It runs in a **groove** in the collar's inner face. The groove is 0.1 deeper than the nub and 0.5 longer per end; it is
+    **open to the collar's back face** and closed towards the room, 0.45 in front of the nub at rest.
+  - Pressing and rocking move the nub deeper into the groove (free). Pulling stops at the groove's front wall, with an
+    overlap of 0.30 per side. The key's side play of 0.25 can free only one side at a time.
+- *The collar is not glued any more.* The plate overlaps its front face, so the collar cannot leave while the plate is
+  on.
+- *Assembly:* key onto the stems → collar from the front over the key (the nubs enter the open groove ends) → plate.
+- *Service:* plate off → collar out → key off.
+- *CAD check:* the key is pulled 0.60 towards the room, centred and shifted ±0.25 sideways; it must hit the collar every
+  time, and pulled 0.40 it must not. Rest, pressed, rocked and wobbled stay without collision.
+- *Fork:* the gap is now 3.90 [TBD], a light pinch so the key does not rattle on its stems.
 
 **Shadow gap.** 1.0 ± 0.21 (RSS: plate location 0.1 + print 0.1, switch-plate screws 0.1, MX cut-out 0.05, stem play
 0.1, socket 0.05). If the key moves further, its skirt touches the collar at 0.75 gap. **It glows** (§4).
@@ -354,8 +381,9 @@ black tape** at assembly. They would shine through the 1.0 mm shell.
 **Collar.** Translucent frosted PETG. Wall 1.2 on the straight runs; the outer corner radius is 5.0, so the corners are
 2.6 thick along the diagonal.
 - The **4 × SK6812 MINI** sit centred on those thick corners (d 12.6), facing forward.
-- The collar is glued into the deck seat **with the key module mounted** (the key is the alignment jig), with a
-  **continuous** bead (it also seals the 0.1 seam to the box, §6.2).
+- v0.8: the collar is **not glued**. It sits in the deck seat (0.1 fit) and the plate holds it in, because the key's
+  catch runs in its grooves and the collar must come out for key service (§3). The 0.1 seam it used to seal is open:
+  fallback, a thin foam ring on its outer face (§6.2) [TBD rig].
 
 **Glow uniformity (WIP).** The corners are nearest the LEDs; the middle of the long sides will be dimmer.
 - Test: desk rig with the real collar and plate.
@@ -1122,6 +1150,11 @@ and never on 230 V.**
     that wall and the holes opened over the edge. Now a round pad gives each hole 1.2 of wall, the radar window is cut
     cleanly open to its −x edge, and `build_kit` reports every carrier web (rule ≥ 0.8; the thinnest is now 0.8, between
     a hole and the window).
+  - *Radar tray (v0.8, second carrier print, 2026-10-04):* the radar area was a floppy U of 1.2–2.1 mm strips, 1.5
+    thick, open on the header side. The cable-loop keep-out had cut its +x strip down to 1.2. Now a **closed wall** (1.0,
+    0.2 play) runs round the board from the plate's front to 0.3 behind the board, 3.4 tall. It closes and stiffens the
+    ring and replaces the corner brackets. The window in front of the antennas stays open, ≥ 1.0 from the box-radius trim.
+    Check: 0 collisions, carrier ↔ cable loop 0.2, radar ↔ box wall 1.24, webs ≥ 0.8.
   - 0 collisions in the practice box (rest and key pressed). Radar 1.24 to the box wall; carrier 0.3 to the cable loop.
 - *Mic (decided 2026-10-03):* the INMP441 is round Ø13.14 and fits neither the 12.0 left wing nor the touch-board
   back (4.0 gap, crowded parts, antenna).
@@ -1144,8 +1177,8 @@ and never on 230 V.**
 2. **Switch plate.** Both MX switches, **wired first** (2 wires), clipped in; switch plate through the collar opening
    into the chassis, 2 × M2 × 4.
 3. **Chassis front.**
-   - Collar into its seat from the front, **glued (continuous bead) with the key module temporarily mounted on the
-     stems as the jig**.
+   - v0.8: **key module onto the stems first, then the collar from the front over the key** (its catch nubs enter the
+     collar's grooves from behind). Not glued — the plate holds the collar.
    - LEDs onto the collar's thick corners through the rear-wall windows (tape mask); daisy-chain wires.
    - B3FS carriers from the front: wires through the flange slots first, then the carrier onto the flat seat — **held
      with tape, not glued**, until the per-switch check (step 6) passes; then a glue dot.

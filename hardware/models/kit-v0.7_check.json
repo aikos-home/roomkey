@@ -5,7 +5,7 @@
   "LD2410C ↔ practice box": 1.239,
   "LD2410C header ↔ practice box": 3.201,
   "MAX98357A ↔ cable loop": 1.25,
-  "back carrier ↔ cable loop": 0.3,
+  "back carrier ↔ cable loop": 0.2,
   "back carrier ↔ speaker 2030": 0.58,
   "back carrier ↔ chassis (kit)": 0.0,
   "LD2410C ↔ MX switch 2": 5.769,
@@ -22,8 +22,10 @@
   "SHT31-D ↔ practice box": 2.23
  },
  "carrier_webs": {
-  "hole (-13.2, +4.0) ↔ edge": 0.8,
-  "hole (-13.2, +4.0) ↔ next opening": 13.7,
+  "window ↔ edge": 1.0,
+  "window ↔ next opening": 0.8,
+  "hole (-13.2, +4.0) ↔ edge": 1.65,
+  "hole (-13.2, +4.0) ↔ next opening": 0.8,
   "hole (-13.2, +20.0) ↔ edge": 1.2,
   "hole (-13.2, +20.0) ↔ next opening": 13.7,
   "hole (+13.2, +4.0) ↔ edge": 1.2,

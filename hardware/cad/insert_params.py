@@ -1,4 +1,4 @@
-"""RoomKey wall insert v0.6 (DRAFT / WIP, AI-assisted, not certified) — every dimension of the in-wall part, both variants.
+"""RoomKey wall insert v0.8 (DRAFT / WIP, AI-assisted, not certified) — every dimension of the in-wall part, both variants.
 
     python3 hardware/cad/insert_params.py          # validate L and S
     python3 hardware/cad/insert_params.py L        # one variant
@@ -39,6 +39,9 @@ v0.6 (the owner's first print and wishes; NOT reviewed):
   * Wider middle cable slot + header slots for pins / wires straight back from the touch-board header.
   * Real speaker dimensions, LED corner notches (WS2812B-MINI 3535, 2.0 high), push-out removal.
   * §6 desk replica / practice box and §7 kit v0.7 (whole RoomKey in one box, bench supply) — prototypes only.
+v0.8 (the owner's first kit assembly, 2026-10-04: the rocker key fell out; NOT reviewed):
+  * Key catch: a rigid nub on each side skirt in a groove of the collar (open to the back, closed to the room) → the key
+    is captive; the collar is no longer glued. Stem fork gap 4.10 → 3.90 (the stem arm is ≈ 4.0: 4.10 clamped nothing).
 
 Tags: [DS] datasheet / norm / vendor drawing (source in SOURCES) · [MEAS] measured on the real part ·
       [FREE] design choice · [TBD] placeholder or assumption until measured (listed by --tbd).
@@ -56,7 +59,7 @@ sys.path.insert(0, HERE)
 import roomkey_params as R  # noqa: E402
 
 VARIANTS = ("L", "S")
-VERSION = "0.6"
+VERSION = "0.8"
 
 SOURCES = {
     "cherry":   "Cherry MX1A datasheet, datasheet.octopart.com/MX1A-11NW-Cherry-datasheet-34676.pdf",
@@ -189,9 +192,20 @@ COLLAR_D0, COLLAR_D1 = 3.6, 12.5   # [FREE] collar front face (lights the plate'
 COLLAR_OUT_X, COLLAR_OUT_Y = WELL_IN_X + COLLAR_T, WELL_IN_Y + COLLAR_T
 COLLAR_OUT_R = 5.0    # [FREE] outer corner radius smaller than the inner one (8.35 would be parallel) → the collar is 2.6 thick
                       #        along the corner diagonals, where the LEDs sit; the deck seat follows the same contour
-COLLAR_FIT = 0.1      # [FREE] collar ↔ deck opening; glued with the key module mounted (the key is the alignment jig)
+COLLAR_FIT = 0.1      # [FREE] collar ↔ deck opening. v0.8: NOT glued (the plate holds it; it must come out for key service)
 COLLAR_RELIEF = (0.4, 2.4)   # [FREE] the collar's inner face at the SHORT sides (incl. corner arcs) is set back 0.4 over its
                              #        first 2.4 mm: room for the key ends under wobble (±KEY_WOBBLE_DEG) and an end press [TBD rig]
+# v0.8 KEY CATCH (owner, 2026-10-04: the assembled v0.7 rocker key simply fell out — the forks clamped nothing). The key is
+# now CAPTIVE: a rigid nub on each side skirt runs in a groove in the collar's inner face. The groove is open to the collar's
+# back face (the collar slides over the mounted key from the front) and closed towards the room: pressing and rocking stay
+# free, pulling stops at the groove's front wall. The plate keeps the collar in (it overlaps the collar's front face).
+# Assembly: key onto the stems → collar over the key → plate. Service: plate off → collar out → key off.
+KEY_CATCH_Y, KEY_CATCH_YC = 6.0, 0.0   # [FREE] nub length along y, centre y (between the stems: rocking moves it deeper)
+KEY_CATCH_D = 1.0      # [FREE] nub height along d, at the skirt's free end
+KEY_CATCH_X = 0.55     # [FREE] nub protrusion beyond the skirt's outer face → catch overlap with the collar = X − KEY_WELL_CLEAR
+KEY_CATCH_GAP = 0.45   # [FREE] nub front ↔ groove front wall at rest; > the 0.37 a ±1.5° roll lifts the nub (the MX top stop
+                       #        defines rest, not the catch)
+GROOVE_CLEAR = (0.1, 0.5)   # [FREE] groove ↔ nub in x (bottom) and in y (rocking moves the nub ≈ 0.25 in y)
 REAR_WALL = 1.2       # [FREE] chassis well wall behind the collar (d COLLAR_D1 → ledge)
 SWP_CLEAR = 0.2       # [FREE] switch plate ↔ well wall
 LEDGE = 1.0           # [FREE] ledge under the switch plate
@@ -561,6 +575,10 @@ KIT_PAD_WALL = 1.2                # [FREE] round pad round each carrier hole (�
                                   # (2026-10-04) had 0.25–0.35 between hole and edge → the slicer dropped it, holes opened
                                   # over the edge. Checked now in build_kit (carrier webs ≥ KIT_MIN_WEB).
 KIT_MIN_WEB = 0.8                 # [FREE] thinnest web the carrier may have anywhere (2 lines of a 0.4 nozzle)
+KIT_RADAR_TRAY = (1.0, 0.2)       # [FREE] v0.8 radar TRAY: a closed perimeter wall round the board (thickness, play), from the
+                                  # plate's front to 0.3 behind the board. The first carrier print (2026-10-04) was a floppy U of
+                                  # 1.2–2.1 mm strips, open on the header side; the wall closes and stiffens the ring and
+                                  # replaces the corner brackets. The window (antennas) stays open.
 
 
 # =====================================================================================================
@@ -931,6 +949,14 @@ def validate(v, verbose=True):
     # --- B. key module ---------------------------------------------------------------------------------
     rule(s["skirt_end"] + KEY_TRAVEL <= COLLAR_D1 - 0.3, f"key side skirts pressed end at d {s['skirt_end'] + KEY_TRAVEL:.1f}, "
          f"inside the collar (back face {COLLAR_D1})")
+    ov = KEY_CATCH_X - R.KEY_WELL_CLEAR
+    gw = COLLAR_OUT_X - (KEY_W / 2 + KEY_CATCH_X + GROOVE_CLEAR[0])
+    rule(ov >= 0.25 and gw >= 0.8 - 1e-9, f"v0.8 key catch: nub overlaps the collar by {ov:.2f} (≥ 0.25; the key's side play "
+         f"{R.KEY_WELL_CLEAR} cannot free both sides at once), collar wall behind the groove {gw:.2f} (≥ 0.8)")
+    rule(KEY_W / 2 + KEY_CATCH_X <= COLLAR_OUT_X + COLLAR_FIT - 0.5, "v0.8 key catch: the key with its nubs passes the empty "
+         f"deck opening (nubs to {KEY_W / 2 + KEY_CATCH_X:.2f}, opening {COLLAR_OUT_X + COLLAR_FIT:.2f})")
+    rule(KEY_CATCH_GAP >= 0.37, f"v0.8 key catch: {KEY_CATCH_GAP} play to the groove's front wall at rest (≥ 0.37: a "
+         f"±{KEY_WOBBLE_DEG}° roll lifts the nub that much)")
     (_, y1), (_, y2) = R.MX_SW_POS
     over_t, over_b = KEY_H / 2 - y1, KEY_H / 2 + y2
     info(f"key overhangs its two MX stems by {over_t:.1f} (top) / {over_b:.1f} (bottom); the side skirts in the collar "
