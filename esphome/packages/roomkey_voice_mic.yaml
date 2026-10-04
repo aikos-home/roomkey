@@ -1,7 +1,7 @@
 # The device's microphone for aikos_voice (roomkey_voice.yaml): the INMP441 with id `mic` (roomkey_mic.yaml).
 # A simulator has none and feeds the same path with push_samples() (aikos_voice v2.1).
 substitutions:
-  voice_mic_gain: "2.0"        # as the own audio path had it (×2 ≈ +6 dB)
+  voice_mic_gain: "6.0"        # the starting value of "Mic gain" (×6 ≈ +15.6 dB; the limiter catches the peaks)
 
 aikos_voice:
   microphone:
@@ -9,3 +9,27 @@ aikos_voice:
     bits_per_sample: 16
   mic_gain: ${voice_mic_gain}
   mic_start_mute: 32ms         # the board pops when the mic starts
+
+# "Mic gain" in HA: what the key sends, tuned without a flash. ×2 sent speech at about −35 dBFS (RMS of a hold, peaks −2 …
+# −6 from the limiter); the door plays keys at −6 dB, so a second room heard it "extremely quiet" (04.10.).
+number:
+  - platform: template
+    id: rk_mic_gain
+    name: "Mic gain"
+    icon: mdi:microphone-plus
+    entity_category: config
+    min_value: 1
+    max_value: 16
+    step: 0.5
+    mode: box
+    optimistic: true
+    restore_value: true
+    initial_value: ${voice_mic_gain}
+    on_value:
+      - lambda: id(voice).set_mic_gain(x);
+
+esphome:
+  on_boot:
+    - priority: -200
+      then:
+        - lambda: id(voice).set_mic_gain(id(rk_mic_gain).state);
