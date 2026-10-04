@@ -34,7 +34,9 @@ packages:
   voice_mic: !include packages/roomkey_voice_mic.yaml   # its microphone: the INMP441 above
   call: !include packages/roomkey_call.yaml        # call settings, front door, door + transcriber address
   link: !include packages/roomkey_link.yaml       # voice v2 (WIP): talk_held / in_call straight to the door
-  speaker: !include packages/roomkey_voice_speaker.yaml  # MAX98357A + 8 Ω speaker (WIP, wiring 02.10.)
+  # speaker: !include packages/roomkey_voice_speaker.yaml  # WIP: only once the MAX98357A is wired. Without it the speaker
+  #   task still runs on the shared I²S bus, restarted every ~2 s in a call ("queues desynced") and starved the mic:
+  #   a 1.1 s hold reached the transcriber as 0.1 s (04.10.).
   sensors: !include packages/roomkey_sensors.yaml   # VEML7700, SHT31-D, LD2410C (WIP, wiring 02.10.)
 
 logger:
