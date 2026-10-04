@@ -1,0 +1,12 @@
+{
+ "collisions": [],
+ "gaps": {
+  "chassis ↔ practice box": 0.0,
+  "chassis ↔ frame 1-gang": 0.1,
+  "plate ↔ frame 1-gang": 0.3,
+  "frame 1-gang ↔ practice box": 0.0,
+  "plate pressed (left wing) ↔ frame 1-gang": 0.16,
+  "plate pressed (top band) ↔ frame 1-gang": 0.157,
+  "plate pressed (bottom band) ↔ frame 1-gang": 0.193
+ }
+}

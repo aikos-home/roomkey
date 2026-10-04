@@ -1,4 +1,4 @@
-"""RoomKey wall insert v0.5 (DRAFT / WIP, AI-assisted, not certified) — every dimension of the in-wall part, both variants.
+"""RoomKey wall insert v0.6 (DRAFT / WIP, AI-assisted, not certified) — every dimension of the in-wall part, both variants.
 
     python3 hardware/cad/insert_params.py          # validate L and S
     python3 hardware/cad/insert_params.py L        # one variant
@@ -34,6 +34,11 @@ v0.5 (after review round 4; NOT reviewed by a fresh round — the loop stopped, 
     (60 V class, OVLO 17 V, SMBJ24A), bleeder in L and S; SNT61 overload = Q4f.
   * RF spring distance corrected (sign error: 8.1 mm pressed, WARN); thicker speaker hooks; mic wire well with an S-loop;
     key channel along the real header; touch-vs-key and power-cut items with assumption, test and fallback.
+v0.6 (the owner's first print and wishes; NOT reviewed):
+  * Rocker key: both MX read separately, centre press = both (forks, stop bosses, tapered ends, rock + wobble checks).
+  * Wider middle cable slot + header slots for pins / wires straight back from the touch-board header.
+  * Real speaker dimensions, LED corner notches (WS2812B-MINI 3535, 2.0 high), push-out removal.
+  * §6 desk replica / practice box and §7 kit v0.7 (whole RoomKey in one box, bench supply) — prototypes only.
 
 Tags: [DS] datasheet / norm / vendor drawing (source in SOURCES) · [MEAS] measured on the real part ·
       [FREE] design choice · [TBD] placeholder or assumption until measured (listed by --tbd).
@@ -51,7 +56,7 @@ sys.path.insert(0, HERE)
 import roomkey_params as R  # noqa: E402
 
 VARIANTS = ("L", "S")
-VERSION = "0.5"
+VERSION = "0.6"
 
 SOURCES = {
     "cherry":   "Cherry MX1A datasheet, datasheet.octopart.com/MX1A-11NW-Cherry-datasheet-34676.pdf",
@@ -118,11 +123,12 @@ PLATE = R.ROCKER_W                 # 55.0 [MEAS, FROZEN]
 HALF = PLATE / 2
 WALL_D = 9.0          # [TBD] plate front ↔ wall / box-rim plane. 55-system rockers sit ~8–11 mm proud. MEASURE (Q1).
 FRAME_OPEN = 55.6     # [TBD] frame opening (rocker 55.0 [MEAS] + ~0.3 per side). MEASURE (Q2).
-FRAME_OUT = 81.0      # [TBD] frame outer size — drawings only
+FRAME_OUT = 80.5      # [DS] Jung AS 500 1-gang frame 80.5 × 80.5 — owner's series CONFIRMED 2026-10-03 ("Jung AS500");
+                      #      vendor lists the inner size as "55 × 55" (nominal) → the real opening still to measure (Q2)
 FRAME_BACK_FREE = 3.5  # [TBD] free depth under the frame for support flange + screw heads. MEASURE (Q2).
 FRAME_TUNNEL_D = WALL_D - FRAME_BACK_FREE   # [TBD] depth of the frame's opening tunnel (5.5), the rims reach into it
 FRAME_RETENTION = None  # [TBD] "ring" (frame clips onto the support ring) or "centre" (held by the rocker). ASK/PHOTO (Q2).
-FRAME_MATERIAL = None   # [TBD] plastic or metal? (RF: a metal frame edge is ≥ 6.6 mm from the antenna chip in-plane, Q2)
+FRAME_MATERIAL = "plastic"   # [DS] Jung AS 500 = plastic program (owner 2026-10-03) → no metal near the antenna or the radar
 FRAME_TUNNEL_MARGIN = 0.1  # [FREE] min gap between any fixed part and the frame tunnel wall (the rims locate at this gap)
 
 BOX_OPEN_D = 60.0     # [DS din49073] installation opening Ø60
@@ -193,12 +199,20 @@ SWP_SCREWS = ((-10.5, 1.5), (10.5, 1.5))   # [FREE] M2 × 4 countersunk (DIN 965
 SWP_SCREW_L = 4.0     # [FREE]
 SWP_BOSS_D, SWP_BOSS_H = 4.6, 3.8   # [FREE] boss 3.8 deep: pilot hole 3.0, 0.8 floor
 M2_CSK_D, M2_CSK_H = 3.8, 1.2    # [DS] DIN 965 M2 head
-CABLE_N, CABLE_WIRE_D = 14, 0.8  # [FREE] 14 × AWG30 silicone stranded, laid flat. Order (ground between fast lines):
-CABLE_ORDER = ("VBUS", "GND", "BOOT", "IO4 LED", "IO3 PLATE_SENSE", "IO5 RELAY_DRIVE", "GND", "IO7 BCLK", "GND", "IO8 WS",
-               "IO16 DOUT", "GND", "IO17 DIN", "3V3")   # [FREE] ground next to the I²S lines; no I²C (no expander needed)
-CABLE_W = CABLE_N * CABLE_WIRE_D   # 11.2
+CABLE_ORDER = ("VBUS", "GND", "BOOT KEY1", "IO6 KEY2", "IO4 LED", "IO3 PLATE_SENSE", "IO5 RELAY_DRIVE", "GND", "IO7 BCLK",
+               "GND", "IO8 WS", "IO16 DOUT", "GND", "IO17 DIN", "3V3")   # [FREE] ground next to the I²S lines; no I²C.
+#              v0.6 rocker: the two MX are read separately → IO6 (IMU INT2 on the board: INT2 must stay disabled)
+#              v1 [TBD, Akte §4 B, 2026-10-03]: + SDA, SCL (header pins 12/10) for the light sensor on the mic carrier and the
+#              RH/T sensor + an I²C port expander on the hub → 17 wires. NOT in the CAD yet: at 17 × 0.8 the central slot
+#              (14.4) would leave only 0.19 to the header slots → v1 needs AWG32 (0.6) or the I²C pair through a header slot.
+CABLE_N, CABLE_WIRE_D = len(CABLE_ORDER), 0.8   # [FREE] 15 × AWG30 silicone stranded, laid flat
+CABLE_W = CABLE_N * CABLE_WIRE_D   # 12.0
 CABLE_Y = 1.5         # [FREE] cable runs between the MX housings at y = +1.5
-CABLE_SLOT = (CABLE_W + 0.8, CABLE_WIRE_D + 0.6)   # [FREE] slots in key back and switch plate
+CABLE_SLOT = (CABLE_W + 0.8, 2.6)   # [FREE] slots in key back and switch plate; 2.6 wide (owner 2026-10-03: "weniger eng",
+                                    #        room for thicker prototype wires / jumper leads, was 1.4)
+HEADER_SLOT_W = 3.0   # [FREE] owner 2026-10-03: room for pins or wires going straight back from the header holes → a slot through
+                      #        the key back under each pin column (x ±8.89 ± 1.5, the old channel strips), first pin − ... last pin
+HEADER_SLOT_Y = (R.TB_HEADER_Y[1] - 0.85, R.TB_HEADER_Y[0] + 1.25)   # −16.6 … +10.9: 0.9 web to the bottom screw's countersink
 LOOP_R = 4.0          # [FREE] rolling U-loop bend radius behind the MX bodies (5 × wire Ø)
 LOOP_Y = (CABLE_Y - 2 * LOOP_R - CABLE_WIRE_D, CABLE_Y + CABLE_WIRE_D / 2 + 0.4)   # loop spans −y from the moving leg
 LOOP_D0 = 24.0        # [FREE] loop region starts behind the MX pins (23.6)
@@ -206,7 +220,39 @@ LOOP_D1 = 36.5        # [FREE] incl. 2 mm roll + slack
 LOOP_LIFE = 250_000   # [FREE] key presses the cable must survive (30 years × 20/day = 219 k); desk-rig test target
 ANCHOR = (-11.5, 11.5, -8.4, -7.4, 24.0, 25.2)   # [FREE] bar that clamps the fixed leg (x0,x1,y0,y1,d0,d1)
 ANCHOR_POSTS = ((-10.5, -7.9), (10.5, -7.9))     # [FREE] posts from the ledge carrying the anchor bar
-KEY_TRAVEL = R.MX_TRAVEL   # [DS] 4.0: the key stops at MX bottom-out like any keycap (no stop bosses in v0.4)
+KEY_TRAVEL = 3.4     # [FREE] v0.6: the key stops on 4 STOP BOSSES landing on the switch plate (centre press), before MX
+                     #        bottom-out (4.0); both switches are past their actuation point (2.0 ± 0.6) by then
+ROCK_PIVOT_D = KS["stem_top"]   # an end press rocks the key about the FAR stem's top (its pad on the stem; that stem stays
+                                # at its top stop, the fork holds the key on it)
+ROCK_ARM = 31.5      # [FREE] distance far stem ↔ near stop bosses along y, the same for both ends (the stems are at +15 / −13)
+STOP_X = (11.25, R.KEY_W / 2 - R.KEY_WALL)   # [FREE] |x| of the stop bosses: outside the board screws' heads (≤ 10.9) and
+                     #        inside the key wall; they land on the switch plate inside its corner arcs
+STOP_W_Y = 2.0       # [FREE] boss length in y
+STOP_YS = (R.MX_SW_POS[1][1] + ROCK_ARM, R.MX_SW_POS[0][1] - ROCK_ARM)   # +18.5 (top), −16.5 (bottom)
+STOP_END_D = KS["plate_front"] - KEY_TRAVEL   # boss end at rest (lands on the switch plate front after KEY_TRAVEL)
+
+
+def rock_angle():
+    """tilt (deg) at which the near stop bosses land on the switch plate when the key rocks about the far stem."""
+    lo, hi = 0.0, 20.0
+    for _ in range(60):
+        th = (lo + hi) / 2
+        t = math.radians(th)
+        d = ROCK_PIVOT_D + (ROCK_ARM + STOP_W_Y / 2) * math.sin(t) + (STOP_END_D - ROCK_PIVOT_D) * math.cos(t)   # outer edge
+        lo, hi = (th, hi) if d < KS["plate_front"] else (lo, th)
+    return lo
+
+
+def wobble_travel(deg):
+    """deepest straight travel at which the key can still wobble ±deg before a stop boss lands (the wobble check runs there)."""
+    ym = (R.MX_SW_POS[0][1] + R.MX_SW_POS[1][1]) / 2
+    lever = max(max(abs(y - ym) for y in STOP_YS) + STOP_W_Y / 2, STOP_X[1])
+    return KEY_TRAVEL - lever * math.sin(math.radians(deg)) - 0.05
+
+
+def rock_stem_travel():
+    """travel of the near stem when the key rocks to its stop (the far stem stays at its top stop)."""
+    return R.SWITCH_PITCH_Y * math.sin(math.radians(rock_angle()))
 KEY_WOBBLE_DEG = 1.5  # [TBD] tilt of the key on its two stems under an eccentric press (MX stem play ≈ 1–2°); CAD checks ±1.5°
 KEY_BACK_CHANNEL = 0.4   # [FREE] recess in the key back's inner face where the 14 wires run (1.2 of the 1.6 wall left)
 KEY_PULL_MIN = 10.0   # [FREE] target key pull-off force (stem friction, coupon v1 row E); the key is not a small part
@@ -318,7 +364,9 @@ _LO = (COLLAR_OUT_X - COLLAR_OUT_R + COLLAR_OUT_R * _Q, COLLAR_OUT_Y - COLLAR_OU
 LED_WALL = math.hypot(_LO[0] - _LI[0], _LO[1] - _LI[1])     # collar wall along the corner diagonal (≈ 2.6)
 LED_POS = tuple((sx * (_LI[0] + _LO[0]) / 2, sy * (_LI[1] + _LO[1]) / 2)
                 for sy in (1, -1) for sx in (-1, 1))   # [FREE] 4 × SK6812 MINI centred on the thick collar corners, facing forward
-LED_W, LED_T, LED_CARRIER_T = 3.5, 1.45, 0.8   # [DS sk6812] / [FREE]
+LED_W, LED_T, LED_CARRIER_T = 3.5, 2.0, 0.8    # [DS] owner ordered 50 × WS2812B-MINI 3535 (led-stuebchen, 2026-10-03): 3.5 × 3.5 ×
+                                                #      2.0 (vendor; the SK6812 MINI was 1.45) / [FREE] carrier (v1; the kit
+                                                #      prototype solders wires straight to the pads, ≈ 0.4)
 LED_D0 = COLLAR_D1 + 0.1
 
 SPK_X0 = COLLAR_OUT_X + 0.55    # [FREE] speaker on its edge right of the collar, grille faces +x into the duct
@@ -328,7 +376,9 @@ SPK_FACE_GASKET = (0.8, 0.5, 0.3)   # [FREE] foam frame on the grille face: widt
 SPK_HOOK_T = 1.2      # [FREE] hook thickness along d (catch face → back face): tip 0.8 after the 0.4 lead-in
 SPK_HOOK = 0.4        # [FREE] snap hooks (45° lead-in) on the cradle ribs overlap the speaker's back edge (inserted from behind)
 SPK_BACK_FOAM = (0.8, 0.55)   # [FREE] foam strip on the speaker's −x face (free, compressed): pushes it +x onto the face gasket
-DUCT_X1 = SPK_X0 + R.SPK_T + SPK_FACE_GASKET[2] + 3.1   # [FREE] 3.1 mm air channel between the gasket and the duct wall
+DUCT_X1 = max(SPK_X0 + R.SPK_T + SPK_FACE_GASKET[2] + 3.1,   # [FREE] ≥ 3.1 mm air channel between the gasket and the duct wall,
+              PERF_XS[-1] + PERF_D / 2 + 0.3)               # and never inside the deck mouth (v0.6: the measured, thinner
+                                                            # speaker would leave a 0.03 sliver of duct wall beside the mouth)
 DUCT_WALL = 0.8
 
 HUB = (-16.0, 14.8, 3.0, 22.0, 25.5, 37.5)   # [FREE] horizontal hub board (x0,x1,y0,y1, PCB front d, component back d)
@@ -442,6 +492,69 @@ RF_MIN_METAL = 10.0         # [FREE] want ≥ 10 mm chip ↔ significant metal (
 
 # optional sensors — deferred to v1 (see doc §6.5)
 SENSORS_DEFERRED = ("VEML7700", "SHT31-D", "LD2410C/B")
+
+
+# =====================================================================================================
+# 6. DESK REPLICA (owner 2026-10-03, prototype only): two coupled flush boxes + 2-gang frame, top = the RoomKey
+#    insert, bottom = a sensor cover with the real breakouts. Powered by USB 5 V, NEVER in a wall, never on 230 V.
+#    Coordinates: top box centre (0, 0), bottom box centre (0, −DESK_PITCH); d as everywhere (wall plane = WALL_D).
+# =====================================================================================================
+DESK_PITCH = 71.0       # [DS] German multi-gang spacing (switch above socket)
+DESK_CUP_IN = 59.0      # [FREE] box replica inner Ø (≥ BOX_USABLE_D 58, which the insert is checked against)
+DESK_CUP_WALL = 1.6     # [FREE]
+DESK_DEPTH = 47.0       # [FREE] box depth behind the wall plane (the planning default); the back is OPEN (wiring access)
+DESK_PLATE = (92.0, 165.0, 2.4, 6.0)   # [FREE] "wall" plate W, H, T, corner R, centred between the boxes
+DESK_DOME_R_OUT = 32.6  # [FREE] the 2 screw domes (0°, 180°) bulge out of the cup wall around the screw hole (r 30)
+DESK_SCREW_PILOT = (2.7, 20.0)   # [FREE] pilot Ø / depth for 3.2 device screws or M3 self-tapping
+DESK_LINK = (9.0, 19.0, WALL_D + 10.0, WALL_D + 20.0)   # [FREE] wire channel between the boxes: x0, x1, d0, d1 (off-centre:
+                                                        # the frame screw is reached from behind at x 0)
+DESK_FRAME_T = (2.0, 1.6, 1.6)   # [FREE] 2-gang frame: face thickness, opening-tunnel wall, outer skirt (to the wall plane)
+DESK_FRAME_R = 4.0      # [FREE] frame outer corner radius
+DESK_FRAME_PROFILE = (10.0, 6.0, 1.5)   # Jung AS 500 face profile, heights above the wall plane: at the inner rim [DS: AS 581
+                        # depth 10 mm], at the outer edge [TBD est.], width of the flat rim round each opening [TBD est.].
+                        # The owner: "the inner side of the frame is a bit higher than the outer side" (2026-10-03)
+DESK_FRAME_SCREWS = ((-37.4, 37.4), (37.4, 37.4), (-37.4, -DESK_PITCH - 37.4), (37.4, -DESK_PITCH - 37.4))   # [FREE] 4 × M3
+                        # from behind into frame corner posts, outside both 71 × 71 flanges (they meet at y −35.5)
+DESK_FRAME_POST = (4.6, 2.6, 3.4)   # [FREE] frame post Ø, its pilot Ø, wall-plate hole Ø
+# SHT31-D IN THE FRAME (owner 2026-10-03; practice frame, bottom border): the board lies along the sloped face under it,
+# chip side to the face (chip pocket, 3 × 3 Ø1.0 vents, 3 air inlets in the bottom skirt); wires under the frame's tunnel
+# wall and through a Ø2.5 hole in the chassis flange at (0, −27.0) (rim gap, inside the box opening) into the box.
+FRAME_RH = (0.0, 0.6, 0.6, 1.3)   # [FREE] board centre x, face recess over the board, skirt left there, chip-pocket depth
+FRAME_RH_HOLE = (0.0, -27.0, 2.5) # [FREE] wire hole in the kit chassis flange: x, y, Ø (bottom rim gap |x| < 4.5)
+# bottom position: sensor cover (55 × 55 face like the plate) + carrier (flange like the chassis + square collar)
+SENS_FACE_T = 2.0       # [FREE]
+SENS_SPIGOT = (1.2, 0.15)   # [FREE] spigot on the face back: depth into the collar, clearance per side
+SENS_COLLAR_T = 1.2     # [FREE] carrier collar wall (outer = the 55 face outline)
+SENS_RADAR_POS = (0.0, 15.0)     # [FREE] LD2410C centre; long side along x; antenna side forward behind a 1.2 thinned window
+SENS_ALS_POS = (-16.0, -13.0)    # [FREE] VEML7700 board centre (chip side forward, light hole Ø2.5 over the chip)
+SENS_RH_POS = (-0.75, -14.6)     # [FREE] SHT31-D board centre (chip side forward, Ø1.0 vent grid over the chip, below the radar)
+SENS_MIC_POS = (17.0, -13.0)     # [FREE] INMP441 centre (labelled port side forward, sealing ring around the port)
+SENS_AMP = (0.0, 0.0, WALL_D + 11.0)   # [FREE] MAX98357A on a separate tray: x, y, tray front d (it rests on 2 ledges on the
+                                       # bottom box's domes; slid in from the open back; the amp sits on its back face)
+DESK_AMP_TRAY = (25.8, 11.0, 1.6)      # [FREE] tray half-width (between the domes, 26), half-height, thickness
+DESK_LEDGE = 1.0                       # [FREE] ledge on each bottom-box dome: protrusion (45° underside, prints without support)
+SENS_STANDOFF = {"radar": 1.0, "als": 2.6, "rh": 1.4, "mic": 1.2}   # [FREE] air between face back and each board front
+
+
+# =====================================================================================================
+# 7. KIT v0.7 (owner 2026-10-03, prototype): the WHOLE RoomKey in ONE box (supply separate, bench = lab supply 5 V).
+#    Presence radar, mic and speaker are non-negotiable. The owner's breakouts: LD2410C, round INMP441 (Ø13.14, no
+#    flats), MAX98357A. Speaker stays in the right wing. Light / humidity sensors: later (small chips).
+# =====================================================================================================
+KIT_MIC_PORT = MIC_PORT           # the plate's mic hole (left strip) stays where the design has it
+KIT_MIC_TUBE = (1.6, 1.0)         # [FREE] sound tube bore Ø, wall: plate back → INMP441 port, through deck and flange
+KIT_MIC_FOAM = (0.8, 0.5)         # [FREE] foam seal rings at both tube ends: free / compressed thickness
+KIT_MIC_D0 = 17.9                 # [FREE] INMP441 front (port side) d: behind the ledge (17.8), clear of the switch plate
+KIT_MIC_PORT_OFF = 0.8            # [PHOTO] port ≈ 0.8 off the module centre towards the L/R–GND row
+KIT_MIC_C = (-19.36, 9.65)        # [FREE] module centre: 0.8 from the port, optimised → 0.29 inside the box margin (0.79 to a
+                                  # Ø58 wall) and 0.29 to the hub post; the L/R–GND row points OUTWARDS (−x). Decided
+                                  # 2026-10-03: the module does not fit the touch-board back (4.0 gap, crowded, antenna)
+KIT_RADAR = (-22.5, -6.66, -17.1, 5.16, 27.0)   # [FREE] LD2410C outline x0, x1, y0, y1 (long side along y) and its FRONT d
+                                  # (antenna side forward, resting on the carrier's back face); patch antennas at the
+                                  # OUTER (−x) edge next to the header → they look forward through the left wing only
+KIT_CARRIER_D = (25.5, 27.0)      # [FREE] back carrier plate d0, d1: on the 4 hub posts (+ pins), radar behind its window
+KIT_AMP_C = (3.2, 12.4)           # [FREE] MAX98357A centre on the carrier back (components to the open back), clear of the radar
+KIT_POST_PIN = (2.0, 1.5, 2.3)    # [FREE] pins on the hub posts: Ø, length; carrier hole Ø
 
 
 # =====================================================================================================
@@ -816,16 +929,31 @@ def validate(v, verbose=True):
     over_t, over_b = KEY_H / 2 - y1, KEY_H / 2 + y2
     info(f"key overhangs its two MX stems by {over_t:.1f} (top) / {over_b:.1f} (bottom); the side skirts in the collar "
          f"({R.KEY_WELL_CLEAR}/side) limit roll. This says nothing about binding (next line)")
-    warn(f"end presses (outside the stem span) are NOT modelled and binding is LIKELY: an end press puts a moment of ≈ "
-         f"{KEY_H / 2 + 1.0:.0f}·F on the two stem guides; with μ 0.15 and ≈ 6 mm guide length the friction is ≈ 1.2·F (a "
-         f"sticking drawer; review round 4) → desk-rig test R1 FIRST (press every 5 mm along the key, 1000 × at each end); "
-         f"fallback: one centre MX + a plate-mount 2u stabiliser — it needs the cable split into two bundles beside the centre "
-         f"switch (the 11.2 mm cable path at y {CABLE_Y} is where the switch would sit) — NOT modelled yet: print both key "
-         f"modules for the first rig")
-    rule(s["mx_top"] - (s["key_back"] + KEY_TRAVEL) >= 0.45, f"key stops at MX bottom-out ({KEY_TRAVEL}); key back ↔ MX housing "
+    # v0.6 rocker key (owner's wish 2026-10-02): forks instead of full cross sockets, stop bosses, end taper
+    th, rt = rock_angle(), rock_stem_travel()
+    act_max = R.MX_PRETRAVEL + 0.6
+    rule(rt >= act_max + 0.3, f"rocker: an end press rocks the key {th:.2f}° about the far stem until the near stop bosses land; "
+         f"the near switch travels {rt:.2f} ≥ its worst actuation point {act_max:.1f} + 0.3; the far switch stays at its top "
+         f"stop (0 travel) → clean top / bottom separation")
+    rule(KEY_TRAVEL >= act_max + 0.3 and KEY_TRAVEL <= R.MX_TRAVEL - 0.2, f"centre press: the key stops on the 4 bosses after "
+         f"{KEY_TRAVEL} (both switches past {act_max:.1f}, MX bottom-out {R.MX_TRAVEL} not reached)")
+    f_end = R.MX_FORCE_N * R.SWITCH_PITCH_Y / (R.SWITCH_PITCH_Y + over_t)
+    warn(f"rocker: an end press needs only ≈ {f_end:.2f} N (one switch, lever {R.SWITCH_PITCH_Y:.0f}/{R.SWITCH_PITCH_Y + over_t:.1f}) "
+         f"vs ≈ {2 * R.MX_FORCE_N:.1f} N in the centre; swipes are 0.8–1.2 N → touch test R13 is harder. Mitigation (RoomKey "
+         f"firmware): a key event while the touch point moves > 2 mm is dropped; fallback: heavier switches")
+    warn(f"rocker: the key is held on the stems only by the fork pinch (x-arm ends, {R.FORK_GAP} gap [coupon]). Under an end "
+         f"press the far fork carries a small pull (the stop bosses are outboard of the near stem: ≈ 0.1·F); pull-off ≥ "
+         f"{KEY_PULL_MIN:.0f} N still the target → coupon (forks instead of row E posts) [TBD]")
+    info(f"rocker firmware (RoomKey software, WIP): KEY1 on BOOT, KEY2 on IO6 (15th wire); top / bottom / centre = both "
+         f"within a window (≈ 100 ms, measure on the rig)")
+    rule(s["mx_top"] - (s["key_back"] + KEY_TRAVEL) >= 0.45, f"key stops on its bosses ({KEY_TRAVEL}); key back ↔ MX housing "
          f"top {s['mx_top'] - (s['key_back'] + KEY_TRAVEL):.2f} mm then (the real housing top is tapered → more)")
-    rule(R.MX_POST_D + 0.3 <= R.MX_WINDOW, f"stem post Ø{R.MX_POST_D} enters the MX housing window {R.MX_WINDOW} [TBD] "
-         f"with {(R.MX_WINDOW - R.MX_POST_D)/2:.2f} per side at full travel (coupon v1 row E)", hard=False)
+    fx = R.FORK_GAP / 2 + R.FORK_PRONG_T
+    sweep = (s["post_end"] - ROCK_PIVOT_D) * math.sin(math.radians(th)) + R.SWITCH_PITCH_Y * (1 - math.cos(math.radians(th)))
+    fy = R.FORK_PRONG_W / 2 + sweep
+    rule(fx <= R.MX_WINDOW / 2 - 0.2 and fy <= R.MX_WINDOW / 2 - 0.2, f"fork prongs enter the MX housing window "
+         f"{R.MX_WINDOW} [TBD]: |x| ≤ {fx:.2f}, |y| ≤ {fy:.2f} incl. the rock sweep {sweep:.2f} (≤ {R.MX_WINDOW/2 - 0.2:.2f})",
+         hard=False)
     loc = [0.1, 0.1, 0.1, 0.05, 0.1, 0.05]   # plate skirt clr, plate print, switch-plate screw play, MX cut-out, MX stem, socket
     rss = math.sqrt(sum(t * t for t in loc))
     hard = CUT_W / 2 - WELL_IN_X
@@ -840,8 +968,18 @@ def validate(v, verbose=True):
          f"pre-soldered headers")
     for (hx, hy) in [(-R.TB_HOLE_DX / 2, R.TB_HOLE_DY / 2), (R.TB_HOLE_DX / 2, R.TB_HOLE_DY / 2),
                      (-R.TB_HOLE_DX_BOTTOM / 2, -R.TB_HOLE_DY / 2), (R.TB_HOLE_DX_BOTTOM / 2, -R.TB_HOLE_DY / 2)]:
-        g = min(math.hypot(hx - x, hy - y) - R.MX_POST_D / 2 - M2_CSK_D / 2 for (x, y) in R.MX_SW_POS)
-        rule(g >= 0.8, f"board screw ({hx:+.2f}, {hy:+.2f}) clears the stem posts by {g:.2f} mm")
+        g = min(math.hypot(hx - x, hy - y) - math.hypot(fx, R.FORK_PRONG_W / 2) - M2_CSK_D / 2 for (x, y) in R.MX_SW_POS)
+        gs = min(math.hypot(max(STOP_X[0] - abs(hx), 0.0), max(abs(hy - sy) - STOP_W_Y / 2, 0.0)) for sy in STOP_YS) - M2_CSK_D / 2 - 0.1
+        rule(g >= 0.8 and gs >= 0.2, f"board screw ({hx:+.2f}, {hy:+.2f}) clears the stem forks by {g:.2f} mm and the stop "
+             f"bosses by {gs:.2f} mm")
+    hx0, hx1 = R.TB_HEADER_PITCH_X / 2 - HEADER_SLOT_W / 2, R.TB_HEADER_PITCH_X / 2 + HEADER_SLOT_W / 2
+    web_c = hx0 - CABLE_SLOT[0] / 2
+    web_s = min(math.hypot(max(hx0 - abs(hx), abs(hx) - hx1, 0.0), max(HEADER_SLOT_Y[0] - hy, hy - HEADER_SLOT_Y[1], 0.0))
+                for (hx, hy) in [(R.TB_HOLE_DX / 2, R.TB_HOLE_DY / 2), (R.TB_HOLE_DX_BOTTOM / 2, -R.TB_HOLE_DY / 2)]) - (M2_CSK_D + 0.2) / 2
+    web_w = R.KEY_W / 2 - R.KEY_WALL - hx1
+    rule(min(web_c, web_s, web_w) >= 0.8, f"key back with the header slots ({HEADER_SLOT_W} × {HEADER_SLOT_Y[1] - HEADER_SLOT_Y[0]:.1f} "
+         f"at x ±{R.TB_HEADER_PITCH_X / 2:.2f}, owner 2026-10-03): webs {web_c:.2f} to the cable slot, {web_s:.2f} to the nearest "
+         f"screw countersink, {web_w:.2f} to the wall; the centre strip with the forks stays tied to both solid end regions")
     for (x, y) in SWP_SCREWS:
         edge = rrect_inside(x, y, WELL_IN_X - SWP_CLEAR, WELL_IN_Y - SWP_CLEAR, WELL_R - SWP_CLEAR) - M2_CSK_D / 2
         cut = min(max(abs(x - mx) - R.MX_CUT / 2, abs(y - my) - R.MX_CUT / 2) for (mx, my) in R.MX_SW_POS) - M2_CSK_D / 2

@@ -53,6 +53,7 @@ TB_HOLE_DX, TB_HOLE_DY = 17.78, 39.00    # [DS] M2 holes: top pair 17.78 apart, 
 TB_HOLE_DX_BOTTOM = 17.00                # [DS] bottom pair 17.00 apart (3.77 from the frame edge)
 TB_HOLE_EDGE = 2.75                      # [DS] bottom hole ↔ frame end; top one inferred by symmetry (2.75 + 39.00 + 2.75 = 44.50)
 TB_HEADER_PITCH_X = 17.78                # [DS] 2 × 11 header columns, 7 × 2.54 apart
+TB_HEADER_Y = (9.65, -15.75)             # [DS] first / last pin of each column (first pin 9.85 below the top hole), pitch 2.54
 TB_STANDOFF_THREAD = None                # [TBD] brass standoffs female M2? (drawing says "M2") — check on arrival
 TB_ANT = (0.0, -20.4, 3.2, 1.6, 1.1)     # [DS] ceramic chip antenna ("C3", red) on the PCB BACK, centred at the non-USB end:
                                          #      x, y, length, width [TBD], height [TBD]
@@ -83,26 +84,79 @@ MX_STEM_ARM_L = 4.10     # [FREE] keycap socket cross: arm length (coupon: 4.05 
 MX_STEM_ARM_W = 1.30     # [FREE] arm width (coupon: 1.25 / 1.30 / 1.35)
 MX_STEM_DEPTH = 3.8      # [FREE] coupon v0 socket depth (the drawing gives no engagement value)
 KEY_SOCKET_DEPTH = 3.4   # [FREE] key socket depth = stem top ↔ post end, so the stem bottoms at the design position
+# v0.6 ROCKER KEY (owner's wish 2026-10-02: the key rocks, top end = top switch, bottom end = bottom switch, centre = both).
+# The full cross socket made the key a rigid frame on two stems (no rocking, end presses bind). Now each stem is held by a
+# FORK: two prongs pinch only the ends of the stem's x-arm (faces normal to x), so the key can turn about x on the stems
+# (pinch friction still holds it on) and rests on a rocking PAD (cylinder about x) on the stem top.
+FORK_GAP = MX_STEM_ARM_L     # [FREE] inner distance of the prongs = the x-arm length the old cross socket used (fit OK, 2026-10-01)
+FORK_PRONG_T = 0.8           # [FREE] prong thickness in x (2 perimeters)
+FORK_PRONG_W = 2.0           # [FREE] prong width in y (grips the 1.3 wide arm end; stays inside the housing window when rocked)
+FORK_PAD_R = 1.5             # [FREE] rocking pad on the stem top: cylinder about x, its lowest line at stem_top
+KEY_END_TAPER = 0.2          # [FREE] the "funnel": the short-end walls are set back by this much from 5.6 behind the glass on
+KEY_END_TAPER_RUN = 5.6      #        (linear from 0 at the glass): room for the dipping end under the plate edge when rocked
 MX_PINCOUNT = 3          # [MEAS] 2 metal pins + centre post, no side pegs → plate mount (needs the 1.5 mm plate)
 
 # ============================================================== audio
 MIC_D, MIC_T = 13.14, 2.83               # [MEAS] INMP441 round module (2026-09-29) — desk rig only, 0.07 mm wider than a wing
+MIC_MODULE = ("round black module with two flats; the LABELLED side carries the sound hole (≈ centre, ≈ 0.8 towards the "
+              "L/R–GND row) → that side faces the room; mic chip on the back (bottom port). Pins: 2 columns × 3 at 2.54, "
+              "columns ≈ 7.6 apart: SCK, WS, L/R | SD, VDD, GND")   # [PHOTO 2026-10-03]
+LED_STRIP = ("owner's strip: black PCB, 5 V, pads +5V / Din / DO / GND, one cap per LED, ≈ 60 LED/m (≈ 16.7 pitch), 5050 "
+             "LEDs with a white phosphor spot → most likely SK6812 RGBW (32-bit GRBW: tell the firmware). 5.0 × 5.0 LEDs do "
+             "NOT fit the collar's LED windows (made for the 3.5 mm SK6812 MINI)")   # [PHOTO 2026-10-03]
 MIC_CARRIER = (8.0, 8.0, 2.6)            # [FREE] v0.2: INMP441 (4.72 × 3.76 [DS]) on an 8 × 8 × 0.8 carrier PCB, bottom port;
                                          #        2.6 = PCB + mic + solder [TBD] — custom part
-SPK_W, SPK_H, SPK_T = 20.0, 30.0, 5.5    # [DS] Waveshare 2030 cavity speaker (the "4PIN" item is a PAIR)
+SPK_W, SPK_H, SPK_T = 19.32, 29.81, 4.57 # [MEAS] Waveshare 2030 cavity speaker, owner's calipers 2026-10-02 (vendor drawing:
+                                         #        20 × 30 × 5.5). The "4PIN" item is a PAIR on one PH1.25 4-pin plug [DS].
+                                         #        4.57 INCLUDES the white face ring (owner, 2026-10-02)
+SPK_END_R = SPK_W / 2                    # [MEAS] "almost oval": near-semicircular ends (photo) → straight sides ≈ 10.5 long.
+                                         #        v0.6: the hooks at the box corners catch nothing → move them onto the straight part
+SPK_RING = (1.4, 0.1)                    # [TBD] white ring on the grille face: width (photo), thickness ("paper-thin", owner) →
+                                         #        NOT a compressible gasket. Possibly the release liner of an adhesive ring [TBD]
+SPK_TAB = (3.4, 1.8)                     # [TBD] wire-exit tab at the CENTRE of one short end: width, overhang (from the photo, ±0.5)
 SPK_PORT_FACE = "large"                  # [DS] vendor outline: mesh grille on one 20 × 30 face
-SPK_PORT_W, SPK_PORT_H = 13.0, 18.5      # [TBD] grille scaled off the vendor outline drawing (±1 mm) — measure
-AMP_W, AMP_H, AMP_T = 18.0, 18.0, 3.0    # [TBD] MAX98357A clone — measure
+SPK_PORT_W, SPK_PORT_H = 16.5, 27.0      # [TBD] mesh inside the white ring, from the photo (±1); diaphragm behind it ≈ 8.6 × 12.6
+AMP_W, AMP_H, AMP_T = 18.77, 17.7, 3.0   # [MEAS] MAX98357A breakout, owner's calipers 2026-10-03; 3.0 = PCB + tallest part
+AMP_PCB_T = 1.56                         # [MEAS]
+AMP_PARTS = ("7 pin holes (gold rings), header NOT soldered yet; a green 2-pin screw terminal for the speaker, loose — "
+             "for a compact box, solder the wires straight to the pads instead (saves the terminal's height)")   # [MEAS]
+AMP_BOARD = "purple MAX98357A 'I2S Amp' breakout (Adafruit 3006 layout); parts on the front only, back flat"   # [PHOTO]
+AMP_PINS = ("LRC", "BCLK", "DIN", "GAIN", "SD", "GND", "Vin")   # [PHOTO] 2.54 pitch, row centred, ≈ 1.9 from the bottom edge
+AMP_HOLE_D, AMP_HOLE_C = 2.5, (2.4, 1.9)   # [PHOTO ±0.5] 2 mounting holes in the top corners: Ø, centre ↔ side / top edge
+AMP_SPK_PADS = (3.5, 3.1)                  # [PHOTO ±0.5] speaker pads (−/+) pitch, centred, centre ↔ top edge
 
 # ============================================================== optional sensors (bought 2026-09-29)
-ALS_W, ALS_H = 14.0, 14.0                # [TBD] VEML7700 breakout, I²C 0x10 — measure; window = one grille hole
-RH_W, RH_H = 14.0, 11.0                  # [TBD] SHT31-D breakout, I²C 0x44 — measure; needs room air, away from heat
-RADAR_W, RADAR_H, RADAR_T = 16.0, 22.0, 3.5   # [DS] HLK-LD2410C 16 × 22 (manual); 5 V; sees through thin plastic, not metal
+ALS_W, ALS_H = 16.36, 16.37              # [MEAS] VEML7700 breakout, owner's calipers 2026-10-03; I²C 0x10
+ALS_PCB_T, ALS_T = 1.41, 3.85            # [MEAS] PCB thickness / total height at the tallest part
+ALS_BOARD = "Adafruit VEML7700 breakout, product 4162 (silkscreen; vendor: 16.6 × 16.5 × 4.0)"   # [DS]
+ALS_HOLE_D = 2.54                        # [DS] Adafruit 0.1" mounting holes (M2 / M2.5); 2 in the top corners
+ALS_HOLE_C = (2.5, 2.0)                  # [PHOTO ±0.5] hole centre ↔ side edge, ↔ top edge (owner's photo on the mat, 2026-10-03)
+ALS_PINS = ("VIN", "3Vo", "GND", "SCL", "SDA")   # [MEAS] pitch 2.54, row centred, ≈ 2.1 from the bottom edge [PHOTO ±0.5]
+ALS_CHIP_C = (7.8, 8.5)                  # [PHOTO ±0.5] sensor window centre ↔ left edge, ↔ top edge; chip ≈ 2.1 × 7.1, long side
+                                         #        top-bottom, same side as the 3.85 height → the light window goes there
+RH_W, RH_H = 13.34, 10.5                 # [MEAS] SHT31-D breakout, owner's calipers 2026-10-03; I²C 0x44; needs room air, away
+                                         #        from heat (ESP, amp, LDO)
+RH_PCB_T, RH_T = 1.47, 2.57              # [MEAS] PCB thickness / total height at the tallest part
+RH_PARTS = "6 pin holes (a 6-pin header comes loose) + 1 large hole"   # [MEAS]
+RH_BOARD = "purple 'SHT3X' breakout (GY-SHT31-D style); the sensor chip side = front"   # [PHOTO 2026-10-03]
+RH_PINS = ("VIN", "GND", "SCL", "SDA")   # [PHOTO] 4 pins at 2.54 along the bottom short edge, ≈ 1.6 from it; the two small
+                                         #        holes at the top (AD = address, AL = alert) are not needed (0x44 default)
+RH_HOLE_D, RH_HOLE_C = 2.3, (2.5, 2.9)   # [PHOTO ±0.5] the one large hole (top left, front view): Ø, centre ↔ left / top edge
+RH_CHIP_C = (7.2, 3.75)                  # [PHOTO ±0.5] SHT31 chip (≈ 2.5 × 2.5) centre ↔ left / top edge (front view): it needs
+                                         #        room air → vents in front of it, low in the box, walled off from ESP and amp heat
+RADAR_W, RADAR_H, RADAR_T = 15.84, 22.26, 1.56   # [MEAS] HLK-LD2410C, owner's calipers 2026-10-03 (manual: 16 × 22); 5 V;
+                                         #        sees through thin plastic, not metal
+RADAR_T_PINS = 11.4                      # [MEAS] total height with the soldered pin header (thickest point)
+RADAR_PINS = ("TX", "RX", "OUT", "GND", "VCC")   # [PHOTO] 5 pins at 2.54 along one LONG edge, ≈ 1.3 from it, roughly centred
+RADAR_FRONT = ("antenna side = the two gold patch antennas (TX/RX) + the radar chip + a status LED → faces the room through "
+               "thin plastic, nothing metal in front; the header's plastic body and pins are on the OTHER (component) side, "
+               "pointing away from the room")   # [PHOTO 2026-10-03]
 RADAR_B_W, RADAR_B_H = 7.0, 35.0         # [DS] HLK-LD2410B 7 × 35 (the slim version, 1.27 mm pin pitch)
 
 # ============================================================== design choices
 KEY_WALL = 1.0           # [FREE] keycap shell wall around the touch board
-KEY_FIT = 0.15           # [FREE] clearance board frame ↔ shell pocket, per side (tune on the first print)
+KEY_FIT = 0.15           # [MEAS] clearance board frame ↔ shell pocket, per side: real touch board in the PETG print
+                         #        (A1, 0.10 layers) fits "extremely perfect" (owner, 2026-10-02); hard to get out → §11
 KEY_GAP = 1.0            # [FREE] shadow gap key ⇄ rocker cut-out
 KEY_PROUD = 8.0          # [FREE] key top above rocker front
 KEY_W = TB_W + 2 * (KEY_FIT + KEY_WALL)      # 26.85
@@ -118,8 +172,8 @@ MX_SW_POS = ((0.0, 15.0), (0.0, -13.0))      # [FREE] two switches on the long a
                                              #        8.4 (top) / 10.4 (bottom) — about a 1u keycap's stem-to-edge — so end
                                              #        presses act like edge presses on a keycap (desk-rig test, insert doc §3);
                                              #        MX2's spring stays ≈ 8 mm from the antenna chip (RF test)
-MX_GUIDE = ("2 × the same brown (tactile) switch, wired in parallel: an end press acts on one switch and feels the same at "
-            "both ends; a centre press gives two simultaneous bumps (felt as one) — desk rig")   # [FREE] v0.4
+MX_GUIDE = ("2 × the same brown (tactile) switch, read SEPARATELY (v0.6 rocker): an end press rocks the key about the other "
+            "stem and moves only the near switch; a centre press moves both (firmware: both within a window = centre) — desk rig")
 SWITCH_PITCH_Y = MX_SW_POS[0][1] - MX_SW_POS[1][1]
 SPK_ON_EDGE = True       # [FREE] speaker stands on its 5.5 mm edge behind the right wing
 CLEAR = 0.5              # [FREE] minimum clearance between parts
@@ -164,11 +218,11 @@ def validate(verbose=True):
     for (x, y) in MX_SW_POS:
         mx_x = KEY_W / 2 + KEY_WELL_CLEAR - (abs(x) + MX_TOP_W / 2)
         mx_y = KEY_H / 2 + KEY_WELL_CLEAR - (abs(y) + MX_TOP_W / 2)
-        post = KEY_W / 2 - KEY_WALL - (abs(x) + MX_POST_D / 2)
+        post = KEY_W / 2 - KEY_WALL - (abs(x) + FORK_GAP / 2 + FORK_PRONG_T)
         ok = min(mx_x, mx_y) >= 0.3 and post >= 1.0
         (oks if ok else errs).append(
             f"switch at ({x:+.1f}, {y:+.1f}): housing {min(mx_x, mx_y):.2f} mm inside the key well, "
-            f"stem post {post:.1f} mm inside the key back")
+            f"stem fork {post:.1f} mm inside the key back")
     gap_y = SWITCH_PITCH_Y - MX_TOP_W
     (oks if gap_y >= 6.0 else warns).append(
         f"{gap_y:.1f} mm between the two switch housings (ribbon cable passes there, needs ≥ 6)")
