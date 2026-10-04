@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Speaker for voice v2 (WIP · opt-in · untested on hardware): MAX98357A I²S amp + 8 Ω speaker; aikos_voice plays the
+# Speaker for voice v2 (WIP · opt-in · amp untested): MAX98357A I²S amp + 8 Ω speaker; aikos_voice plays the
 # door's audio on it (roomkey_voice.yaml), the ring screen its ringtone.
 #   MAX98357A  VIN→5V   GND→GND (the header has one GND: join it with the INMP441's)
 #              BCLK→${i2s_bclk}  LRC→${i2s_lrclk}  (parallel to the INMP441's SCK / WS)   DIN→${i2s_dout}
@@ -13,6 +13,23 @@
 substitutions:
   ringtone: "roomkey:d=4,o=5,b=100:8e6,4c6,8p,8e6,4c6"
   speaker_max: "0.9"          # volume cap (software volume of the speaker); tune on the real speaker
+
+# The I²S driver from ESPHome 2026.4.5 (fetched from ESPHome's repository at build time, nothing copied here). Since 2026.5
+# the speaker task restarts when the DMA's completion events and its write records fall out of step (esphome#16755).
+# On the ESP32-C6 that happens within 0.1-0.9 s, so a ringtone or the door's voice played as a click and the restarts
+# took the shared bus from the mic. ESPHome's fix in dev (#19319) resyncs in place, but the C6 would still glitch.
+# 2026.4.5 only warns ("Event dropped": timestamp sync, unused here) and plays cleanly; mic tested with it (04.10.).
+# Drop this pin once a release plays cleanly on the C6.
+external_components:
+  - source:
+      type: git
+      url: https://github.com/esphome/esphome
+      ref: 2026.4.5
+    components: [i2s_audio]
+
+logger:
+  logs:
+    i2s_audio.speaker: ERROR    # the 2026.4.5 driver warns "Event dropped" several times a second on the C6
 
 speaker:
   - platform: i2s_audio
