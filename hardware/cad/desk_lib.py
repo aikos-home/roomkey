@@ -94,7 +94,8 @@ def frame_rh_geometry():
 
 
 def frame_rh_tools_and_parts():
-    """tunnel wall thinned, skirt thinned, 3 × 3 Ø1.0 vents over the chip, 3 air inlets in the bottom skirt."""
+    """tunnel wall thinned, skirt thinned, 3 × 3 Ø1.0 vents over the chip, 3 air inlets in the bottom skirt (all centred
+    on x = 0 with the chip)."""
     g = frame_rh_geometry()
     x0, x1 = g["cx"] - g["l"] / 2 - 0.3, g["cx"] + g["l"] / 2 + 0.3
     fo, yo = P.FRAME_OPEN / 2, P.FRAME_OUT / 2
@@ -104,8 +105,8 @@ def frame_rh_tools_and_parts():
     for i in (-1, 0, 1):
         for j in (-1, 0, 1):
             tools.append(cyl(ccx + 1.6 * i, ccy + 1.6 * j, 0.5, -3.0, g["d_front"] - 0.2))
-    for k in (-1, 0, 1):
-        tools.append(box(g["cx"] + 4.0 * k - 0.6, g["cx"] + 4.0 * k + 0.6, -yo - 1, -(yo - 3), 5.1, 6.1))
+    for k in (-1, 0, 1):                                # inlets centred under the chip = on the frame's centre line
+        tools.append(box(ccx + 4.0 * k - 0.6, ccx + 4.0 * k + 0.6, -yo - 1, -(yo - 3), 5.1, 6.1))
     return tools
 
 

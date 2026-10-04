@@ -587,7 +587,8 @@ wing. Planned for v1.
 
 **Humidity/temperature sensor IN THE FRAME (owner's idea, 2026-10-03; kit prototype, WIP).**
 - The SHT31-D breakout lies **flat under the bottom border of the (practice) frame**, chip side forward, 0.8 below the
-  face skin. Vents: 3 × 3 Ø1.0 through the face over the chip, plus 3 air inlets in the bottom skirt. The frame's tunnel
+  face skin. Vents: 3 × 3 Ø1.0 through the face over the chip, plus 3 air inlets in the bottom skirt — **both on the
+  frame's centre line** (owner, 2026-10-04): the board sits 2.92 left of centre so that its chip is at x 0. The frame's tunnel
   wall is thinned to 0.7 and its skirt to 0.6 over the board's length. Along the slope the board does not fit (its
   thickness at the tilt).
 - Its 4 wires run under the frame's tunnel wall and through a **Ø2.5 hole in the kit chassis' flange at (0, −27.0)**

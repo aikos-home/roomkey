@@ -516,10 +516,12 @@ DESK_FRAME_PROFILE = (10.0, 6.0, 1.5)   # Jung AS 500 face profile, heights abov
 DESK_FRAME_SCREWS = ((-37.4, 37.4), (37.4, 37.4), (-37.4, -DESK_PITCH - 37.4), (37.4, -DESK_PITCH - 37.4))   # [FREE] 4 × M3
                         # from behind into frame corner posts, outside both 71 × 71 flanges (they meet at y −35.5)
 DESK_FRAME_POST = (4.6, 2.6, 3.4)   # [FREE] frame post Ø, its pilot Ø, wall-plate hole Ø
-# SHT31-D IN THE FRAME (owner 2026-10-03; practice frame, bottom border): the board lies along the sloped face under it,
-# chip side to the face (chip pocket, 3 × 3 Ø1.0 vents, 3 air inlets in the bottom skirt); wires under the frame's tunnel
+# SHT31-D IN THE FRAME (owner 2026-10-03; practice frame, bottom border): the board lies flat under the bottom border,
+# chip side forward (3 × 3 Ø1.0 vents over the chip, 3 air inlets in the bottom skirt); wires under the frame's tunnel
 # wall and through a Ø2.5 hole in the chassis flange at (0, −27.0) (rim gap, inside the box opening) into the box.
-FRAME_RH = (0.0, 0.6, 0.6, 1.3)   # [FREE] board centre x, face recess over the board, skirt left there, chip-pocket depth
+# The owner (2026-10-04): the vents must sit on the frame's centre line → the board is shifted so its chip is at x = 0.
+FRAME_RH = (-(R.RH_W / 2 - R.RH_CHIP_C[1]), 0.6, 0.6, 1.3)   # [FREE] board centre x (chip centred), face recess,
+                                                               # skirt left there, chip-pocket depth
 FRAME_RH_HOLE = (0.0, -27.0, 2.5) # [FREE] wire hole in the kit chassis flange: x, y, Ø (bottom rim gap |x| < 4.5)
 # bottom position: sensor cover (55 × 55 face like the plate) + carrier (flange like the chassis + square collar)
 SENS_FACE_T = 2.0       # [FREE]
