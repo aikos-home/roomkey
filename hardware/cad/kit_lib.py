@@ -56,12 +56,14 @@ def back_carrier():
     rx0, rx1, ry0, ry1, rd = P.KIT_RADAR
     hub = box(P.HUB[0] + 1.3, P.HUB[1] - 0.1, P.HUB[2] - 0.4, P.HUB[3] - 0.2, c0, c1)
     rad = box(rx0 - 0.6, rx1 + 0.3, ry0 - 0.6, ry1 + 0.6, c0, c1)
-    plate = fuse([hub, rad]).common(cyl(0, 0, R_BOX - 0.2, c0 - 1, c1 + 10))
+    pads = [cyl(x, y, P.KIT_POST_PIN[2] / 2 + P.KIT_PAD_WALL, c0, c1) for (x, y) in P.HUB_POSTS]   # wall round the holes
+    plate = fuse([hub, rad] + pads).common(cyl(0, 0, R_BOX - 0.2, c0 - 1, c1 + 10))
     keep_loop = box(-P.CABLE_W / 2 - 1.0, P.CABLE_W / 2 + 1.0, P.LOOP_Y[0] - 0.5, P.LOOP_Y[1] + 0.2, c0 - 1, c1 + 1)
     tools = [keep_loop]
     tools += [cyl(x, y, P.KIT_POST_PIN[2] / 2, c0 - 1, c1 + 1) for (x, y) in P.HUB_POSTS]
     wy1 = min(ry1 - 1.5, P.HUB_POSTS[0][1] - P.KIT_POST_PIN[2] / 2 - 0.8)          # stays below the hub-post pin
-    tools.append(box(rx0 - 0.5, rx1 - 1.5, ry0 + 1.5, wy1, c0 - 1, c1 + 1))          # window; open towards the header (−x)
+    tools.append(box(rx0 - 1.5, rx1 - 1.5, ry0 + 1.5, wy1, c0 - 1, c1 + 1))          # window, cut cleanly open to the −x
+                                                                                      # edge (header side; no 0.1 skin)
     body = cut(plate, tools)
     # radar corner brackets on the back face (board rests on the plate's back face around the window)
     parts = [body]
@@ -72,6 +74,26 @@ def back_carrier():
     hy = ay + R.AMP_H / 2 - R.AMP_HOLE_C[1]
     parts += [cyl(ax + sx * (R.AMP_W / 2 - R.AMP_HOLE_C[0]), hy, 1.0, c1 - EPS, c1 + 3.0) for sx in (-1, 1)]
     return fuse(parts).common(cyl(0, 0, R_BOX, c0 - 1, c1 + 20))
+
+
+def carrier_webs(bc):
+    """thinnest material between the carrier's outline and each hole / the window, in a section through the plate —
+    what the slicer sees. Below ~0.8 (2 lines) it drops the web and the hole opens over the edge."""
+    import Part
+    c0, c1 = P.KIT_CARRIER_D
+    wires = bc.slice(V(0, 0, 1), -(c0 + c1) / 2)
+    outer = max(wires, key=lambda w: abs(Part.Face(w).Area))
+    inner = [w for w in wires if w is not outer]
+    webs = {}
+    for i, w in enumerate(sorted(inner, key=lambda w: (round(w.BoundBox.Center.x), round(w.BoundBox.Center.y)))):
+        c = w.BoundBox.Center
+        nm = "window" if w.BoundBox.XLength > 5 else f"hole ({c.x:+.1f}, {c.y:+.1f})"
+        webs[nm + " ↔ edge"] = w.distToShape(outer)[0]
+        for w2 in inner:
+            if w2 is not w:
+                webs.setdefault(nm + " ↔ next opening", 99.0)
+                webs[nm + " ↔ next opening"] = min(webs[nm + " ↔ next opening"], w.distToShape(w2)[0])
+    return {k: round(v, 2) for k, v in webs.items()}
 
 
 def kit_refs():
@@ -111,6 +133,9 @@ def build_kit():
           frozenset(("MAX98357A", "back carrier")),                 # amp holes on the carrier pins
           frozenset(("speaker 2030", "speaker back foam")), frozenset(("chassis (kit)", "speaker back foam")),
           frozenset(("LD2410C front parts", "back carrier"))}       # they sit in the window (check below)
+    webs = carrier_webs(bc)
+    print(f"  back carrier: thinnest web {min(webs.values()):.2f} (rule ≥ {P.KIT_MIN_WEB}) | " +
+          ", ".join(f"{k} {v:.2f}" for k, v in webs.items()))
     col = L.check_state(bodies, "kit, rest", ex)
     # key pressed / rocked with the kit parts present
     kb = dict(bodies)
@@ -136,5 +161,7 @@ def build_kit():
     Part.makeCompound(list(bodies.values())).exportStep(os.path.join(L.OUT, "kit-v0.7_assembly.step"))
     L.write_stl(Part.makeCompound([bodies[k] for k in ("key shell", "switch plate", "collar", "plate", "chassis (kit)", "back carrier")]),
                 os.path.join(L.OUT, "kit-v0.7_printed-assembly.stl"), 0.05, 0.4)
+    if min(webs.values()) < P.KIT_MIN_WEB:
+        print(f"  ERROR back carrier web below {P.KIT_MIN_WEB}: the slicer will open it")
     with open(os.path.join(L.OUT, "kit-v0.7_check.json"), "w", encoding="utf-8") as f:
-        json.dump({"collisions": col, "gaps": gaps}, f, indent=1, ensure_ascii=False)
+        json.dump({"collisions": col, "gaps": gaps, "carrier_webs": webs}, f, indent=1, ensure_ascii=False)

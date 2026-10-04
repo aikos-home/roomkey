@@ -557,6 +557,10 @@ KIT_RADAR = (-22.5, -6.66, -17.1, 5.16, 27.0)   # [FREE] LD2410C outline x0, x1,
 KIT_CARRIER_D = (25.5, 27.0)      # [FREE] back carrier plate d0, d1: on the 4 hub posts (+ pins), radar behind its window
 KIT_AMP_C = (3.2, 12.4)           # [FREE] MAX98357A centre on the carrier back (components to the open back), clear of the radar
 KIT_POST_PIN = (2.0, 1.5, 2.3)    # [FREE] pins on the hub posts: Ø, length; carrier hole Ø
+KIT_PAD_WALL = 1.2                # [FREE] round pad round each carrier hole (≥ 3 lines of a 0.4 nozzle). The first print
+                                  # (2026-10-04) had 0.25–0.35 between hole and edge → the slicer dropped it, holes opened
+                                  # over the edge. Checked now in build_kit (carrier webs ≥ KIT_MIN_WEB).
+KIT_MIN_WEB = 0.8                 # [FREE] thinnest web the carrier may have anywhere (2 lines of a 0.4 nozzle)
 
 
 # =====================================================================================================

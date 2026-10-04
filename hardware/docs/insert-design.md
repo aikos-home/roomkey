@@ -1118,6 +1118,10 @@ and never on 230 V.**
     forward through the left wing only (plastic, about 4.7 mm of PETG in layers); the display and the speaker are not in
     front of them. Its range through the insert is the key test.
   - **MAX98357A** sits on 2 pins, components to the open back.
+  - *Carrier holes (first print, 2026-10-04):* 3 of the 4 pin holes had only 0.25–0.35 to the edge. The slicer dropped
+    that wall and the holes opened over the edge. Now a round pad gives each hole 1.2 of wall, the radar window is cut
+    cleanly open to its −x edge, and `build_kit` reports every carrier web (rule ≥ 0.8; the thinnest is now 0.8, between
+    a hole and the window).
   - 0 collisions in the practice box (rest and key pressed). Radar 1.24 to the box wall; carrier 0.3 to the cable loop.
 - *Mic (decided 2026-10-03):* the INMP441 is round Ø13.14 and fits neither the 12.0 left wing nor the touch-board
   back (4.0 gap, crowded parts, antenna).
