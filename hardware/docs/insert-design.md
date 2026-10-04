@@ -1,4 +1,4 @@
-# RoomKey wall insert — v0.5 (Variant L and Variant S)
+# RoomKey wall insert — v0.6 (Variant L and Variant S)
 
 > **DRAFT / WIP. AI-assisted design. Not built, not tested, nothing certified.**
 > - The insert is a **SELV-only (class III) device**: it never carries 230 V.
@@ -10,7 +10,10 @@
 >   the round-4 findings but was **not** reviewed again — the remaining MAJOR items need real parts and measurements
 >   ([review log](../reviews/insert-v0-review-log.md)).
 >
-> Date: 2026-10-01. Licence: CERN-OHL-P-2.0 (hardware), CC BY 4.0 (this text).
+> - **v0.6** adds the owner's first fit test, the rocker key, wider wire slots and the kit v0.7 prototype (§0). It was
+>   **not** reviewed either.
+>
+> Date: 2026-10-01, v0.6 2026-10-04. Licence: CERN-OHL-P-2.0 (hardware), CC BY 4.0 (this text).
 
 **What it is.** The insert replaces the 55 × 55 mm rocker of a German flush-mount switch (or socket) position and
 keeps the frame.
@@ -55,6 +58,18 @@ outside the chamber. Floating plate on 4 tactile switches; light-guide collar; m
 **v0.2 → v0.3 (round 2: no BLOCKER, ~28 MAJORs).** No foam gaskets between plate and chassis (mic carrier bonded to
 the plate, speaker sealed at its grille); glow = translucent plate rim; flange datum + tolerance chain + shims; 8 frame
 rims; stainless load plates; T0/T4 and the switch-box inventory; hub GPIO map from the vendor schematic.
+
+**v0.5 → v0.6 (the owner's first print and wishes, 2026-10-02 … 04; WIP, not reviewed).**
+
+| Input | v0.6 |
+|---|---|
+| First chassis printed (PETG, A1): the touch board fits "extremely perfectly" but is hard to get out; the USB port is no problem | removal = **push-out through the screw hole** (owner tried it: ok); no USB port in the insert — §3 |
+| "Two switches — let the key rock so each one can be pressed alone; a centre press must still do something" | **rocker key**: both MX read separately (KEY1 / KEY2), centre press = both; forks, stop bosses and tapered ends; CAD checks rest, pressed, rocked both ways and wobbled — §3 |
+| The cable slot under the display is too narrow; pins or wires must go straight back from the header holes | middle slot wider; **header slots** in the key back for pre-soldered pins or wires — §3 |
+| Real speaker measured (19.32 × 29.81 × 4.57, stadium shape, paper-thin white ring) | reference body updated; hooks on the straight part are **still open** — §6.2 |
+| WS2812B-MINI 3535 ordered (2.0 high) | LED corner notches in the switch plate — §6.3 |
+| Production goal: print → plaster → silicone mould → UV resin | noted, not designed for yet; PETG for the prototypes — §10 |
+| Whole RoomKey in ONE box, bench power from a lab supply | **practice box v0.1 + kit v0.7** (radar, amplifier, mic, humidity sensor in the frame, 41 wires) — §10 |
 
 **v0.4 → v0.5 (round 4: no BLOCKER, 19 MAJORs; not re-reviewed).**
 
@@ -229,6 +244,43 @@ side. There are no stop bosses.
   cable must be split into two bundles beside the centre switch. **Not modelled yet** — build this fallback key module
   alongside the first rig and test both.
 
+**Rocker key — owner's wish, 2026-10-02 (v0.6, WIP: modelled, not reviewed, test print pending).** Both MX are read
+**separately** and the key **rocks**: top end → top switch, bottom end → bottom switch, centre → both. The owner's words:
+viewed from the side the key should be "funnel-shaped"; and "the press in the middle should do something".
+- **Why the old key could not rock:** the full cross sockets made the key a rigid frame on two stems. Rocking one end down
+  by the 2.0 mm pretravel needs ≈ 4° of tilt over the 28 mm stem pitch; MX stems allow 1–2°. The same constraint made
+  the end presses bind (R1, see above), so the rocker replaces that problem.
+- **Fork mounts:** each stem is held by a fork, not a socket.
+  - Two prongs (0.8 thick, 2.0 wide, gap = the old 4.10 socket arm) pinch only the **end faces of the stem's x-arm**.
+    These faces are normal to x, so turning about x stays free while the pinch still holds the key on.
+  - A **rocking pad** (a cylinder about x, R 1.5) rests on the stem top.
+- **Stop bosses:**
+  - Four bosses (|x| 11.25–12.4, y +18.5 / −16.5, 2.0 long) land on the switch plate.
+  - **Centre press:** the key stops after **3.4** (both switches past their worst actuation point 2.6; MX bottom-out 4.0
+    is not reached).
+  - **End press:** the key rocks about the far stem's top until the near pair lands, at **≈ 6.1°**. The near switch
+    then travels **2.96** (≥ 2.6 + 0.3); the far switch stays at its top stop (0 travel), so top and bottom separate
+    cleanly.
+  - The bosses sit outboard of the near stem, so the far fork carries only a small pull (≈ 0.1·F) under a hard end
+    press.
+- **Funnel:** the short-end walls are set back 0.2, rising over 5.6 behind the glass (the 1.0 wall keeps 0.8). It is
+  invisible from the front.
+- **CAD check (both variants):**
+  - States: key rocked to its stop at both ends (key + board turned about the far stem, near stem down, far stem
+    still), pressed to the bosses, and wobbled ±1.5° at the deepest travel before a boss lands.
+  - **0 collisions.**
+  - Gaps when rocked: plate edge 0.25–0.27, collar 0.13–0.14, MX housings ≥ 0.25, forks in the housing window 0.25.
+  - Wall check: OK.
+- **Costs and open points:**
+  - a **15th cable wire** (IO6 = KEY2; IMU INT2 must stay disabled) [TBD RoomKey software];
+  - firmware: centre = both switches within a window (≈ 100 ms, rig);
+  - **an end press needs only ≈ 0.43 N** (one switch, lever 28/36.4), so touch test R13 is harder. Mitigation: a key
+    event during a moving touch is dropped (firmware); fallback: heavier switches;
+  - the pull-off force of the fork pinch [coupon, target ≥ 10 N] (coupon v1 row E still tests the old posts → to update);
+  - the real MX window shape (6.2 [TBD]).
+- **Test print** (owner, PETG, A1, 0.10): only the new key shell, on the 01.10. parts. File:
+  `druck/roomkey-taste-v0.6-wippe/` with `DRUCKEN.md`.
+
 **Shadow gap.** 1.0 ± 0.21 (RSS: plate location 0.1 + print 0.1, switch-plate screws 0.1, MX cut-out 0.05, stem play
 0.1, socket 0.05). If the key moves further, its skirt touches the collar at 0.75 gap. **It glows** (§4).
 
@@ -244,9 +296,31 @@ at (±10.5, 1.5) into ledge bosses.
 - **Life target 250 k presses** on the desk rig (30 y × 20/day = 219 k). Fallback: the flex jumper.
 
 **Removal and BOOT.**
+- **Fit test 2026-10-02 (owner, real touch board, PETG, A1, 0.10 layers):** the board fits the pocket "extremely
+  perfect" (KEY_FIT 0.15 → [MEAS]), but it is **hard or impossible to get out** again.
+  - **Removal = push-out** (tried by the owner, 2026-10-02: "ok, not super easy — it's ok like this"). With the key off
+    its stems and the screws out, push the board out to the front through the Ø2.2 screw holes in the key back. They
+    sit over the brass standoffs; use a toothpick or a 1.5 mm hex key. **No spudger slot** (it was considered: hidden
+    in the long sides behind the plate front; dropped).
+- **Wires (owner's request 2026-10-03, v0.6):**
+  - The central slot is now **12.8 × 2.6** (was 1.4 wide) for 15 wires, or thicker prototype leads.
+  - **A 3.0 × 27.5 slot runs through the key back under each pin column** (x ±8.89, y −16.6 … +10.9), so pins or wires
+    can leave the header holes straight back. These slots replace the old channel strips.
+  - The webs that remain: 0.99 to the central slot, 0.90 to the bottom screw's countersink, 2.04 to the wall. The
+    centre strip with the forks stays tied to both solid end regions.
+  - Beside a column the pins pass the MX housing with ≈ 0.8 clearance. Anything sticking out must end ≤ 7 mm behind
+    the key back: the switch plate is 11.1 behind it at rest and 7.7 when pressed. A standard 2.54 header's long pins end
+    ≈ 3 behind it. Flat wiring to the central slot still
+    works (the band channel stays).
 - The key pulls off its stems (target ≥ 10 N, coupon row E) and hangs on its cable. Behind it there is SELV only.
 - The key (26.85 × 46.8) is not a small part.
-- Firmware updates over the air; USB-C needs the board out of the shell.
+- **USB (owner's decision 2026-10-01, for v0.6): no USB port in the insert.** The shell's closed top wall leaves no room
+  for a plug at the board's USB-C. Flow: first flash and Wi-Fi setup over the bare board's USB-C on the bench; then
+  assembly, 5 V over the header (VBUS from the hub); every update over the air. USB is needed only for a rescue (a
+  firmware that never brings up OTA): key off, 4 screws, board out of the shell — its USB-C is free (the cable leaves
+  from the header pads, away from the USB end), and the hub's Schottky stops back-feed from the laptop's VBUS.
+  *Fallback if rescues become common:* the header carries the native USB lines (pin 14 USB_P, pin 16 USB_N, pin 1 VBUS,
+  pin 3 GND [DS schematic]; pins 10/12 are SCL/SDA) → 2 more cable wires (16) and a USB-C socket (with 5.1 k on CC) behind the key.
 - The key shares GPIO9 (BOOT strap) with the board's button: powering up with the key held enters ROM download mode.
   That is also a **failure mode**: a key held or stuck when the power returns leaves the RoomKey in download mode
   (screen dark) until the next power cycle — the light still works. Recovery: release the key, power-cycle (MCB of the
@@ -456,6 +530,22 @@ plate can come off tethered, with the 30 mm service loop in the box. Wire flexin
 - Sliding the speaker 20 mm in over pre-compressed foam can shear it. Assembly: cover both foams with 0.1 mm PET film,
   slide the speaker in, pull the films out. The back strip is backed by the rear wall only to d ≈ 17.8; behind that it
   presses on the speaker alone (v0.6: extend the backing).
+- **Real part (owner's photo, 2026-10-02) — v0.6 must fix the mounting:**
+  - Confirmed: the Waveshare 2030 pair on one 4-pin PH1.25 connector.
+  - **Measured: 19.32 × 29.81 × 4.57** (owner's calipers; vendor drawing 20 × 30 × 5.5). It is 0.93 thinner, so the
+    duct moves in, but never inside the deck mouth (that left a 0.03 sliver; the channel is now 3.87 wide). The duct
+    now stays 1.04 mm from the screw domes (was 0.87); `validate()` 0 errors, wall check OK.
+  - The outline is **almost a stadium**: near-semicircular ends, straight sides only ≈ 10.5 long. The hooks sit at
+    y ±14.6…15.0 on the back edge, that is, at the corners of the CAD's box. There the real speaker is not present, so
+    the hooks catch nothing.
+  - A **white ring is already on the grille face** (≈ 1.4 wide from the photo). It is **paper-thin**, and 4.57 includes
+    it, so it is not a compressible gasket: the planned foam face gasket stays. If it is the release liner of an adhesive
+    ring [TBD], the speaker can be bonded to the duct face. That would hold and seal it at once, with the hooks only as
+    a backup.
+  - The wire leaves at the **centre of a short end** through a small tab (≈ 3.4 wide, 1.8 overhang from the photo).
+  - v0.6: a stadium-shaped reference body, hooks on the straight part (|y| ≤ 4), a tab notch, and back foam / gasket
+    retuned to the real thickness.
+  - Still [TBD]: whether the white ring is a liner over adhesive.
 
 **Sound path.** Grille → face gasket → 3.1 mm channel → plenum (a 1.5 mm recess in the deck) → 52 holes (41 mm²).
 
@@ -477,6 +567,12 @@ speaker's front volume. It opens:
 ### 6.3 LEDs
 4 × SK6812 MINI on 0.8 carriers (3.5 × 3.5, the LED's footprint), 5 V, daisy-chained with 3 wires per hop through the
 rear-wall windows. Data from IO4 through a 74AHCT1G125 on the hub.
+- **Owner's parts, 2026-10-03:** the glow ring stays. The owner ordered **WS2812B-MINI 3535** (RGB, 3.5 × 3.5 × **2.0** [DS
+  vendor]).
+  - The windows deepen with LED_T, and the switch plate gets 4 corner notches (the 2.0 LEDs reached 0.1 into it).
+  - 0 collisions in L/S/kit; wall check OK.
+  - Kit prototype: wires soldered straight to the LED pads, chain BR → TR → TL → BL, data from IO4 at 3.3 V into
+    5 V LEDs, no level shifter [TBD: add one if they flicker].
 - A 100 nF per LED does not fit on a 3.5 × 3.5 carrier. The design puts 100 nF + 10 µF at the chain start on the hub and
   keeps the hops short. If the desk rig shows flicker: wider carriers with an 0402 beside the LED [TBD, check the
   windows in CAD first].
@@ -488,6 +584,32 @@ rear-wall windows. Data from IO4 through a 74AHCT1G125 on the hub.
 ### 6.4 Deferred sensors
 VEML7700, SHT31-D and the LD2410C/B radar do not fit: the wings are full, and the LD2410C is 16 mm wide vs a 13.07 mm
 wing. Planned for v1.
+
+**Humidity/temperature sensor IN THE FRAME (owner's idea, 2026-10-03; kit prototype, WIP).**
+- The SHT31-D breakout lies **flat under the bottom border of the (practice) frame**, chip side forward, 0.8 below the
+  face skin. Vents: 3 × 3 Ø1.0 through the face over the chip, plus 3 air inlets in the bottom skirt. The frame's tunnel
+  wall is thinned to 0.7 and its skirt to 0.6 over the board's length. Along the slope the board does not fit (its
+  thickness at the tilt).
+- Its 4 wires run under the frame's tunnel wall and through a **Ø2.5 hole in the kit chassis' flange at (0, −27.0)**
+  (rim gap, inside the box opening) into the box, then with the key cable to SDA/SCL/3V3/GND.
+- Outside the warm box, in room air, below the electronics: the best place available.
+- **The light sensor does not fit the frame:** its board is 16.4 wide and the border holds about 11 (the middle bar of
+  a 2-gang frame 15.4). It needs the small chip (VEML6030) later.
+- Check: 0 collisions; board ↔ frame 0.2, ↔ chassis 1.0.
+
+**Light sensor (owner, 2026-10-03): it should report how bright the room is** (to HA), among other things. The v1
+concept (WIP):
+- *Part:* a VEML6030 (same family as the VEML7700, 2 × 2 × 0.65) on the custom mic carrier behind the left strip. The
+  VEML7700 chip on the breakouts is 6.8 × 2.35 × 3.0, too tall.
+- *Window:* a **translucent dot** (natural PETG, co-printed like the glow rim) in place of one or two strip holes. Bare
+  Ø1.0 holes would give a narrow, strongly attenuated view; the dot diffuses and widens the view, which suits a
+  room-brightness reading.
+- *Accuracy:*
+  - Calibrate once against a lux meter.
+  - Relative brightness is then reliable; absolute lux ≈ ±20–30 %, like any wall sensor (it sees the room from the wall).
+- *Crosstalk:* display and glow ring are ≥ 15 mm away and the plate core is black. If needed, the firmware reads during
+  a short dim.
+- *Wiring:* I²C (SDA, SCL) adds 2 wires → 17 [TBD RoomKey software].
 
 ## 7. Chassis, flange, box
 
@@ -714,6 +836,51 @@ hand on the key:
 
 ## 9. Installation (for the electrician)
 
+**Owner's input 2026-10-03 (WIP, to be decided with the electrician; the owner will hire one):**
+- The owner wants the whole system **behind one frame**, powered from the wall (blue/brown).
+  - The printed insert stays **SELV-only** (E1): the mains side is a certified device, installed and connected by the
+    electrician (E2).
+  - A two-chamber box (S1/T2) is "hardly possible, rather not at all" at the owner's positions. So the **12 V supply sits
+    outside the RoomKey box**, and the electrician picks one of three options from what Q3 finds:
+    - a DIN-rail supply in the distribution board (T3);
+    - a certified supply in an adjacent box behind a blank cover;
+    - a supply at the lamp or ceiling box (T1).
+  - In every case a SELV line runs to the RoomKey.
+- **Shelly 1 Mini Gen3** as relay and supply? [DS]
+  - **It supplies nothing:** the Shelly is fed from 110–240 V AC and has no low-voltage output, so a 12 V supply is still
+    needed.
+  - **Its SW input is at line potential** and must never be wired to the RoomKey (SELV).
+  - Its relay is potential-free (8 A), so it could switch the light as a Wi-Fi relay at the lamp or junction box, with
+    the RoomKey talking to it over the network. But then **software sits in the light path**, against the north star
+    ("the plate switches the light without software"). That is the owner's call; Variant S already works this way.
+- **Owner, later on 2026-10-03:** "RoomKey and relay in one common flush box", and something cheaper than the SNT61.
+  - **Not in the RoomKey box:** relay and supply carry 230 V. A shared box would put 230 V next to the uncertified printed
+    SELV device with its thin wires. A loose mains conductor or an insulation fault would then reach the touchable
+    key/screen, and the box is full anyway. This is the one hard boundary (E1).
+  - **What comes close, with the common 2-core switch leg (R1):**
+    - At the lamp or ceiling box (230 V is there anyway), the electrician installs a certified 12 V supply plus a
+      certified relay (e.g. a Shelly 1 Mini Gen3).
+    - The two former switch-leg cores are converted to SELV (+12 V / 0 V, labelled, verified, §8.1, §9.1) and feed the
+      RoomKey.
+    - The RoomKey switches the light over Wi-Fi, so the light path holds software (owner's call).
+    - This needs no new cable and no two-chamber box.
+  - **Cheaper supplies:**
+    - any certified, marked SELV 12 V (or 5 V) supply rated for flush boxes, chosen by the electrician;
+    - a USB charging insert (5 V, Variant S);
+    - for several rooms, one DIN-rail supply in the distribution board, if SELV lines exist.
+    - Never open modules (HLK-PM01 class).
+- **Owner's decision, 2026-10-03 (planning default, WIP): RoomKey only at positions with ≥ 2 coupled boxes**, e.g. a light
+  switch above a socket.
+  - The RoomKey replaces the switch.
+  - The **certified 12 V supply goes into the socket's box**, installed and connected by the electrician. Likely a deeper
+    box there: a socket insert plus a supply of ≈ 45 × 45 × 18 does not fit a 40 mm box.
+  - **Only the SELV line passes the box connection.** The electrician makes sure no 230 V conductor can reach the
+    RoomKey box (route, fix, cover the passage).
+  - Variant L: the light relay (impulse relay or Wi-Fi relay) also sits on the 230 V side, behind the socket if it fits,
+    otherwise at the lamp. The switch-leg cores leave the RoomKey box.
+  - This is §9 topology T2/S1 with two standard boxes instead of one two-chamber box.
+
+
 ![installation topologies](../drawings/insert-topologies.png)
 
 ### 9.1 Common rules
@@ -850,6 +1017,25 @@ E / σy replace the PETG values. Other parts PETG or ASA (Tg ≈ 80 / 100 °C), 
 flush box (glow-wire 650 °C) is not a fire enclosure in the IEC 62368 sense; the power limit (§9.1), the entry fuse and
 the V-0 chassis are mitigations that keep a fault small, not a guarantee.
 
+**Production route — owner's goal, 2026-10-02 (WIP, not designed for yet).**
+- *The route:* print the parts → finish them with filler → make a silicone mould → cast the final parts in resin and
+  cure them with UV light. Until then: FDM prototypes in PETG on the 0.4 nozzle.
+- *Consequences to design for (v1):*
+  - **UV curing** needs light through the mould: only clear (platinum) silicone works, and only thin or clear parts cure
+    through. Ivory or black, thick parts do not. The usual alternative for small series is 2-component PU casting resin,
+    which cures chemically. A clear UV resin suits the **collar** (light guide).
+  - **The chassis stays UL94 V-0 (≤ 0.8 mm).** Normal casting resins are not V-0, so either use a V-0-rated casting resin
+    or keep the chassis printed in V-0 filament (it is hidden). The likely split: cast the visible parts (plate, key
+    shell, collar), print chassis and switch plate.
+  - **Snap features** (plate lips, tongues at 1.36 % strain, key forks) need a tough resin (ABS-like PU); UV resins are
+    often brittle.
+  - **Fine details:** the perforations (Ø1.0, 0.6 webs) and the 0.8 prongs mean thin silicone pins and trapped bubbles,
+    so vacuum or a pressure pot is needed.
+  - **Shrink:** fits must be re-tuned on cast parts.
+  - **The 3-colour plate** (ivory face, black core, translucent rim) becomes one colour; the glow rim becomes a separate
+    clear part.
+- *Masters:* PLA on the 0.2 nozzle (sharp, sands well, no warping); the snaps need not work in the master.
+
 **Wall check** (`tools/insert_wallcheck.py`, CAD slices, every thin spot confirmed on a twin plane 0.3 away).
 - In-plane walls ≥ 0.8 outside declared zones; zones: perforation webs 0.6, lips 0.6, tongues 0.8 with lead-in, MX
   stem-post walls, countersink floors. Layer stacks ≥ 0.4.
@@ -895,6 +1081,55 @@ Winners go into the parameter files as [MEAS].
 | R13 | touch vs key: 300 swipes and taps → 0 key-downs | §3 |
 | R14 | hub rail hard short → the plate still toggles the relay, 20 × | §8.2 |
 | R15 | 20 power cuts with the light off → it stays off | §9.2 |
+
+**Desk replica v0.1 (owner's request 2026-10-03; prototype only, WIP, not reviewed).**
+`make_desk_replica.py` / `desk_lib.py`, parameters in `insert_params.py` §6. It is **powered by USB 5 V, never in a wall
+and never on 230 V.**
+- *Parts:* two coupled flush-box replicas at the 71 mm pitch (Ø59, 47 deep, open back, screw domes at ±30, a wire
+  channel between the boxes) and a 2-gang frame (4 × M3 from behind into corner posts, outside both 71 × 71 flanges).
+  - The **top** box takes the unchanged wall insert.
+  - The **bottom** box takes a sensor cover on a carrier (flange like the chassis), holding the owner's breakouts:
+    - the LD2410C behind a 1.2 skin, with a heat wall below it;
+    - the VEML7700 behind a Ø2.5 light hole;
+    - the SHT31-D behind a 3 × 3 Ø1.0 vent grid;
+    - the INMP441 on a port seal ring.
+  - Also a MAX98357A tray, slid in from the back onto ledges on the domes.
+- *Check:* 0 collisions with the insert and all reference bodies; plate ↔ frame ≥ 0.157 when pressed.
+- *Files:* print files in `druck/roomkey-tischnachbau-v0.1/`, all printable without supports.
+- *It does not replace ET4a:* a real loose box, the real frame series and real NYM.
+
+**Practice box v0.1 and kit v0.7 (owner 2026-10-03; prototype, WIP, not reviewed).**
+- *Owner's rules:*
+  - The **whole RoomKey goes into ONE box**, everything except its supply. A sensor cover in the second box was rejected,
+    and the 2-box replica's parts 3–5 are retired.
+  - **Presence radar, mic and speaker are non-negotiable**; the light and humidity sensors come later as small chips.
+  - The bench supply is a **lab supply at 5 V** (no hub yet).
+- *Practice box* (`make_practice_box.py`): one box replica (Ø59, 47 deep, open back, domes at ±30) + a 1-gang frame,
+  Jung AS 500 size 80.5. 0 collisions with the insert; plate ↔ frame ≥ 0.157 pressed.
+  - The frame has the AS 500 profile (the owner: the inner side is higher than the outer). It is 10.0 above the wall at
+    the rim round the opening (AS 581 depth [DS]) and slopes to 6.0 at the outer edge [TBD est.]; the flat rim is 1.5
+    [TBD].
+  - With WALL_D 9.0 [TBD Q1], the frame's inner rim stands ≈ 1 mm in front of the RoomKey plate. Q1 and the two frame
+    heights, measured from the front, settle that.
+- *Kit v0.7* (`make_kit.py`, `kit_lib.py`, parameters §7):
+  - The unchanged insert, plus pins on the 4 hub posts and a **back carrier** at d 25.5–27.0.
+  - **LD2410C** sits lower left behind a window, antenna side forward, patch antennas at the outer −x edge. They look
+    forward through the left wing only (plastic, about 4.7 mm of PETG in layers); the display and the speaker are not in
+    front of them. Its range through the insert is the key test.
+  - **MAX98357A** sits on 2 pins, components to the open back.
+  - 0 collisions in the practice box (rest and key pressed). Radar 1.24 to the box wall; carrier 0.3 to the cable loop.
+- *Mic (decided 2026-10-03):* the INMP441 is round Ø13.14 and fits neither the 12.0 left wing nor the touch-board
+  back (4.0 gap, crowded parts, antenna).
+  - It sits behind the ledge, upper left, centre (−19.36, 9.65). That leaves 0.29 inside the box margin and 0.29 to the
+    hub post; its L/R–GND row points outwards.
+  - A **sound tube** (Ø1.6 bore, 3.6 outside) runs from the plate's mic hole through the deck pocket and the flange to
+    its port, with foam seal rings at both ends. A shelf (outside the well, clear of the switch plate) and a partial ring
+    hold it.
+  - 0 collisions; module ↔ box 1.3, ↔ switch plate 1.1.
+- *Touch board with pre-soldered headers* (owner ordered, 2026-10-03): it fits.
+  - The pins pass the header slots with 0.5–0.9 to spare, the plastic spacer sits in the 4.0 gap (1.5 left), and the
+    long pins end 2.9 behind the key back (10.5 pressed vs. the switch plate at 15.3); 0.77 to the MX housings.
+  - No Dupont plugs on them (too long).
 
 ## 11. Assembly and service
 

@@ -26,7 +26,7 @@ import insert_params as P  # noqa: E402
 R = P.R
 OUT = os.path.join(ROOT, "hardware", "drawings")
 SECT = os.path.join(OUT, "sections")
-DATE = "2026-10-01"
+DATE = "2026-10-04"
 VER = f"v{P.VERSION} DRAFT"
 PRESSED_C = "#C0392B"
 
@@ -361,7 +361,7 @@ def sections_sheet(v, secs, pressed):
             note(ax, (P.LOOP_Y[0] + 2, -(P.LOOP_D0 + 6)), (-43, -44), "rolling U-loop of the flat cable (R 4)")
             note(ax, (18, -(P.HUB[4] + 3)), (8, -50), "hub envelope (buck, amp, protection) [TBD]")
             note(ax, (0, -P.COLLAR_D0 - 3), (-43, 8), "collar = light guide behind the plate's glow rim")
-            ax.text(-43, -30, f"dashed red: key fully pressed ({P.KEY_TRAVEL:.2f}, to MX bottom-out like a keycap)\nand plate "
+            ax.text(-43, -30, f"dashed red: key fully pressed ({P.KEY_TRAVEL:.2f}, to its 4 stop bosses on the switch plate)\nand plate "
                               f"pressed on the top band (tips about the bottom snaps)",
                     fontsize=5.5, color=PRESSED_C, zorder=25)
         if k == "DD_xsw":
@@ -430,14 +430,14 @@ def layers_sheet(v, secs):
 def key_module_sheet(secs, pressed):
     fig, ax = plt.subplots(figsize=(10.0, 6.6), dpi=220)
     s = P.KS
-    frame_axes(ax, (-32, 32), (-27, 11), "Key module: section A–A at x = 0 (both MX switches, stem posts, collar)",
+    frame_axes(ax, (-32, 32), (-27, 11), "Key module: section A–A at x = 0 (both MX switches, rocking pads on the stems, collar)",
                "y [mm]", "d [mm]")
     draw_section(ax, secs["AA_x0"], only=["key shell", "touch board", "antenna chip", "MX switch", "MX stem", "switch plate",
                                           "collar", "chassis", "plate"])
     if pressed:
         draw_pressed(ax, pressed["AA_x0"], ["key shell (pressed)", "touch board (pressed)"], label="key fully pressed (dashed)")
     chain = [(s["glass"], "glass (key front)"), (s["pcb_front"], "PCB front"), (s["pcb_back"], "PCB back"),
-             (s["standoff_end"], "brass standoffs end"), (s["key_back"], "key back"), (s["post_end"], "stem post end"),
+             (s["standoff_end"], "brass standoffs end"), (s["key_back"], "key back"), (s["post_end"], "stem fork end"),
              (s["mx_top"], "MX housing top"), (s["plate_front"], "switch plate front"), (s["plate_back"], "switch plate back"),
              (s["mx_bottom"], "MX housing bottom"), (s["mx_pins"], "MX pin tips")]
     x = 27.5
@@ -453,7 +453,7 @@ def key_module_sheet(secs, pressed):
     ax.plot([-32, 32], [0, 0], color="#7A7A7A", lw=0.6, ls=(0, (6, 3)))
     ax.text(31, 0.4, "plate front d = 0", fontsize=5.5, ha="right")
     ax.text(0, 9.3, f"MX on the long axis (y {R.MX_SW_POS[0][1]:+.1f} / {R.MX_SW_POS[1][1]:+.1f}); key travel {P.KEY_TRAVEL:.2f} "
-                    f"(stops at MX bottom-out; click at {R.MX_PRETRAVEL} ± 0.6); side skirts in the collar limit roll; end presses: desk rig",
+                    f"(stops on 4 bosses; click at {R.MX_PRETRAVEL} ± 0.6); v0.6 rocker: an end press rocks the key about the other stem (WIP)",
             fontsize=5.5, ha="center")
     legend(ax, "lower right")
     title_block(fig, f"RoomKey key module {VER}, {DATE}, mm. MX data: Cherry MX drawing; board: Waveshare drawing.")

@@ -11,3 +11,6 @@ esphome/secrets.yaml
 backup/
 # - audio captured on the device
 tools/recordings/
+
+# macOS folder files
+.DS_Store
