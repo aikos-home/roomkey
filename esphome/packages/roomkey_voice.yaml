@@ -75,6 +75,11 @@ esphome:
               if (prev_answer) prev_answer();
               id(voice).join();
             };
+            auto prev_call_door = c.hooks.call_door;
+            c.hooks.call_door = [prev_call_door]() {   // menu "talk to the door": start a call there (case 2), to listen
+              if (prev_call_door) prev_call_door();
+              id(voice).join();
+            };
             auto prev_hangup = c.hooks.hangup;
             c.hooks.hangup = [prev_hangup]() {      // touch: hang up = leave the call
               if (prev_hangup) prev_hangup();
@@ -125,6 +130,20 @@ interval:
           if (h != hear) {
             hear = h;
             id(voice).set_hear_visitor(h == 1);
+          }
+          // The screen shows a call only while the call model has one. A call the screen began that the model never took
+          // (or one whose end got lost) ends after 5 s; otherwise the screen stayed "in a call" for up to an hour and
+          // ignored rings (04.10.: menu "talk to the door" before this fix, a ring at 17:05 went unseen).
+          static uint32_t orphan_since = 0;
+          if (c.in_call() && !id(voice).in_call()) {
+            if (orphan_since == 0) orphan_since = millis();
+            else if (millis() - orphan_since > 5000) {
+              ESP_LOGW("roomkey.call", "the screen was in a call the call model doesn't have: ended");
+              c.call_state("ended");
+              orphan_since = 0;
+            }
+          } else {
+            orphan_since = 0;
           }
           // new words from the visitor count as speech at the door (noise can fool the level detector)
           if (c.visitor_text_count() != text_n) {
