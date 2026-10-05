@@ -59,7 +59,7 @@ sys.path.insert(0, HERE)
 import roomkey_params as R  # noqa: E402
 
 VARIANTS = ("L", "S")
-VERSION = "0.8"
+VERSION = "0.9"
 
 SOURCES = {
     "cherry":   "Cherry MX1A datasheet, datasheet.octopart.com/MX1A-11NW-Cherry-datasheet-34676.pdf",
@@ -235,26 +235,13 @@ LOOP_LIFE = 250_000   # [FREE] key presses the cable must survive (30 years × 2
 ANCHOR = (-11.5, 11.5, -8.4, -7.4, 24.0, 25.2)   # [FREE] bar that clamps the fixed leg (x0,x1,y0,y1,d0,d1)
 ANCHOR_POSTS = ((-10.5, -7.9), (10.5, -7.9))     # [FREE] posts from the ledge carrying the anchor bar
 KEY_TRAVEL = 3.4     # [FREE] v0.6: the key stops on 4 STOP BOSSES landing on the switch plate (centre press), before MX
-                     #        bottom-out (4.0); both switches are past their actuation point (2.0 ± 0.6) by then
-ROCK_PIVOT_D = KS["stem_top"]   # an end press rocks the key about the FAR stem's top (its pad on the stem; that stem stays
-                                # at its top stop, the fork holds the key on it)
-ROCK_ARM = 31.5      # [FREE] distance far stem ↔ near stop bosses along y, the same for both ends (the stems are at +15 / −13)
+                     #        bottom-out (4.0); both switches are past their actuation point (2.0 ± 0.6) by then. v0.9 rigid
+                     #        key: the bosses take the press off the stems (a keycap bottoming on the plate, not on the switch)
 STOP_X = (11.25, R.KEY_W / 2 - R.KEY_WALL)   # [FREE] |x| of the stop bosses: outside the board screws' heads (≤ 10.9) and
                      #        inside the key wall; they land on the switch plate inside its corner arcs
 STOP_W_Y = 2.0       # [FREE] boss length in y
-STOP_YS = (R.MX_SW_POS[1][1] + ROCK_ARM, R.MX_SW_POS[0][1] - ROCK_ARM)   # +18.5 (top), −16.5 (bottom)
+STOP_YS = (18.5, -16.5)   # [FREE] y of the boss pairs (v0.6 rocker geometry, kept: inside the plate's corner arcs)
 STOP_END_D = KS["plate_front"] - KEY_TRAVEL   # boss end at rest (lands on the switch plate front after KEY_TRAVEL)
-
-
-def rock_angle():
-    """tilt (deg) at which the near stop bosses land on the switch plate when the key rocks about the far stem."""
-    lo, hi = 0.0, 20.0
-    for _ in range(60):
-        th = (lo + hi) / 2
-        t = math.radians(th)
-        d = ROCK_PIVOT_D + (ROCK_ARM + STOP_W_Y / 2) * math.sin(t) + (STOP_END_D - ROCK_PIVOT_D) * math.cos(t)   # outer edge
-        lo, hi = (th, hi) if d < KS["plate_front"] else (lo, th)
-    return lo
 
 
 def wobble_travel(deg):
@@ -262,11 +249,6 @@ def wobble_travel(deg):
     ym = (R.MX_SW_POS[0][1] + R.MX_SW_POS[1][1]) / 2
     lever = max(max(abs(y - ym) for y in STOP_YS) + STOP_W_Y / 2, STOP_X[1])
     return KEY_TRAVEL - lever * math.sin(math.radians(deg)) - 0.05
-
-
-def rock_stem_travel():
-    """travel of the near stem when the key rocks to its stop (the far stem stays at its top stop)."""
-    return R.SWITCH_PITCH_Y * math.sin(math.radians(rock_angle()))
 KEY_WOBBLE_DEG = 1.5  # [TBD] tilt of the key on its two stems under an eccentric press (MX stem play ≈ 1–2°); CAD checks ±1.5°
 KEY_BACK_CHANNEL = 0.4   # [FREE] recess in the key back's inner face where the 14 wires run (1.2 of the 1.6 wall left)
 KEY_PULL_MIN = 10.0   # [FREE] target key pull-off force (stem friction, coupon v1 row E); the key is not a small part
@@ -961,31 +943,32 @@ def validate(v, verbose=True):
     over_t, over_b = KEY_H / 2 - y1, KEY_H / 2 + y2
     info(f"key overhangs its two MX stems by {over_t:.1f} (top) / {over_b:.1f} (bottom); the side skirts in the collar "
          f"({R.KEY_WELL_CLEAR}/side) limit roll. This says nothing about binding (next line)")
-    # v0.6 rocker key (owner's wish 2026-10-02): forks instead of full cross sockets, stop bosses, end taper
-    th, rt = rock_angle(), rock_stem_travel()
+    # v0.9 rigid key (owner 2026-10-05, replaces the v0.6–v0.8 rocker): full cross sockets, fixed (MX1) + floating (MX2)
     act_max = R.MX_PRETRAVEL + 0.6
-    rule(rt >= act_max + 0.3, f"rocker: an end press rocks the key {th:.2f}° about the far stem until the near stop bosses land; "
-         f"the near switch travels {rt:.2f} ≥ its worst actuation point {act_max:.1f} + 0.3; the far switch stays at its top "
-         f"stop (0 travel) → clean top / bottom separation")
     rule(KEY_TRAVEL >= act_max + 0.3 and KEY_TRAVEL <= R.MX_TRAVEL - 0.2, f"centre press: the key stops on the 4 bosses after "
          f"{KEY_TRAVEL} (both switches past {act_max:.1f}, MX bottom-out {R.MX_TRAVEL} not reached)")
-    f_end = R.MX_FORCE_N * R.SWITCH_PITCH_Y / (R.SWITCH_PITCH_Y + over_t)
-    warn(f"rocker: an end press needs only ≈ {f_end:.2f} N (one switch, lever {R.SWITCH_PITCH_Y:.0f}/{R.SWITCH_PITCH_Y + over_t:.1f}) "
-         f"vs ≈ {2 * R.MX_FORCE_N:.1f} N in the centre; swipes are 0.8–1.2 N → touch test R13 is harder. Mitigation (RoomKey "
-         f"firmware): a key event while the touch point moves > 2 mm is dropped; fallback: heavier switches")
-    warn(f"rocker: the key is held on the stems only by the fork pinch (x-arm ends, {R.FORK_GAP} gap [coupon]). Under an end "
-         f"press the far fork carries a small pull (the stop bosses are outboard of the near stem: ≈ 0.1·F); pull-off ≥ "
-         f"{KEY_PULL_MIN:.0f} N still the target → coupon (forks instead of row E posts) [TBD]")
-    info(f"rocker firmware (RoomKey software, WIP): KEY1 on BOOT, KEY2 on IO6 (15th wire); top / bottom / centre = both "
-         f"within a window (≈ 100 ms, measure on the rig)")
+    warn(f"rigid key: every press moves both springs (≈ {2 * R.MX_FORCE_N:.1f} N + guide friction). An end press "
+         f"({over_t:.1f} / {over_b:.1f} beyond the stems) tilts the key within the stem play and loads the guides (a drawer: "
+         f"friction ≈ 1.2·F estimated) → binding is desk-rig test R1 [TBD]. Fallback (not modelled): one centre MX + a 2u "
+         f"plate-mount stabiliser")
+    warn(f"rigid key: held on the stems by socket friction — MX1 full cross, MX2 clamped in x only (floats "
+         f"±{R.KEY_SOCKET_FLOAT} in y) — pull-off ≥ {KEY_PULL_MIN:.0f} N target → coupon [TBD]; the v0.8 catch (collar grooves) "
+         f"is the geometric backup")
+    info("firmware (RoomKey software): KEY1 on BOOT, KEY2 on IO6 stay wired separately and are ORed (key_raw) — one key; "
+         "top / bottom, if ever wanted, from the touch point at the click (AXS5106L), not from the mechanics")
     rule(s["mx_top"] - (s["key_back"] + KEY_TRAVEL) >= 0.45, f"key stops on its bosses ({KEY_TRAVEL}); key back ↔ MX housing "
          f"top {s['mx_top'] - (s['key_back'] + KEY_TRAVEL):.2f} mm then (the real housing top is tapered → more)")
-    fx = R.FORK_GAP / 2 + R.FORK_PRONG_T
-    sweep = (s["post_end"] - ROCK_PIVOT_D) * math.sin(math.radians(th)) + R.SWITCH_PITCH_Y * (1 - math.cos(math.radians(th)))
-    fy = R.FORK_PRONG_W / 2 + sweep
-    rule(fx <= R.MX_WINDOW / 2 - 0.2 and fy <= R.MX_WINDOW / 2 - 0.2, f"fork prongs enter the MX housing window "
-         f"{R.MX_WINDOW} [TBD]: |x| ≤ {fx:.2f}, |y| ≤ {fy:.2f} incl. the rock sweep {sweep:.2f} (≤ {R.MX_WINDOW/2 - 0.2:.2f})",
-         hard=False)
+    pitch_err = math.sqrt(0.05 ** 2 + 0.05 ** 2 + 0.1 ** 2)   # MX cut-out, socket, print: MX2's post off its housing centre
+    dip = s["key_back"] + KEY_TRAVEL - s["mx_top"] + (s["post_end"] - s["key_back"])
+    sweep = dip * math.sin(math.radians(KEY_WOBBLE_DEG))
+    pc = R.MX_WINDOW / 2 - R.MX_POST_D / 2 - pitch_err - sweep
+    rule(pc >= 0.1, f"stem posts Ø{R.MX_POST_D} dip {dip:.1f} into the MX housing window {R.MX_WINDOW} [TBD] at the stop; MX2's "
+         f"post sits off centre by the pitch error (≈ {pitch_err:.2f} RSS, its socket floats up to ±{R.KEY_SOCKET_FLOAT}) + "
+         f"{KEY_WOBBLE_DEG}° sweep {sweep:.2f} → {pc:.2f} radial clearance left (≥ 0.1)", hard=False)
+    half = (R.MX_POST_D - R.MX_STEM_ARM_W) / 2
+    rule(half >= 1.6 and R.KEY_SOCKET_FLOAT >= pitch_err, f"MX2 floating socket: its y-arm slot runs through the "
+         f"Ø{R.MX_POST_D} post (no thin end walls; two {half:.2f} halves clamp the arm's {R.MX_STEM_ARM_W} width), the x-arm "
+         f"slot is {R.MX_STEM_ARM_W + 2 * R.KEY_SOCKET_FLOAT:.2f} wide → float ±{R.KEY_SOCKET_FLOAT} ≥ pitch error {pitch_err:.2f}")
     loc = [0.1, 0.1, 0.1, 0.05, 0.1, 0.05]   # plate skirt clr, plate print, switch-plate screw play, MX cut-out, MX stem, socket
     rss = math.sqrt(sum(t * t for t in loc))
     hard = CUT_W / 2 - WELL_IN_X
@@ -1000,9 +983,9 @@ def validate(v, verbose=True):
          f"pre-soldered headers")
     for (hx, hy) in [(-R.TB_HOLE_DX / 2, R.TB_HOLE_DY / 2), (R.TB_HOLE_DX / 2, R.TB_HOLE_DY / 2),
                      (-R.TB_HOLE_DX_BOTTOM / 2, -R.TB_HOLE_DY / 2), (R.TB_HOLE_DX_BOTTOM / 2, -R.TB_HOLE_DY / 2)]:
-        g = min(math.hypot(hx - x, hy - y) - math.hypot(fx, R.FORK_PRONG_W / 2) - M2_CSK_D / 2 for (x, y) in R.MX_SW_POS)
+        g = min(math.hypot(hx - x, hy - y) - R.MX_POST_D / 2 - M2_CSK_D / 2 for (x, y) in R.MX_SW_POS)
         gs = min(math.hypot(max(STOP_X[0] - abs(hx), 0.0), max(abs(hy - sy) - STOP_W_Y / 2, 0.0)) for sy in STOP_YS) - M2_CSK_D / 2 - 0.1
-        rule(g >= 0.8 and gs >= 0.2, f"board screw ({hx:+.2f}, {hy:+.2f}) clears the stem forks by {g:.2f} mm and the stop "
+        rule(g >= 0.8 and gs >= 0.2, f"board screw ({hx:+.2f}, {hy:+.2f}) clears the stem posts by {g:.2f} mm and the stop "
              f"bosses by {gs:.2f} mm")
     hx0, hx1 = R.TB_HEADER_PITCH_X / 2 - HEADER_SLOT_W / 2, R.TB_HEADER_PITCH_X / 2 + HEADER_SLOT_W / 2
     web_c = hx0 - CABLE_SLOT[0] / 2

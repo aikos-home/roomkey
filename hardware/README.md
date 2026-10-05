@@ -39,7 +39,7 @@ technical writing and design review. **In practice the owner runs a one-person p
 6. **Print, fit, report back.** The owner prints, tries the real parts and sends the result — which is the next step 1.
    The checks do not catch everything. At the first kit assembly the rocker key simply fell out: the stem forks had been
    sized from a clearance dimension and clamped nothing. The next turn added a catch to the collar, plus a CAD check that
-   pulls the key out and must fail to get it free.
+   pulls the key out and must fail to get it free. One turn later the owner dropped the rocker altogether (v0.9).
 7. **Review.** Larger revisions go through independent adversarial review rounds: fresh AI reviewers try to break the
    design, and every finding gets a fix or a stated assumption with a test and a fallback
    ([review log](reviews/insert-v0-review-log.md)).
@@ -59,16 +59,16 @@ technical writing and design review. **In practice the owner runs a one-person p
 |---|---|
 | ![What you see on the wall](docs/img/kit-v0.7_face.png) | ![Rear, without the box: carrier with radar and amplifier, mic, speaker, key switches](docs/img/kit-v0.7_rear-parts.png) |
 | *What you see on the wall: frame, plate with speaker and mic perforation, touch key with glow ring; humidity-sensor vents in the frame.* | *From behind: back carrier with the LD2410C radar (blue) and MAX98357A amplifier (purple), INMP441 mic (green), speaker, the two key switches.* |
-| ![Wiring](docs/img/kit-v0.7_wiring.png) | ![Rocker key from behind](docs/img/rocker-key_rear.png) |
+| ![Wiring](docs/img/kit-v0.7_wiring.png) | ![Rigid key v0.9 from behind: fixed socket top, floating socket bottom](docs/img/key-v0.9_rear.png) |
 | *All 41 wires of the kit, routed in 3D (0.05 mm² silicone wire; cut lengths in [`models/kit-v0.7_wiring.json`](models/kit-v0.7_wiring.json)).* | *Rocker key from behind: two key switches read separately — rock up, rock down, or press the middle for both.* |
 
 | File | What |
 |---|---|
 | [`cad/roomkey_params.py`](cad/roomkey_params.py) | every dimension, tagged [DS] datasheet · [MEAS] measured · [FREE] design choice · [TBD] placeholder; `python3 cad/roomkey_params.py` runs the fit check |
 | [`cad/make_coupon_v0.py`](cad/make_coupon_v0.py) | tolerance coupon — print this first |
-| [`cad/insert_params.py`](cad/insert_params.py) | **wall insert v0.8 (draft)**: box, frame, both variants, installation topologies; `python3 cad/insert_params.py` validates L and S |
+| [`cad/insert_params.py`](cad/insert_params.py) | **wall insert v0.9 (draft)**: box, frame, both variants, installation topologies; `python3 cad/insert_params.py` validates L and S |
 | [`cad/insert_lib.py`](cad/insert_lib.py), [`make_key_module.py`](cad/make_key_module.py), [`make_insert_L.py`](cad/make_insert_L.py), [`make_insert_S.py`](cad/make_insert_S.py) | FreeCAD generators + collision/clearance checks (rest, key pressed, rocked and wobbled with its stems, plate pressed at five points) |
-| [`docs/insert-design.md`](docs/insert-design.md) | **design of the wall insert (v0.8 DRAFT)**: concept, stack-up, installation topologies (electrician), BOM, printing, open questions, risks |
+| [`docs/insert-design.md`](docs/insert-design.md) | **design of the wall insert (v0.9 DRAFT)**: concept, stack-up, installation topologies (electrician), BOM, printing, open questions, risks |
 | [`cad/desk_lib.py`](cad/desk_lib.py), [`make_practice_box.py`](cad/make_practice_box.py), [`make_desk_replica.py`](cad/make_desk_replica.py) | **practice box v0.1** (one flush-box replica + 1-gang frame with the humidity sensor) and the older 2-box desk replica — prototypes, never in a wall |
 | [`cad/kit_lib.py`](cad/kit_lib.py), [`make_kit.py`](cad/make_kit.py), [`wiring_lib.py`](cad/wiring_lib.py) | **kit v0.7 (WIP)**: the whole RoomKey in one box — back carrier (radar + amplifier), mic sound tube, 41 wires with cut lengths |
 | [`cad/view_kit.py`](cad/view_kit.py), [`render_kit.py`](cad/render_kit.py) | open the kit in the FreeCAD GUI (coloured, grouped) and render the images in [`docs/img/`](docs/img/) |
@@ -95,7 +95,7 @@ Print flat, PLA, 0.2 mm layers, no supports (≈ 10 min, 9 g). Dots = variant, 1
 The winners go into `roomkey_params.py` as [MEAS]. Repeat in ABS/PETG before the final parts —
 they shrink differently.
 
-## Wall insert v0.8 (DRAFT / WIP, 2026-10-04)
+## Wall insert v0.9 (DRAFT / WIP, 2026-10-05)
 
 **AI-assisted draft — nothing built, nothing certified, not approved for mains. All 230 V work only by a
 qualified electrician of a registered installation company (NAV §13).** Two variants of the in-wall part with the same printed parts, key module and look —
@@ -112,9 +112,9 @@ see [docs/insert-design.md](docs/insert-design.md):
 * **Variant S — socket replacement.** Same parts; the plate goes to the ESP only; the socket at that
   position is lost; only sensible at a usable height.
 
-v0.6 adds the owner's first fit test, the rocker key and wider wire slots. v0.8 makes the rocker key captive after the first kit assembly, where it simply fell out (design doc §0, §3). Neither was reviewed.
+v0.6 adds the owner's first fit test, the rocker key and wider wire slots. v0.8 makes the rocker key captive after the first kit assembly, where it simply fell out. v0.9 drops the rocker (the owner: it scrapes and does not stay in): a rigid key on both MX again, with a fixed and a floating stem socket, keeping the catch and the stop bosses; end-press binding is still desk test R1 (design doc §0, §3). None of these was reviewed.
 Status: **WIP — the adversarial review gate was NOT passed** (4 rounds, scores ≈ 7/10; the remaining MAJOR items need
-real parts, a desk rig and measurements — see the review log). CAD closes in all checked states (0 collisions at rest, key pressed, key rocked both ways, key + stems wobbled ±1.5°,
+real parts, a desk rig and measurements — see the review log). CAD closes in all checked states (0 collisions at rest, key pressed, key + stems wobbled ±1.5°, MX2 at the ends of its floating socket,
 plate pressed at five points to the nominal and worst-case stop), `validate()` 0 errors, wall check passes. Blocked on
 measurements (rocker-to-wall distance ≥ 8.9 mm, frame retention, box interior, conductors behind 5 WAGOs — plan with a
 47 mm box), desk-rig tests (key end presses, touch vs key, glow look, mic path, start-up, relay drive at reset) and six

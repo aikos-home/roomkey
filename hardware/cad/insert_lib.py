@@ -159,8 +159,8 @@ def key_shell():
     # side skirts only (straight long sides): they limit roll in the collar, the short sides stay free → free pitch
     skirts = [box(sx * (P.KEY_W / 2 - R.KEY_WALL), sx * P.KEY_W / 2, -P.KEY_SKIRT_Y, P.KEY_SKIRT_Y, s["key_back"] - EPS,
                   s["skirt_end"]) for sx in (-1, 1)]
-    # v0.6 rocker: stem forks (pinch the x-arm ends only → the key turns about x on the stems) + 4 stop bosses that land on
-    # the switch plate (centre press: all four after KEY_TRAVEL; end press: the near pair after rock_angle())
+    # v0.9 rigid key: stem posts with cross sockets (fixed on MX1, floating along y on MX2) + 4 stop bosses that land on
+    # the switch plate after KEY_TRAVEL (the press ends on the plate, not on the stems)
     stops = [box(sx * P.STOP_X[0], sx * (P.STOP_X[1] + EPS), y - P.STOP_W_Y / 2, y + P.STOP_W_Y / 2, s["key_back"] - EPS,
                  P.STOP_END_D) for sx in (-1, 1) for y in P.STOP_YS]
     # v0.8 key catch: a rigid nub at the free end of each side skirt (runs in the collar's groove; see collar())
@@ -172,22 +172,28 @@ def key_shell():
     relief = [box(sx * P.CABLE_SLOT[0] / 2, sx * lug_x1, P.CABLE_Y - 3.0, P.CABLE_Y + 3.0,
                   s["key_back"] - EPS, s["key_back"] + 1.2) for sx in (-1, 1)]
     # wire channel: a KEY_BACK_CHANNEL recess in the back's inner face between the header columns and the cable slot
-    return cut(fuse([shell] + skirts + nubs + [key_forks()] + stops + relief), [key_channel()])
+    return cut(fuse([shell] + skirts + nubs + [key_posts()] + stops + relief), [key_channel()] + key_sockets())
 
 
-def key_forks():
-    """per stem: two prongs that pinch the ends of the stem's x-arm (faces normal to x: turning about x stays free) and a
-    rocking pad between them (a cylinder about x whose lowest line rests on the stem top)."""
+def key_posts():
     s = P.KS
-    g, t, w, r = R.FORK_GAP, R.FORK_PRONG_T, R.FORK_PRONG_W, R.FORK_PAD_R
-    parts = []
-    for (x, y) in R.MX_SW_POS:
-        for sx in (-1, 1):
-            parts.append(box(x + sx * g / 2, x + sx * (g / 2 + t), y - w / 2, y + w / 2, s["key_back"] - EPS, s["post_end"]))
-        axis_d = s["stem_top"] - r
-        pad = Part.makeCylinder(r, g + 2 * EPS, V(x - g / 2 - EPS, y, -axis_d), V(1, 0, 0))
-        parts.append(pad.common(box(x - g / 2 - EPS, x + g / 2 + EPS, y - r, y + r, s["key_back"] - EPS, s["stem_top"])))
-    return fuse(parts)
+    return fuse([cyl(x, y, R.MX_POST_D / 2, s["key_back"] - EPS, s["post_end"]) for (x, y) in R.MX_SW_POS])
+
+
+def key_sockets():
+    """v0.9: the v0.5 cross sockets (coupon v0 row C fit). MX1 (top) = FIXED: full cross. MX2 (bottom) = FLOATING: the
+    y-arm slot runs through the post (the halves clamp the arm's width → held in x) and the x-arm slot is 2 ×
+    KEY_SOCKET_FLOAT wider → the stem floats along y, so a pitch error cannot strain the two stems against each other."""
+    s = P.KS
+    d_top = s["post_end"] - R.KEY_SOCKET_DEPTH
+    L, W, f = R.MX_STEM_ARM_L, R.MX_STEM_ARM_W, R.KEY_SOCKET_FLOAT
+    out = []
+    for i, (x, y) in enumerate(R.MX_SW_POS):
+        ly = L if i == 0 else R.MX_POST_D + 1.0
+        wy = W if i == 0 else W + 2 * f
+        out.append(box(x - L / 2, x + L / 2, y - wy / 2, y + wy / 2, d_top, s["post_end"] + EPS))      # x-arm
+        out.append(box(x - W / 2, x + W / 2, y - ly / 2, y + ly / 2, d_top, s["post_end"] + EPS))      # y-arm
+    return out
 
 
 def key_end_taper():
@@ -585,26 +591,6 @@ def key_wobbled(shape, axis, deg, travel=0.0):
     return s
 
 
-def key_rocked(shape, end):
-    """v0.6 rocker: the key turned by rock_angle() about the far stem's top line (x-parallel), so that the pressed `end`
-    (+1 top, −1 bottom) goes into the wall until its stop bosses land on the switch plate."""
-    far_y = R.MX_SW_POS[1][1] if end > 0 else R.MX_SW_POS[0][1]
-    th = P.rock_angle()
-    piv = V(0, far_y, -P.ROCK_PIVOT_D)
-    for sg in (1, -1):                  # the sense that moves the near end into the wall (−Z)
-        probe = Part.Vertex(V(0, far_y + end * 20.0, -P.ROCK_PIVOT_D))
-        probe.rotate(piv, V(1, 0, 0), sg * th)
-        if probe.Point.z < -P.ROCK_PIVOT_D:
-            s = shape.copy()
-            s.rotate(piv, V(1, 0, 0), sg * th)
-            return s
-    raise RuntimeError("rock sense not found")
-
-
-def near_stem(end):
-    return "MX stem 1" if end > 0 else "MX stem 2"
-
-
 def plate_pressed(shape, case, travel=None):
     """tip the plate about the pivot line until the farthest switch has travelled `travel` (default: RSS stop)."""
     travel = stop_travel() if travel is None else travel
@@ -796,20 +782,18 @@ def build_variant(v):
                 col += check_state(kpx, f"key wobble {sg * wob:+.1f}° about {axis_} ({lab})", exempt, only=KEY_MOVERS)
                 if axis_ == "x" and sg == 1 and lab == "pressed":
                     kpb = kpx
-    # v0.6 rocker: an end press turns the key (shell, board, antenna) about the far stem's top; the near stem goes down
-    # with it (rock_stem_travel), the far stem stays at its top stop. All pairs against the movers; the near stop bosses
-    # land on the switch plate (touching = 0 by design).
-    rock_bodies = {}
-    for end, lab in ((1, "top"), (-1, "bottom")):
-        kr = dict(bodies)
-        for nm in ("key shell", "touch board", "antenna chip"):
-            kr[nm] = key_rocked(bodies[nm], end)
-        st = bodies[near_stem(end)].copy()
-        st.translate(V(0, 0, -P.rock_stem_travel()))
-        kr[near_stem(end)] = st
-        col += check_state(kr, f"key rocked ({lab} end pressed, {P.rock_angle():.2f}°)", exempt,
-                           only=("key shell", "touch board", "antenna chip", near_stem(end)))
-        rock_bodies[lab] = kr
+    # v0.9 floating socket: MX2 (housing + stem) off its nominal y by the full float (a pitch error the socket absorbs),
+    # at rest and pressed — MX2's post must still clear the housing window, the key the housing top
+    float_bodies = {}
+    for dy in (R.KEY_SOCKET_FLOAT, -R.KEY_SOCKET_FLOAT):
+        for trv, lab in ((0.0, "rest"), (P.KEY_TRAVEL, "pressed")):
+            kf = dict(kb) if trv else dict(bodies)
+            for nm in ("MX switch 2", "MX stem 2"):
+                m = kf[nm].copy()
+                m.translate(V(0, dy, 0))
+                kf[nm] = m
+            col += check_state(kf, f"MX2 off by {dy:+.2f} in y ({lab})", exempt, only=("MX switch 2", "MX stem 2"))
+            float_bodies[(dy, lab)] = kf
     # v0.8 key catch: the key pulled towards the room must hit the collar (groove front wall) — also when shifted sideways
     # by its full side play; and it must NOT hit it before the catch play is used up
     pulled = {}
@@ -828,8 +812,8 @@ def build_variant(v):
     print("  " + report["states"]["key pulled (catch)"])
     if not ok:
         col.append(("key catch", "fails", 0.0))
-    report["states"]["key rocked"] = (f"v0.6 rocker: key + board turned {P.rock_angle():.2f}° about the far stem's top, near "
-                                      f"stem down {P.rock_stem_travel():.2f}, far stem at its top stop; both ends; base exemptions")
+    report["states"]["MX2 floating"] = (f"v0.9: MX2 housing + stem shifted ±{R.KEY_SOCKET_FLOAT} in y against the key (the "
+                                        f"floating socket's full float), at rest and pressed {P.KEY_TRAVEL}; base exemptions")
     t_stop = stop_travel()
     t_nom = P.NUB_GAP + P.SW_TRAVEL_TOTAL
     report["states"]["plate pressed"] = (f"five press points; nominal stop (travel {t_nom:.2f} at the farthest engaged switch, "
@@ -856,20 +840,15 @@ def build_variant(v):
     report["gaps"]["key shell ↔ plate (rest)"] = g("key shell", "plate")
     report["gaps"]["key shell ↔ collar (rest, side skirts: roll limit)"] = g("key shell", "collar")
     report["gaps"]["key shell ↔ collar (key pressed)"] = g("key shell", "collar", kb)
-    forks = key_forks()
-    fx = R.FORK_GAP / 2 + R.FORK_PRONG_T + 0.05
-    grow = fuse([box(x - fx, x + fx, y - max(R.FORK_PRONG_W / 2, R.FORK_PAD_R) - 0.05, y + max(R.FORK_PRONG_W / 2, R.FORK_PAD_R) + 0.05,
-                     P.KS["key_back"] + EPS, P.KS["post_end"] + 1) for (x, y) in R.MX_SW_POS])
-    report["gaps"]["stem forks ↔ MX housing 2 window (key pressed)"] = round(min_gap(key_pressed(forks), bodies["MX switch 2"]), 3)
-    report["gaps"]["key back (without forks) ↔ MX housing 2 top (key pressed to its stop bosses)"] = round(
+    posts = key_posts()
+    grow = fuse([cyl(x, y, R.MX_POST_D / 2 + 0.05, P.KS["key_back"] + EPS, P.KS["post_end"] + 1) for (x, y) in R.MX_SW_POS])
+    report["gaps"]["stem posts ↔ MX housing 2 window (key pressed)"] = round(min_gap(key_pressed(posts), bodies["MX switch 2"]), 3)
+    for dy in (R.KEY_SOCKET_FLOAT, -R.KEY_SOCKET_FLOAT):
+        report["gaps"][f"stem post 2 ↔ MX housing 2 window (pressed, MX2 off {dy:+.2f})"] = round(
+            min_gap(key_pressed(posts), float_bodies[(dy, "pressed")]["MX switch 2"]), 3)
+    report["gaps"]["key back (without posts) ↔ MX housing 2 top (key pressed to its stop bosses)"] = round(
         min_gap(kb["key shell"].cut(key_pressed(grow)), bodies["MX switch 2"]), 3)
     report["gaps"]["stop bosses ↔ switch plate (key pressed; 0 = landed, by design)"] = g("key shell", "switch plate", kb)
-    for lab, kr in rock_bodies.items():
-        for other in ("plate", "collar", "switch plate", "MX switch 1", "MX switch 2", "chassis"):
-            report["gaps"][f"key shell ↔ {other} (rocked, {lab} end pressed)"] = g("key shell", other, kr)
-        near = 1 if lab == "top" else 2
-        report["gaps"][f"stem fork ↔ MX housing {near} (rocked, {lab} end)"] = round(
-            min_gap(key_rocked(forks, 1 if lab == "top" else -1), bodies[f"MX switch {near}"]), 3)
     report["gaps"]["key shell ↔ switch plate (key pressed)"] = g("key shell", "switch plate", kb)
     for axis_ in ("x", "y"):
         for trv, lab in ((0.0, "rest"), (P.wobble_travel(P.KEY_WOBBLE_DEG), "pressed")):

@@ -1,4 +1,4 @@
-# RoomKey wall insert — v0.8 (Variant L and Variant S)
+# RoomKey wall insert — v0.9 (Variant L and Variant S)
 
 > **DRAFT / WIP. AI-assisted design. Not built, not tested, nothing certified.**
 > - The insert is a **SELV-only (class III) device**: it never carries 230 V.
@@ -11,10 +11,10 @@
 >   ([review log](../reviews/insert-v0-review-log.md)).
 >
 > - **v0.6** adds the owner's first fit test, the rocker key, wider wire slots and the kit v0.7 prototype (§0). **v0.8**
->   makes the rocker key captive after the first kit assembly (§0, §3). Neither was reviewed. (There is no insert v0.7;
->   v0.7 is the kit.)
+>   makes the rocker key captive after the first kit assembly (§0, §3). **v0.9** drops the rocker: a rigid key on two
+>   MX with a fixed and a floating socket (§0, §3). None of these was reviewed. (There is no insert v0.7; v0.7 is the kit.)
 >
-> Date: 2026-10-01, v0.6 and v0.8 2026-10-04. Licence: CERN-OHL-P-2.0 (hardware), CC BY 4.0 (this text).
+> Date: 2026-10-01, v0.6 and v0.8 2026-10-04, v0.9 2026-10-05. Licence: CERN-OHL-P-2.0 (hardware), CC BY 4.0 (this text).
 
 **What it is.** The insert replaces the 55 × 55 mm rocker of a German flush-mount switch (or socket) position and
 keeps the frame.
@@ -59,6 +59,15 @@ outside the chamber. Floating plate on 4 tactile switches; light-guide collar; m
 **v0.2 → v0.3 (round 2: no BLOCKER, ~28 MAJORs).** No foam gaskets between plate and chassis (mic carrier bonded to
 the plate, speaker sealed at its grille); glow = translucent plate rim; flange datum + tolerance chain + shims; 8 frame
 rims; stainless load plates; T0/T4 and the switch-box inventory; hub GPIO map from the vendor schematic.
+
+**v0.8 → v0.9 (the owner's verdict on the rocker, 2026-10-05; WIP: modelled, CAD-checked, not printed, not reviewed).**
+
+| Input | v0.9 |
+|---|---|
+| "Die Idee mit der Wippe ist an sich schlecht. Es führt zu zu vielen Problemen mit der Integrität und Usability." Two problems: a rocking key on stem tops, skirts in the collar and stop bosses may scrape instead of gliding; and it did not stay in (v0.7 fell out, the v0.8 catch was a patch). | **Rigid key on the two MX** (the owner chose it from three options: this, one centre MX + a 2u stabiliser, a printed plunger). The forks and rocking pads are gone; the v0.5 **stem posts with cross sockets** are back (coupon v0 row C fit): **fixed** on MX1 (top), **floating** on MX2 (bottom: its y-arm slot runs through the post, its x-arm slot is 1.80 wide → the stem floats ±0.25 along y, so a pitch error cannot strain the two stems against each other). The key moves straight in and out only. — §3 |
+| Keep the key captive | The **v0.8 catch** (nubs in the collar grooves) and the **4 stop bosses** (stop at 3.4, before MX bottom-out) stay unchanged; socket friction holds the key as well. CAD: 0 collisions in L, S and the kit; key pulled → **CAPTIVE**; MX2 shifted ±0.25 → its post still clears the housing window (0.10). |
+| Top / bottom functions | Not needed by the firmware today: it already ORs both switches into one key (`key_raw`). If they are ever wanted, they come from the touch point at the click (the AXS5106L touch panel), not from the mechanics. Wiring unchanged (KEY1 = BOOT, KEY2 = IO6). |
+| Still open | End-press binding (desk test **R1**) — the reason v0.6 went to the rocker. If R1 fails, the documented fallback is one centre MX + a 2u plate-mount stabiliser. |
 
 **v0.6 → v0.8 (the owner's first kit assembly, 2026-10-04; WIP, not reviewed).**
 
@@ -211,11 +220,14 @@ The 1.0 mm ivory walls have no black core: backlight/glow bleed through the key 
 - Back wall 1.6, screw heads flush. A **0.4 mm channel** in its inner face carries the 14 wires: a band x ±10.4,
   y −6.5 … 9.5 to the cable slot, plus a strip along each header column (|x| 7.4–10.4, y −16.6 … 10.5: the pins run
   y +9.65 … −15.75 [DS drawing]).
-- Two stem posts Ø5.5 with MX cross sockets 4.10 × 1.30, 3.4 deep (coupon v0 row C, v1 row E).
+- Two stem posts Ø5.5 with MX cross sockets 4.10 × 1.30, 3.4 deep (coupon v0 row C, v1 row E). v0.9: MX1 (top) is
+  the **fixed** socket (full cross); MX2 (bottom) **floats** ±0.25 along y (its y-arm slot runs through the post, the
+  x-arm slot is 1.80 wide). The fixed socket locates the key; the floating one only holds it in x.
 
 **Guidance: the two MX stems guide the key**, on the long axis at (0, +15.0) and (0, −13.0), pitch 28.
 - The key overhangs the stems by **8.4 (top) / 10.4 (bottom)** — about a 1u keycap's stem-to-edge distance (9.1).
-- **Both switches are the same brown (tactile)**, wired in parallel, so both ends feel the same.
+- **Both switches are the same brown (tactile)**, so both ends feel the same. v0.9: each stays on its own pin (KEY1 =
+  BOOT, KEY2 = IO6) and the firmware ORs them into one key.
 - The **side skirts** (long sides only, |y| ≤ 16.5) run in the collar with 0.25 clearance per side. They limit roll
   and keep the key off the plate.
 
@@ -233,13 +245,14 @@ R13:* 3 people, 100 swipes from each end and the centre, 100 taps → 0 key-down
 (≥ 1 N each, then repeat R1), firmware: a touch that moved > 2 mm suppresses key-down, and Ringing answers on key-up
 after a still press (WIP — the firmware is not changed in this revision).
 
-**Travel and stop.** The key stops at **MX bottom-out (4.0)**, like any keycap. The key back is then 0.50 above the
-modelled MX housing top (the real top is tapered, so more). The stem posts enter the housing windows with 0.35 per
-side. There are no stop bosses.
+**Travel and stop.** v0.9 (kept from v0.6): the key stops on **4 stop bosses** that land on the switch plate after
+**3.4**, before MX bottom-out (4.0), with both switches past their worst actuation point (2.6). The press ends on the
+plate, not on the stems. The key back is then 1.1 above the modelled MX housing top. The stem posts enter the housing
+windows with 0.35 per side (0.10 when MX2 sits at the end of its ±0.25 float).
 
 **Wobble (CAD).** The key, its board and **both stems** are tilted ±1.5° (KEY_WOBBLE_DEG [TBD], typical MX stem play
 1–2°) about x and about y, at rest and pressed. Only the stem-in-housing and stem-in-socket pairs are exempt.
-- No collision. Smallest gaps: key ↔ collar 0.11 (roll, pressed), key ↔ MX housing 0.23, key ↔ plate 0.76.
+- No collision. Smallest gaps (v0.9): key ↔ collar 0.03 (roll, about y), key ↔ MX housing 0.26, key ↔ plate 0.79.
 - The collar's inner face is set back 0.4 at the short sides over its first 2.4 mm, for the key ends.
 
 **End presses — BLOCKED-ON-DATA, binding likely.**
@@ -252,6 +265,10 @@ side. There are no stop bosses.
   It **collides with today's cable path** (11.2 mm wide at y +1.5, through the key back and the switch plate): the
   cable must be split into two bundles beside the centre switch. **Not modelled yet** — build this fallback key module
   alongside the first rig and test both.
+
+**Rocker key — SUPERSEDED by v0.9 (owner, 2026-10-05: the rocker idea is bad in itself).** The rocker text below and
+the v0.8 catch reasoning are kept as history. The catch nubs, grooves and stop bosses are still in the model; the forks,
+rocking pads and the rocked CAD state are not.
 
 **Rocker key — owner's wish, 2026-10-02 (v0.6, WIP: modelled, not reviewed, test print pending).** Both MX are read
 **separately** and the key **rocks**: top end → top switch, bottom end → bottom switch, centre → both. The owner's words:
@@ -1177,8 +1194,9 @@ and never on 230 V.**
 2. **Switch plate.** Both MX switches, **wired first** (2 wires), clipped in; switch plate through the collar opening
    into the chassis, 2 × M2 × 4.
 3. **Chassis front.**
-   - v0.8: **key module onto the stems first, then the collar from the front over the key** (its catch nubs enter the
-     collar's grooves from behind). Not glued — the plate holds the collar.
+   - v0.8/v0.9: **key module onto the stems first, then the collar from the front over the key** (its catch nubs enter
+     the collar's grooves from behind). Not glued — the plate holds the collar. v0.9: press the key straight onto both
+     stems like a keycap (top socket fixed, bottom one floating).
    - LEDs onto the collar's thick corners through the rear-wall windows (tape mask); daisy-chain wires.
    - B3FS carriers from the front: wires through the flange slots first, then the carrier onto the flat seat — **held
      with tape, not glued**, until the per-switch check (step 6) passes; then a glue dot.
