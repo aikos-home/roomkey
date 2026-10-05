@@ -145,8 +145,28 @@ LED flickers, add a level shifter (74AHCT1G125), or feed that LED's VDD through 
 | I²S clock | 7 | microphone SCK, amplifier BCLK |
 | I²S word select | 8 | microphone WS, amplifier LRC |
 
-Where several parts share a pad, use a small breadboard as a hub on the bench, or solder two thin wires into the same hole.
-The insert design specifies AWG 30 fine-stranded silicone wire.
+**One wire per board pad.** Where several parts share a line, don't put several wires on the board's pad. Run one wire to
+the first part and **chain** on from part to part: solder the next wire to the same pin of that breakout, which has
+bigger pads and no display next to it.
+
+| Line | Chain | Wire |
+|---|---|---|
+| 5 V | VBUS → amp VIN → radar VCC → LED 1 VDD → LED 2 … | AWG 26–28 (the amp draws a few hundred mA) |
+| 3.3 V | 3V3 → mic VDD → SHT31-D VIN → VEML7700 VIN | AWG 30 |
+| GND 1 | GND (H1-3) → mic GND → amp GND | AWG 28 |
+| GND 2 | GND (H1-4) → SHT31-D GND → VEML7700 GND → radar GND | AWG 30 |
+| GND 3 | GND (H1-6) → MX1 leg 2 → MX2 leg 2 → LED 1 GND → LED 2 … | AWG 30 |
+| I²C clock | SCL → SHT31-D SCL → VEML7700 SCL | AWG 30 |
+| I²C data | SDA → SHT31-D SDA → VEML7700 SDA | AWG 30 |
+| I²S clock | 7 → mic SCK → amp BCLK | AWG 30, short |
+| I²S word select | 8 → mic WS → amp LRC | AWG 30, short |
+
+The mic's L/R goes to GND **on the mic board itself**: a short bridge from its L/R pin to its GND pin, so no extra wire runs
+to the board.
+
+On the bench with jumper wires, a small breadboard does the same job: one wire from each pad into its row, and the parts plug
+into that row. For a tidy prototype, a small piece of stripboard with one strip per line works as a hub: the insert's hub
+board does this later.
 
 ## Rules
 - Unplug USB before you solder or re-plug anything.
