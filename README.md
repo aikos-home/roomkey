@@ -149,6 +149,7 @@ esphome compile sim_v2_check.yaml && python3 ../tools/voice_host_check.py   # vo
 | Path | What |
 |---|---|
 | [`esphome/roomkey_v2.yaml`](esphome/roomkey_v2.yaml) | device entry, one per room (voice v2, `aikos_voice`) |
+| [`docs/wiring-touch-board.md`](docs/wiring-touch-board.md) | **wiring of the RoomKey Touch prototype**: every wire from the board to mic, amp, sensors, keys, LEDs |
 | [`esphome/roomkey.yaml`](esphome/roomkey.yaml) | the same with the key's own audio path (fallback) |
 | [`esphome/packages/`](esphome/packages/) | board contracts (PoC, touch, simulator) and feature packages: core UI, HA contract, mic, intercom, speaker |
 | [`esphome/src/roomkey_ui.h`](esphome/src/roomkey_ui.h) | UI, input grammar and state machine (LVGL 9) |

@@ -26,6 +26,7 @@
 #     21 IO6       ← key bottom (MX 2; IMU INT2     22 IO7        → I²S SCK/BCLK (mic + amp)
 #                    high-Z, never enabled)
 #   INMP441 L/R goes to GND (3 GND pins here), so no GPIO for it.
+#   Every wire, part by part: docs/wiring-touch-board.md
 # ─────────────────────────────────────────────────────────────────────────────
 
 substitutions:
