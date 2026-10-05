@@ -151,7 +151,7 @@ bigger pads and no display next to it.
 
 | Line | Chain | Wire |
 |---|---|---|
-| 5 V | VBUS → amp VIN → radar VCC → LED 1 VDD → LED 2 … | AWG 26–28 (the amp draws a few hundred mA) |
+| 5 V | USB power: VBUS → amp VIN → radar VCC → LED 1 VDD → LED 2 …; lab supply: from the 5 V node (see "Power without USB") | AWG 26–28 (the amp draws a few hundred mA) |
 | 3.3 V | 3V3 → mic VDD → SHT31-D VIN → VEML7700 VIN | AWG 30 |
 | GND 1 | GND (H1-3) → mic GND → amp GND | AWG 28 |
 | GND 2 | GND (H1-4) → SHT31-D GND → VEML7700 GND → radar GND | AWG 30 |
@@ -179,10 +179,25 @@ on the 5 V chain.
   - **0.5 A** for the board, mic and sensors. The ESP's Wi-Fi peaks need 0.3–0.4 A; less makes the voltage dip and the key
     restart.
   - **1.5–2 A** once the amp and LEDs are on.
-- **+ → VBUS** (or the start of the 5 V chain), **− → GND**.
-- If USB may be plugged in at the same time (to flash or log), put a Schottky diode (SS34, 1N5819) in the + line, cathode
-  toward the board, so neither source feeds the other. VBUS is then about 4.6 V, which is fine.
-- Otherwise, never plug in USB while the lab supply is connected.
+- Feed a **5 V node at the parts**, not the board's VBUS pad, so the board's thin wires (0.05 mm²) never carry the
+  amplifier's and LEDs' current:
+
+```
+lab supply +  ──►  5 V node ──┬── amplifier VIN
+                  (≥0.14 mm²) ├── radar VCC
+                              ├── LED 1 VDD → LED 2 …
+                              └──►|── board VBUS   (Schottky SS34/1N5819, cathode toward the board; 0.05 mm² is enough)
+
+lab supply −  ──►  GND node ──┬── amplifier GND
+                              ├── radar GND, LED GND, …
+                              └── board GND
+```
+
+- The board then draws only its own 0.1–0.35 A through its VBUS wire. With the diode you may plug in USB at the same time to
+  flash or log: USB then powers only the board, and neither source feeds the other. Board VBUS is about 4.6 V behind the
+  diode, which is fine.
+- Without the diode, never plug in USB while the lab supply is connected.
+- Wires: 0.14–0.25 mm² from the supply to the nodes and for the amplifier's VIN/GND; 0.05 mm² for everything else.
 - If the supply goes into current limit (CC) right away, there is a short or a wiring fault: switch off and check.
 
 | State | Current at 5 V (approx.) |
