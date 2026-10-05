@@ -8,6 +8,10 @@ The wall insert v1 differs: IO3 and IO5 go to the plate and the relay there, and
 
 **SELV only:** 5 V from USB-C. Nothing here ever touches 230 V.
 
+![Which part goes to which pad, colour-coded by part](wiring-touch-board.svg)
+
+*Back of the board, USB-C at the top. Next to each pad are the part pins that go there. Colours: mic purple, amp coral, SHT31-D teal, VEML7700 amber, radar blue, MX1 pink, MX2 red, glow ring green; grey = leave free. The ground wires are spread over the three GND pads by part group.*
+
 ## The board: Waveshare ESP32-C6-Touch-LCD-1.47
 
 Header H1: 2 × 11 bare pads, 2.54 mm pitch. The silkscreen names the pads by GPIO number. The view is from the **back**
