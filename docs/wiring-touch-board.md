@@ -168,6 +168,36 @@ On the bench with jumper wires, a small breadboard does the same job: one wire f
 into that row. For a tidy prototype, a small piece of stripboard with one strip per line works as a hub: the insert's hub
 board does this later.
 
+## Power without USB
+
+VBUS is wired to the USB-C connector's VBUS. 5 V fed into the VBUS pad powers the board exactly as USB does, plus everything
+on the 5 V chain.
+
+**Bench: a lab power supply**
+- Set it with the output off: **5.0 V** (5.2 V at most; the amp and LEDs allow 5.5 V).
+- Current limit:
+  - **0.5 A** for the board, mic and sensors. The ESP's Wi-Fi peaks need 0.3–0.4 A; less makes the voltage dip and the key
+    restart.
+  - **1.5–2 A** once the amp and LEDs are on.
+- **+ → VBUS** (or the start of the 5 V chain), **− → GND**.
+- If USB may be plugged in at the same time (to flash or log), put a Schottky diode (SS34, 1N5819) in the + line, cathode
+  toward the board, so neither source feeds the other. VBUS is then about 4.6 V, which is fine.
+- Otherwise, never plug in USB while the lab supply is connected.
+- If the supply goes into current limit (CC) right away, there is a short or a wiring fault: switch off and check.
+
+| State | Current at 5 V (approx.) |
+|---|---|
+| board alone, display on, Wi-Fi connected | 0.1–0.2 A, short peaks to 0.35 A |
+| + mic and sensors | a few mA more |
+| + radar | +0.08 A |
+| ringtone / door audio on the speaker | peaks to 0.5–0.8 A |
+| glow ring full white | up to +0.25 A |
+
+**Later, in the wall:** a 12 V SELV feed, the hub's 12 → 5 V converter, then a Schottky diode into VBUS (insert design §8.2).
+
+Without USB, flashing, logs and Home Assistant all run over Wi-Fi. Keep the USB-C port reachable for recovery: a firmware
+that doesn't boot needs a USB flash.
+
 ## Rules
 - Unplug USB before you solder or re-plug anything.
 - **Never connect 5 V (VBUS) to a 3.3 V part:** microphone, SHT31-D, VEML7700.
