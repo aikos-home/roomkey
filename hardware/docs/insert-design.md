@@ -1,4 +1,4 @@
-# RoomKey wall insert — v0.9 (Variant L and Variant S)
+# RoomKey wall insert — v0.9.1 (Variant L and Variant S)
 
 > **DRAFT / WIP. AI-assisted design. Not built, not tested, nothing certified.**
 > - The insert is a **SELV-only (class III) device**: it never carries 230 V.
@@ -12,9 +12,10 @@
 >
 > - **v0.6** adds the owner's first fit test, the rocker key, wider wire slots and the kit v0.7 prototype (§0). **v0.8**
 >   makes the rocker key captive after the first kit assembly (§0, §3). **v0.9** drops the rocker: a rigid key on two
->   MX with a fixed and a floating socket (§0, §3). None of these was reviewed. (There is no insert v0.7; v0.7 is the kit.)
+>   MX with a fixed and a floating socket (§0, §3); **v0.9.1** fixes the speaker tab and the radar tray after the
+>   first kit fit (§0). None of these was reviewed. (There is no insert v0.7; v0.7 is the kit.)
 >
-> Date: 2026-10-01, v0.6 and v0.8 2026-10-04, v0.9 2026-10-05. Licence: CERN-OHL-P-2.0 (hardware), CC BY 4.0 (this text).
+> Date: 2026-10-01, v0.6 and v0.8 2026-10-04, v0.9 2026-10-05, v0.9.1 2026-10-06. Licence: CERN-OHL-P-2.0 (hardware), CC BY 4.0 (this text).
 
 **What it is.** The insert replaces the 55 × 55 mm rocker of a German flush-mount switch (or socket) position and
 keeps the frame.
@@ -59,6 +60,16 @@ outside the chamber. Floating plate on 4 tactile switches; light-guide collar; m
 **v0.2 → v0.3 (round 2: no BLOCKER, ~28 MAJORs).** No foam gaskets between plate and chassis (mic carrier bonded to
 the plate, speaker sealed at its grille); glow = translucent plate rim; flange datum + tolerance chain + shims; 8 frame
 rims; stainless load plates; T0/T4 and the switch-box inventory; hub GPIO map from the vendor schematic.
+
+**v0.9 → v0.9.1 (the owner's kit fit, 2026-10-06; WIP: modelled, CAD-checked, not printed).** Key, amplifier and
+microphone fit as printed.
+
+| Input | v0.9.1 |
+|---|---|
+| The speaker does not go in: a ≈ 0.5 mm wire tab at the centre of one short end hits the cradle rib. "A hole in one of the towers, not a fork (integrity)." | **Blind tab slot** in the +y cradle rib (towards the amplifier): open to the back (the speaker and its wires come from behind), closed to the front, 4.4 wide (tab 3.4 [TBD] + 0.5/side), 0.9 beyond the speaker end; the rib is thickened outward there so 0.8 of wall stays behind the slot. The +y snap hook is dropped (the slot cut its root and left it as a loose 2nd solid; at the round speaker end it caught nothing). `SPK_TAB` overhang 1.8 (photo) → 0.5 (owner). The speaker reference now carries the tab. New hard check: every printed part is exactly ONE solid. |
+| The radar does not sit flat in the intended orientation (header to the wall): small SMD parts on the antenna face, along the long edge opposite the header, land on the carrier. (Turned by 180°, the header pin stubs do the same.) | The antenna **window spans the full board width** → the board rests only on its two short ends (1.5 / ≈ 3 mm). New references: "LD2410C edge parts" (`KIT_RADAR_EDGE` [TBD]) and "LD2410C pin stubs" (`KIT_RADAR_STUBS` [TBD]); both clear the carrier by 0.1. |
+
+CAD: L, S and the kit 0 collisions; key still captive. Print folder `roomkey-bausatz-v0.9.1/` (new: chassis, carrier).
 
 **v0.8 → v0.9 (the owner's verdict on the rocker, 2026-10-05; WIP: modelled, CAD-checked, not printed, not reviewed).**
 

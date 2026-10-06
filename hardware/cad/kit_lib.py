@@ -68,7 +68,9 @@ def back_carrier():
         box(rx0 - tc, rx1 + tc, ry0 - tc, ry1 + tc, c1 - EPS, t1 + 1))
     plate = fuse([plate, tray]).common(cyl(0, 0, R_BOX - 0.2, c0 - 1, t1 + 1))
     wy1 = min(ry1 - 1.5, P.HUB_POSTS[0][1] - P.KIT_POST_PIN[2] / 2 - 0.8)          # stays below the hub-post pin
-    tools.append(box(rx0 - tc, rx1 - 1.8, ry0 + 1.5, wy1, c0 - 1, c1 + 1).common(    # window for the antennas; its −x side
+    # v0.9.1: the window spans the full board width (+x edge: small SMD parts sat on the plate, owner 2026-10-06) → the
+    # board rests on the plate only at its two short ends
+    tools.append(box(rx0 - tc, rx1 + tc, ry0 + 1.5, wy1, c0 - 1, c1 + 1).common(      # window for the antennas; its −x side
         cyl(0, 0, R_BOX - 0.2 - 1.0, c0 - 2, c1 + 2)))                                # ends at the tray wall, ≥ 1.0 from the
                                                                                       # box-radius trim (no skin)
     body = cut(plate, tools)
@@ -106,7 +108,12 @@ def kit_refs():
     refs = {"LD2410C": box(rx0, rx1, ry0, ry1, c1, c1 + R.RADAR_T),
             "LD2410C header": box(rx0 + 0.3, rx0 + 2.8, ry0 + 3.0, ry1 - 3.0, c1 + R.RADAR_T, c1 + R.RADAR_T_PINS - R.RADAR_T),
             "LD2410C front parts": box(rx0 + 7.0, rx1 - 2.0, ry0 + 2.0, P.HUB_POSTS[0][1] - P.KIT_POST_PIN[2] / 2 - 1.0,
-                                       c1 - 1.0, c1)}   # chip + LED on the antenna side, inside the window
+                                       c1 - 1.0, c1),   # chip + LED on the antenna side, inside the window
+            # v0.9.1 [TBD envelopes]: SMD parts along the +x long edge and the header pin stubs, both on the antenna face
+            "LD2410C edge parts": box(rx1 - P.KIT_RADAR_EDGE[0], rx1 - 0.2, ry0 + 1.6,
+                                      P.HUB_POSTS[0][1] - P.KIT_POST_PIN[2] / 2 - 0.9, c1 - P.KIT_RADAR_EDGE[1], c1),
+            "LD2410C pin stubs": box(rx0 + 0.3, rx0 + 2.8, ry0 + 3.0, P.HUB_POSTS[0][1] - P.KIT_POST_PIN[2] / 2 - 0.9,
+                                     c1 - P.KIT_RADAR_STUBS, c1)}
     ax, ay = P.KIT_AMP_C
     refs["MAX98357A"] = box(ax - R.AMP_W / 2, ax + R.AMP_W / 2, ay - R.AMP_H / 2, ay + R.AMP_H / 2, c1, c1 + R.AMP_T)
     cx, cy = P.KIT_MIC_C
@@ -147,7 +154,8 @@ def build_kit():
         kb[nm] = L.key_pressed(bodies[nm])
     col += L.check_state(kb, "kit, key pressed", ex, only=("key shell", "touch board", "antenna chip"))
     gaps = {}
-    for a, b in (("LD2410C front parts", "back carrier"), ("LD2410C", "practice box"), ("LD2410C header", "practice box"),
+    for a, b in (("LD2410C front parts", "back carrier"), ("LD2410C edge parts", "back carrier"),
+                 ("LD2410C pin stubs", "back carrier"), ("LD2410C", "practice box"), ("LD2410C header", "practice box"),
                  ("MAX98357A", "cable loop"), ("back carrier", "cable loop"), ("back carrier", "speaker 2030"),
                  ("back carrier", "chassis (kit)"), ("LD2410C", "MX switch 2"), ("MAX98357A", "practice box"),
                  ("INMP441", "practice box"), ("INMP441", "chassis (kit)"), ("INMP441", "switch plate"), ("INMP441", "LD2410C"),

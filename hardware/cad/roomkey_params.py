@@ -112,7 +112,8 @@ SPK_END_R = SPK_W / 2                    # [MEAS] "almost oval": near-semicircul
                                          #        v0.6: the hooks at the box corners catch nothing → move them onto the straight part
 SPK_RING = (1.4, 0.1)                    # [TBD] white ring on the grille face: width (photo), thickness ("paper-thin", owner) →
                                          #        NOT a compressible gasket. Possibly the release liner of an adhesive ring [TBD]
-SPK_TAB = (3.4, 1.8)                     # [TBD] wire-exit tab at the CENTRE of one short end: width, overhang (from the photo, ±0.5)
+SPK_TAB = (3.4, 0.5)                     # wire-exit tab at the CENTRE of one short end: width [TBD photo ±0.5], overhang [MEAS ≈ 0.5,
+                                         #        owner 2026-10-06: it stopped the speaker at the cradle rib in the first kit print]
 SPK_PORT_FACE = "large"                  # [DS] vendor outline: mesh grille on one 20 × 30 face
 SPK_PORT_W, SPK_PORT_H = 16.5, 27.0      # [TBD] mesh inside the white ring, from the photo (±1); diaphragm behind it ≈ 8.6 × 12.6
 AMP_W, AMP_H, AMP_T = 18.77, 17.7, 3.0   # [MEAS] MAX98357A breakout, owner's calipers 2026-10-03; 3.0 = PCB + tallest part

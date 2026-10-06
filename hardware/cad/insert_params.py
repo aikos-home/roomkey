@@ -59,7 +59,7 @@ sys.path.insert(0, HERE)
 import roomkey_params as R  # noqa: E402
 
 VARIANTS = ("L", "S")
-VERSION = "0.9"
+VERSION = "0.9.1"
 
 SOURCES = {
     "cherry":   "Cherry MX1A datasheet, datasheet.octopart.com/MX1A-11NW-Cherry-datasheet-34676.pdf",
@@ -371,6 +371,10 @@ SPK_D0 = DECK_D1 + 0.6          # [FREE] the speaker's front edge rests on the p
 SPK_FACE_GASKET = (0.8, 0.5, 0.3)   # [FREE] foam frame on the grille face: width, free, compressed thickness → seals the channel
 SPK_HOOK_T = 1.2      # [FREE] hook thickness along d (catch face → back face): tip 0.8 after the 0.4 lead-in
 SPK_HOOK = 0.4        # [FREE] snap hooks (45° lead-in) on the cradle ribs overlap the speaker's back edge (inserted from behind)
+SPK_TAB_END = 1      # [FREE] v0.9.1: the speaker goes in with its wire tab at +y (towards the amplifier)
+SPK_TAB_SLOT = (0.5, 0.4, 0.8)   # [FREE] v0.9.1: blind slot for the tab in the +y cradle rib, open to the back (the speaker
+                                 #        and its wires come from behind), closed to the front: play per side along d, play
+                                 #        beyond the tab, wall left behind the slot (the rib is thickened for it → no fork)
 SPK_BACK_FOAM = (0.8, 0.55)   # [FREE] foam strip on the speaker's −x face (free, compressed): pushes it +x onto the face gasket
 DUCT_X1 = max(SPK_X0 + R.SPK_T + SPK_FACE_GASKET[2] + 3.1,   # [FREE] ≥ 3.1 mm air channel between the gasket and the duct wall,
               PERF_XS[-1] + PERF_D / 2 + 0.3)               # and never inside the deck mouth (v0.6: the measured, thinner
@@ -557,6 +561,11 @@ KIT_PAD_WALL = 1.2                # [FREE] round pad round each carrier hole (�
                                   # (2026-10-04) had 0.25–0.35 between hole and edge → the slicer dropped it, holes opened
                                   # over the edge. Checked now in build_kit (carrier webs ≥ KIT_MIN_WEB).
 KIT_MIN_WEB = 0.8                 # [FREE] thinnest web the carrier may have anywhere (2 lines of a 0.4 nozzle)
+KIT_RADAR_EDGE = (1.5, 1.0)       # [TBD] v0.9.1: small SMD parts on the antenna face along the long edge opposite the header
+                                  #        (owner 2026-10-06: they sat on the carrier plate, the board did not fit): band width
+                                  #        from the edge, height. The antenna window now spans the full board width → the
+                                  #        board rests only on its two short ends
+KIT_RADAR_STUBS = 1.0             # [TBD] header pin stubs on the antenna face (owner 2026-10-06), height
 KIT_RADAR_TRAY = (1.0, 0.2)       # [FREE] v0.8 radar TRAY: a closed perimeter wall round the board (thickness, play), from the
                                   # plate's front to 0.3 behind the board. The first carrier print (2026-10-04) was a floppy U of
                                   # 1.2–2.1 mm strips, open on the header side; the wall closes and stiffens the ring and

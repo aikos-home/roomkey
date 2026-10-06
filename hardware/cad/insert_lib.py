@@ -318,6 +318,20 @@ def plate(v):
 
 
 # ============================================================================ chassis
+def spk_tab_slot():
+    """v0.9.1: blind slot in the SPK_TAB_END cradle rib for the speaker's wire tab: from the speaker's end face out to the
+    tab + play, along d from in front of the tab to behind the rib (open to the back: the speaker goes in from behind and
+    the wires leave there), across the speaker's thickness. Returns box() arguments (x0, x1, y0, y1, d0, d1)."""
+    sy = P.SPK_TAB_END
+    gx = P.SPK_X0 + R.SPK_T
+    w, ov = R.SPK_TAB
+    pw, pd, _ = P.SPK_TAB_SLOT
+    dc = P.SPK_D0 + R.SPK_W / 2
+    ya, yb = sy * (P.SPK_Y[1] + 0.2 - EPS), sy * (P.SPK_Y[1] + ov + pd)
+    return (P.SPK_X0 - 0.2, gx + 0.2, min(ya, yb), max(ya, yb), dc - w / 2 - pw,
+            P.SPK_D0 + R.SPK_W + 0.1 + P.SPK_HOOK_T + 1.0)
+
+
 def chassis(v):
     s = P.KS
     d0, d1 = P.DECK_D0, P.DECK_D1
@@ -403,9 +417,18 @@ def chassis(v):
         add.append(box(P.COLLAR_OUT_X + P.COLLAR_FIT, gx + 1.0, y0_, y1_, d1 - EPS, P.SPK_D0 + R.SPK_W))
         add.append(box(P.WELL_IN_X + 0.2, gx + 1.0, y0_, y1_, P.COLLAR_D1 - EPS, P.HUB[4] - 0.2))
         add.append(box(P.HUB[1] + 0.5, gx + 1.0, y0_, y1_, P.HUB[4] - 0.2 - EPS, P.SPK_D0 + R.SPK_W + 0.1 + P.SPK_HOOK_T))
-        # hook: catch face 0.1 behind the speaker's back edge, 45° lead-in on its back face (the speaker comes from behind)
-        add.append(lip_prism(P.HUB[1] + 0.5, gx - 0.5, sy, P.SPK_Y[1] - P.SPK_HOOK, P.SPK_Y[1] + 0.2 + EPS,
-                             P.SPK_D0 + R.SPK_W + 0.1, P.SPK_D0 + R.SPK_W + 0.1 + P.SPK_HOOK_T, chamfer=P.SPK_HOOK))
+        # hook: catch face 0.1 behind the speaker's back edge, 45° lead-in on its back face (the speaker comes from behind).
+        # v0.9.1: not on the tab end — the tab slot cut its root and left the tip loose (2nd solid); at the speaker's round
+        # end it caught nothing anyway (SPK_END_R)
+        if sy != P.SPK_TAB_END:
+            add.append(lip_prism(P.HUB[1] + 0.5, gx - 0.5, sy, P.SPK_Y[1] - P.SPK_HOOK, P.SPK_Y[1] + 0.2 + EPS,
+                                 P.SPK_D0 + R.SPK_W + 0.1, P.SPK_D0 + R.SPK_W + 0.1 + P.SPK_HOOK_T, chamfer=P.SPK_HOOK))
+        if sy == P.SPK_TAB_END:      # v0.9.1: the rib is thickened outward where the tab slot runs (wall stays ≥ 0.8)
+            sd0 = spk_tab_slot()[4]
+            outer = P.SPK_Y[1] + R.SPK_TAB[1] + P.SPK_TAB_SLOT[1] + P.SPK_TAB_SLOT[2]
+            ty0, ty1 = sorted((sy * (P.SPK_Y[1] + 1.2 - EPS), sy * outer))
+            add.append(box(P.COLLAR_OUT_X + P.COLLAR_FIT, gx + 1.0, ty0, ty1, sd0 - P.SPK_TAB_SLOT[2],
+                           P.SPK_D0 + R.SPK_W + 0.1 + P.SPK_HOOK_T))
     # hub posts from the ledge, anchor posts + bar for the cable loop
     for (x, y) in P.HUB_POSTS:
         add.append(cyl(x, y, 1.5, ledge1 - EPS, P.HUB[4]))
@@ -430,6 +453,7 @@ def chassis(v):
     tools.append(box(gx + g - EPS, P.DUCT_X1, n0, n1, d1 - 2 * EPS, pd1))                        # channel (opens the floor)
     tools.append(box(P.SPK_X0 - 0.2, gx + g, P.SPK_Y[0] - 0.2, P.SPK_Y[1] + 0.2, P.SPK_D0,
                      P.SPK_D0 + R.SPK_W + 0.1))                                                  # speaker + face gasket
+    tools.append(box(*spk_tab_slot()))                                                           # v0.9.1 tab slot
     for (x, y) in P.PAD_POS:                                                                     # preload pad pockets
         tools.append(box(x - P.PAD_SIZE[0] / 2 - 0.1, x + P.PAD_SIZE[0] / 2 + 0.1, y - P.PAD_SIZE[1] / 2 - 0.1,
                          y + P.PAD_SIZE[1] / 2 + 0.1, d0 - 1, d0 + P.PAD_POCKET))
@@ -515,7 +539,10 @@ def ref_bodies(v):
     m0, m1, n0, n1 = P.mouth()
     pd0, pd1 = P.port_d()
     w = P.DUCT_WALL
-    refs["speaker 2030"] = box(P.SPK_X0, gx, P.SPK_Y[0], P.SPK_Y[1], P.SPK_D0, P.SPK_D0 + R.SPK_W)
+    dc, sy = P.SPK_D0 + R.SPK_W / 2, P.SPK_TAB_END
+    tab = box(P.SPK_X0 + 0.5, gx - 0.5, min(sy * (P.SPK_Y[1] - EPS), sy * (P.SPK_Y[1] + R.SPK_TAB[1])),
+              max(sy * (P.SPK_Y[1] - EPS), sy * (P.SPK_Y[1] + R.SPK_TAB[1])), dc - R.SPK_TAB[0] / 2, dc + R.SPK_TAB[0] / 2)
+    refs["speaker 2030"] = fuse([box(P.SPK_X0, gx, P.SPK_Y[0], P.SPK_Y[1], P.SPK_D0, P.SPK_D0 + R.SPK_W), tab])   # v0.9.1 tab
     refs["speaker face gasket"] = box(gx, gx + g, n0 - w, n1 + w, P.SPK_D0, pd1 + w).cut(
         box(gx - 1, gx + g + 1, n0, n1, P.SPK_D0 - 1, pd1))
     h = P.HUB
@@ -742,6 +769,7 @@ def build_variant(v):
                                    size=[round(bb.XLength, 2), round(bb.YLength, 2), round(bb.ZLength, 2)])
         print(f"  {nm:13s} valid {ok} | solids {len(shp.Solids)} | {bb.XLength:.1f} × {bb.YLength:.1f} × {bb.ZLength:.1f} | "
               f"{shp.Volume/1000:.2f} cm³ ≈ {shp.Volume/1000*1.27:.1f} g PETG")
+        assert len(shp.Solids) == 1, f"{nm}: {len(shp.Solids)} solids — a cut left a piece loose (v0.9.1 lesson)"
     assert lost <= TRIM_FAIL_MM3, f"allowed-space trim removed {lost:.2f} mm³ of chassis — a feature leaves the frame tunnel/box"
     print(f"  chassis trimmed to the allowed space: {lost:.2f} mm³ (fails above {TRIM_FAIL_MM3})")
 

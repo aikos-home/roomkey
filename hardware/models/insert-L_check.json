@@ -1,6 +1,6 @@
 {
  "variant": "L",
- "version": "0.9",
+ "version": "0.9.1",
  "parts": {
   "key shell": {
    "valid": true,
@@ -45,7 +45,7 @@
   "chassis": {
    "valid": true,
    "solids": 1,
-   "volume_cm3": 8.06,
+   "volume_cm3": 8.05,
    "size": [
     71.0,
     71.0,
