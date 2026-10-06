@@ -12,7 +12,7 @@
 #   GPIO20   TP RST            GPIO21 TP INT   GPIO9  BOOT = mechanical key
 #   Header H1 (2×11, 2.54 mm, bare pads; the silkscreen names the pads by GPIO: left VBUS GND TXD RXD RST 1-6,
 #   right VBAT GND GND 3V3 SCL SDA 13 12 9 8 7), as RoomKey uses it (H1 pin numbers from Waveshare's schematic):
-#      1 VBUS 5V   → amp, radar, glow ring          2 VBAT       (unused: no battery in aikos, E7)
+#      1 VBUS 5V   → amp, radar, glow ring          2 VBAT       (unused: no battery in aikos, E7; its charger runs at 2 A)
 #      3 GND                                         4 GND
 #      5 TXD=IO16  → MAX98357A DIN                   6 GND
 #      7 RXD=IO17  ← INMP441 SD                      8 3V3        → mic, SHT31-D

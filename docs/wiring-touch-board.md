@@ -49,7 +49,7 @@ Header H1: 2 × 11 bare pads, 2.54 mm pitch. The silkscreen names the pads by GP
 | 7 | 22 | GPIO7 | I²S bit clock (BCLK/SCK): microphone **and** amplifier |
 | 8 | 20 | GPIO8 | I²S word select (WS/LRC): microphone **and** amplifier |
 | 9 | 18 | GPIO9 | key top (MX 1); also the board's BOOT button |
-| RST, 1, 2, 12, 13, VBAT | 9, 11, 13, 16, 14, 2 | — | **don't connect**: reset, display bus, USB, battery |
+| RST, 1, 2, 12, 13, VBAT | 9, 11, 13, 16, 14, 2 | — | **don't connect**: reset, display bus, USB, battery (its charger runs at 2 A, see "Bench: a battery") |
 
 ## Every wire, by part
 
@@ -198,6 +198,27 @@ lab supply −  ──►  GND node ──┬── amplifier GND
 | + radar | +0.08 A |
 | ringtone / door audio on the speaker | peaks to 0.5–0.8 A |
 | glow ring full white | up to +0.25 A |
+
+**Bench: a battery**
+
+One LiPo cell gives 3.0–4.2 V, not 5 V. Don't wire it to the pads directly:
+- **Not to the 5 V node.** The radar needs 5 V (rated 5–12 V) and the LEDs at least 3.5 V. The board gets the cell's
+  voltage behind two diodes, ours and the board's own (D1), so the ESP browns out once the cell is below about 4 V.
+- **Not to VBAT** (H1-2). The board's charger (ETA6098) charges at **2 A** (R18 = 82 kΩ) whenever USB or the 5 V node
+  is live. That is 2C for a 1000 mAh cell, about twice what small cells allow. The round master board
+  (ESP32-S3-Touch-AMOLED-1.32) has the same charger at 2 A.
+
+Instead, feed the 5 V node from a 5 V source, in the lab supply's place:
+- **A USB power bank** (simplest): a USB cable with bare ends, red to the 5 V node, black to the GND node. It brings
+  the cell's protection, its charging and the 5 V converter. Some power banks switch off below about 0.1 A; the key
+  draws more.
+- **A LiPo through a step-up converter** to 5.0 V, at least 1.5 A out. Set it to 5.0 V before you connect anything.
+  Use only cells with a protection board (the small board under the tape at the wires), and check red and black with a
+  multimeter: the pads have no reverse-polarity protection. Charge the cell on its own at 0.5 A, attended: a lab supply
+  at 4.20 V and 0.5 A (stop below 50 mA), or a LiPo charger set that low.
+
+A 1000 mAh cell through a step-up runs the key for about 2–3 hours idle (board and radar), less with sound and the
+ring.
 
 **Later, in the wall:** a 12 V SELV feed, the hub's 12 → 5 V converter, then a Schottky diode into VBUS (insert design §8.2).
 
