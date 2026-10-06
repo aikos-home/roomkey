@@ -1,4 +1,4 @@
-# RoomKey wall insert — v0.9.2 (Variant L and Variant S)
+# RoomKey wall insert — v0.9.3 (Variant L and Variant S)
 
 > **DRAFT / WIP. AI-assisted design. Not built, not tested, nothing certified.**
 > - The insert is a **SELV-only (class III) device**: it never carries 230 V.
@@ -13,9 +13,9 @@
 > - **v0.6** adds the owner's first fit test, the rocker key, wider wire slots and the kit v0.7 prototype (§0). **v0.8**
 >   makes the rocker key captive after the first kit assembly (§0, §3). **v0.9** drops the rocker: a rigid key on two
 >   MX with a fixed and a floating socket (§0, §3); **v0.9.1** fixes the speaker tab and the radar tray after the
->   first kit fit, **v0.9.2** closes the radar tray again (§0). None of these was reviewed. (There is no insert v0.7; v0.7 is the kit.)
+>   first kit fit, **v0.9.2** closes the radar tray again, **v0.9.3** fits it to the board (§0). None of these was reviewed. (There is no insert v0.7; v0.7 is the kit.)
 >
-> Date: 2026-10-01, v0.6 and v0.8 2026-10-04, v0.9 2026-10-05, v0.9.1 and v0.9.2 2026-10-06. Licence: CERN-OHL-P-2.0 (hardware), CC BY 4.0 (this text).
+> Date: 2026-10-01, v0.6 and v0.8 2026-10-04, v0.9 2026-10-05, v0.9.1 to v0.9.3 2026-10-06. Licence: CERN-OHL-P-2.0 (hardware), CC BY 4.0 (this text).
 
 **What it is.** The insert replaces the 55 × 55 mm rocker of a German flush-mount switch (or socket) position and
 keeps the frame.
@@ -60,6 +60,11 @@ outside the chamber. Floating plate on 4 tactile switches; light-guide collar; m
 **v0.2 → v0.3 (round 2: no BLOCKER, ~28 MAJORs).** No foam gaskets between plate and chassis (mic carrier bonded to
 the plate, speaker sealed at its grille); glow = translucent plate rim; flange datum + tolerance chain + shims; 8 frame
 rims; stainless load plates; T0/T4 and the switch-box inventory; hub GPIO map from the vendor schematic.
+
+**v0.9.2 → v0.9.3 (owner's print, 2026-10-06).** The radar slid about in the v0.9.2 tray (≈ 0.5 too long, the short side
+just too loose). The board is **22.03** long (caliper photo), not 22.26 (10-03): `RADAR_H` corrected, `KIT_RADAR` now
+derived from `RADAR_W/H`, tray play 0.2 → **0.15/side** (= `KEY_FIT` [MEAS]). Pocket 16.14 × 22.33. Kit: 0 collisions,
+frame closed.
 
 **v0.9.1 → v0.9.2 (the owner's slicer view and a photo of the radar's antenna face, 2026-10-06; WIP, not printed).**
 - *My error in v0.9.1:* the full-width antenna window removed the plate strip under the board's parts edge; next to it

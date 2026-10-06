@@ -66,9 +66,9 @@ technical writing and design review. **In practice the owner runs a one-person p
 |---|---|
 | [`cad/roomkey_params.py`](cad/roomkey_params.py) | every dimension, tagged [DS] datasheet · [MEAS] measured · [FREE] design choice · [TBD] placeholder; `python3 cad/roomkey_params.py` runs the fit check |
 | [`cad/make_coupon_v0.py`](cad/make_coupon_v0.py) | tolerance coupon — print this first |
-| [`cad/insert_params.py`](cad/insert_params.py) | **wall insert v0.9.2 (draft)**: box, frame, both variants, installation topologies; `python3 cad/insert_params.py` validates L and S |
+| [`cad/insert_params.py`](cad/insert_params.py) | **wall insert v0.9.3 (draft)**: box, frame, both variants, installation topologies; `python3 cad/insert_params.py` validates L and S |
 | [`cad/insert_lib.py`](cad/insert_lib.py), [`make_key_module.py`](cad/make_key_module.py), [`make_insert_L.py`](cad/make_insert_L.py), [`make_insert_S.py`](cad/make_insert_S.py) | FreeCAD generators + collision/clearance checks (rest, key pressed, rocked and wobbled with its stems, plate pressed at five points) |
-| [`docs/insert-design.md`](docs/insert-design.md) | **design of the wall insert (v0.9.2 DRAFT)**: concept, stack-up, installation topologies (electrician), BOM, printing, open questions, risks |
+| [`docs/insert-design.md`](docs/insert-design.md) | **design of the wall insert (v0.9.3 DRAFT)**: concept, stack-up, installation topologies (electrician), BOM, printing, open questions, risks |
 | [`cad/desk_lib.py`](cad/desk_lib.py), [`make_practice_box.py`](cad/make_practice_box.py), [`make_desk_replica.py`](cad/make_desk_replica.py) | **practice box v0.1** (one flush-box replica + 1-gang frame with the humidity sensor) and the older 2-box desk replica — prototypes, never in a wall |
 | [`cad/kit_lib.py`](cad/kit_lib.py), [`make_kit.py`](cad/make_kit.py), [`wiring_lib.py`](cad/wiring_lib.py) | **kit v0.7 (WIP)**: the whole RoomKey in one box — back carrier (radar + amplifier), mic sound tube, 41 wires with cut lengths |
 | [`cad/view_kit.py`](cad/view_kit.py), [`render_kit.py`](cad/render_kit.py) | open the kit in the FreeCAD GUI (coloured, grouped) and render the images in [`docs/img/`](docs/img/) |
@@ -95,7 +95,7 @@ Print flat, PLA, 0.2 mm layers, no supports (≈ 10 min, 9 g). Dots = variant, 1
 The winners go into `roomkey_params.py` as [MEAS]. Repeat in ABS/PETG before the final parts —
 they shrink differently.
 
-## Wall insert v0.9.2 (DRAFT / WIP, 2026-10-06)
+## Wall insert v0.9.3 (DRAFT / WIP, 2026-10-06)
 
 **AI-assisted draft — nothing built, nothing certified, not approved for mains. All 230 V work only by a
 qualified electrician of a registered installation company (NAV §13).** Two variants of the in-wall part with the same printed parts, key module and look —

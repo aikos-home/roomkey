@@ -59,7 +59,7 @@ sys.path.insert(0, HERE)
 import roomkey_params as R  # noqa: E402
 
 VARIANTS = ("L", "S")
-VERSION = "0.9.2"
+VERSION = "0.9.3"
 
 SOURCES = {
     "cherry":   "Cherry MX1A datasheet, datasheet.octopart.com/MX1A-11NW-Cherry-datasheet-34676.pdf",
@@ -551,7 +551,7 @@ KIT_MIC_PORT_OFF = 0.8            # [PHOTO] port ≈ 0.8 off the module centre t
 KIT_MIC_C = (-19.36, 9.65)        # [FREE] module centre: 0.8 from the port, optimised → 0.29 inside the box margin (0.79 to a
                                   # Ø58 wall) and 0.29 to the hub post; the L/R–GND row points OUTWARDS (−x). Decided
                                   # 2026-10-03: the module does not fit the touch-board back (4.0 gap, crowded, antenna)
-KIT_RADAR = (-22.5, -6.66, -17.1, 5.16, 27.0)   # [FREE] LD2410C outline x0, x1, y0, y1 (long side along y) and its FRONT d
+KIT_RADAR = (-22.5, -22.5 + R.RADAR_W, -17.1, -17.1 + R.RADAR_H, 27.0)   # [FREE] LD2410C outline x0, x1, y0, y1 (long side along y), FRONT d
                                   # (antenna side forward, resting on the carrier's back face); patch antennas at the
                                   # OUTER (−x) edge next to the header → they look forward through the left wing only
 KIT_CARRIER_D = (25.5, 27.0)      # [FREE] back carrier plate d0, d1: on the 4 hub posts (+ pins), radar behind its window
@@ -570,7 +570,8 @@ KIT_RADAR_RAISE = 1.3             # [FREE] v0.9.2: the board sits on two LEDGES 
                                   #        plate under the parts edge stays and the tray is a CLOSED frame again (v0.9.1 had
                                   #        cut it open: full-width window + the cable-loop keep-out took the +x wall → a "C")
 KIT_RADAR_LEDGE_X = 11.0          # [FREE] ledge length from the header edge (parts band starts 15.84 − 4.2 = 11.6 from it)
-KIT_RADAR_TRAY = (1.0, 0.2)       # [FREE] v0.8 radar TRAY: a closed perimeter wall round the board (thickness, play), from the
+KIT_RADAR_TRAY = (1.0, 0.15)      # [FREE] v0.9.3 play 0.15/side = KEY_FIT [MEAS] (0.2 printed just too loose, owner 2026-10-06)
+                                  # v0.8 radar TRAY: a closed perimeter wall round the board (thickness, play), from the
                                   # plate's front to 0.3 behind the board. The first carrier print (2026-10-04) was a floppy U of
                                   # 1.2–2.1 mm strips, open on the header side; the wall closes and stiffens the ring and
                                   # replaces the corner brackets. The window (antennas) stays open.

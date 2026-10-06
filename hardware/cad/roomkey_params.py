@@ -144,7 +144,9 @@ RH_PINS = ("VIN", "GND", "SCL", "SDA")   # [PHOTO] 4 pins at 2.54 along the bott
 RH_HOLE_D, RH_HOLE_C = 2.3, (2.5, 2.9)   # [PHOTO ±0.5] the one large hole (top left, front view): Ø, centre ↔ left / top edge
 RH_CHIP_C = (7.2, 3.75)                  # [PHOTO ±0.5] SHT31 chip (≈ 2.5 × 2.5) centre ↔ left / top edge (front view): it needs
                                          #        room air → vents in front of it, low in the box, walled off from ESP and amp heat
-RADAR_W, RADAR_H, RADAR_T = 15.84, 22.26, 1.56   # [MEAS] HLK-LD2410C, owner's calipers 2026-10-03 (manual: 16 × 22); 5 V;
+RADAR_W, RADAR_H, RADAR_T = 15.84, 22.03, 1.56   # [MEAS] HLK-LD2410C, owner's calipers 2026-10-03 (manual: 16 × 22); 5 V;
+                                         #        H 22.03: caliper photo 2026-10-06 (10-03 said 22.26 → the v0.9.2 tray was
+                                         #        ≈ 0.5 too long, the board slid about);
                                          #        sees through thin plastic, not metal
 RADAR_T_PINS = 11.4                      # [MEAS] total height with the soldered pin header (thickest point)
 RADAR_PINS = ("TX", "RX", "OUT", "GND", "VCC")   # [PHOTO] 5 pins at 2.54 along one LONG edge, ≈ 1.3 from it, roughly centred
