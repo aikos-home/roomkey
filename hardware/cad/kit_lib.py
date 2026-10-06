@@ -123,7 +123,7 @@ def kit_refs():
 
 
 def build_kit():
-    print(f"\n==================== RoomKey KIT v0.7 (prototype, one box, lab supply 5 V) — insert v{P.VERSION} ====")
+    print(f"\n==================== RoomKey KIT (concept v0.7: one box, lab supply 5 V) — parts v{P.VERSION} ====")
     one = ((0.0, 0.0),)
     pbody, prim = L.plate_parts("S")
     ch, bc = kit_chassis("S"), back_carrier()
@@ -170,10 +170,10 @@ def build_kit():
     L.export(ch, "kit_chassis", "front_down")
     L.export(bc, "kit_back_carrier", "front_down")
     import Part
-    Part.makeCompound(list(bodies.values())).exportStep(os.path.join(L.OUT, "kit-v0.7_assembly.step"))
+    Part.makeCompound(list(bodies.values())).exportStep(os.path.join(L.OUT, f"kit-v{P.VERSION}_assembly.step"))
     L.write_stl(Part.makeCompound([bodies[k] for k in ("key shell", "switch plate", "collar", "plate", "chassis (kit)", "back carrier")]),
-                os.path.join(L.OUT, "kit-v0.7_printed-assembly.stl"), 0.05, 0.4)
+                os.path.join(L.OUT, f"kit-v{P.VERSION}_printed-assembly.stl"), 0.05, 0.4)
     if min(webs.values()) < P.KIT_MIN_WEB:
         print(f"  ERROR back carrier web below {P.KIT_MIN_WEB}: the slicer will open it")
-    with open(os.path.join(L.OUT, "kit-v0.7_check.json"), "w", encoding="utf-8") as f:
+    with open(os.path.join(L.OUT, f"kit-v{P.VERSION}_check.json"), "w", encoding="utf-8") as f:
         json.dump({"collisions": col, "gaps": gaps, "carrier_webs": webs}, f, indent=1, ensure_ascii=False)

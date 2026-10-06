@@ -4,7 +4,7 @@ Parametric FreeCAD scripts, the same method as [Klingelbox](https://github.com/a
 one file holds every dimension, generators read it, `validate()` checks the fit before anything is
 printed. Licence: [CERN-OHL-P-2.0](../LICENSES/CERN-OHL-P-2.0.txt).
 
-![Kit v0.7 in the practice box, front 3/4 (FreeCAD)](docs/img/kit-v0.7_front.png)
+![Kit (parts v0.9.1) in the practice box, front 3/4 (FreeCAD)](docs/img/kit-v0.9.1_front.png)
 
 *Kit v0.7 (prototype, WIP, not reviewed): the whole RoomKey in one flush box — touch key, speaker, mic, presence radar,
 amplifier, humidity sensor — behind a 1-gang frame. Practice box shown transparent. Real FreeCAD screenshots, made by
@@ -57,10 +57,10 @@ technical writing and design review. **In practice the owner runs a one-person p
 
 | | |
 |---|---|
-| ![What you see on the wall](docs/img/kit-v0.7_face.png) | ![Rear, without the box: carrier with radar and amplifier, mic, speaker, key switches](docs/img/kit-v0.7_rear-parts.png) |
+| ![What you see on the wall](docs/img/kit-v0.9.1_face.png) | ![Rear, without the box: carrier with radar and amplifier, mic, speaker, key switches](docs/img/kit-v0.9.1_rear-parts.png) |
 | *What you see on the wall: frame, plate with speaker and mic perforation, touch key with glow ring; humidity-sensor vents in the frame.* | *From behind: back carrier with the LD2410C radar (blue) and MAX98357A amplifier (purple), INMP441 mic (green), speaker, the two key switches.* |
-| ![Wiring](docs/img/kit-v0.7_wiring.png) | ![Rigid key v0.9 from behind: fixed socket top, floating socket bottom](docs/img/key-v0.9_rear.png) |
-| *All 41 wires of the kit, routed in 3D (0.05 mm² silicone wire; cut lengths in [`models/kit-v0.7_wiring.json`](models/kit-v0.7_wiring.json)).* | *Rocker key from behind: two key switches read separately — rock up, rock down, or press the middle for both.* |
+| ![Wiring](docs/img/kit-v0.9.1_wiring.png) | ![Rigid key v0.9 from behind: fixed socket top, floating socket bottom](docs/img/key-v0.9.1_rear.png) |
+| *All 41 wires of the kit, routed in 3D (0.05 mm² silicone wire; cut lengths in [`models/kit-v0.9.1_wiring.json`](models/kit-v0.9.1_wiring.json)).* | *Rocker key from behind: two key switches read separately — rock up, rock down, or press the middle for both.* |
 
 | File | What |
 |---|---|

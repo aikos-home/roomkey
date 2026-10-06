@@ -103,28 +103,28 @@ def shots():
     fr = objs["Rahmen_JungAS500"].ViewObject
     t0, fr.Transparency = fr.Transparency, 0
     cam((0, 0, 1))
-    shot("kit-v0.7_face.png")
+    shot(f"kit-v{P.VERSION}_face.png")
     fr.Transparency = t0
     # 2 front 3/4 in the practice box (box transparent)
     show(None, hide=("Draht_", "Kabelbogen"))
     cam((-0.65, 0.45, 1))
-    shot("kit-v0.7_front.png")
+    shot(f"kit-v{P.VERSION}_front.png")
     # 3 rear 3/4 without the box: back carrier with radar + amplifier, mic, speaker, switches
     show(None, hide=wall)
     cam((0.75, 0.5, -1))
-    shot("kit-v0.7_rear-parts.png")
+    shot(f"kit-v{P.VERSION}_rear-parts.png")
     # 4 the same with all 41 wires
     show(None, hide=("Uebungsdose", "Kabelbogen"))
     cam((0.75, 0.5, -1))
-    shot("kit-v0.7_wiring.png")
+    shot(f"kit-v{P.VERSION}_wiring.png")
     # 5 the frame from behind and below: humidity sensor flat under its bottom border
     show(("Rahmen_JungAS500", "Feuchtesensor"))
     cam((0.35, -0.55, -1))
     shot("frame_humidity-sensor.png")
-    # 6 the rocker key from behind: forks, stop bosses, header slots, the two switches
-    show(("Tastenschale_Wippe", "MX_", "Touch_Board"))
+    # 6 the rigid key from behind: fixed / floating stem sockets, stop bosses, header slots, the two switches
+    show(("Tastenschale_starr", "MX_", "Touch_Board"))
     cam((0.6, 0.55, -1))
-    shot("rocker-key_rear.png")
+    shot(f"key-v{P.VERSION}_rear.png")
 
 
 from PySide import QtCore, QtGui  # noqa: E402

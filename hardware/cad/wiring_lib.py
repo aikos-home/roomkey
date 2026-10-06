@@ -256,6 +256,6 @@ def build_wiring():
     print(f"  wires: {len(wires)}, overlaps with parts > 0.05 mm³: {len(hits)} (ends on pins/pads are expected)")
     for h in hits:
         print("    TOUCH", h)
-    with open(os.path.join(L.OUT, "kit-v0.7_wiring.json"), "w", encoding="utf-8") as f:
+    with open(os.path.join(L.OUT, f"kit-v{P.VERSION}_wiring.json"), "w", encoding="utf-8") as f:
         json.dump({"overlaps": hits, "table": table_md()}, f, indent=1, ensure_ascii=False)
     return wires, hits
