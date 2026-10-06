@@ -59,7 +59,7 @@ sys.path.insert(0, HERE)
 import roomkey_params as R  # noqa: E402
 
 VARIANTS = ("L", "S")
-VERSION = "0.9.1"
+VERSION = "0.9.2"
 
 SOURCES = {
     "cherry":   "Cherry MX1A datasheet, datasheet.octopart.com/MX1A-11NW-Cherry-datasheet-34676.pdf",
@@ -561,11 +561,15 @@ KIT_PAD_WALL = 1.2                # [FREE] round pad round each carrier hole (�
                                   # (2026-10-04) had 0.25–0.35 between hole and edge → the slicer dropped it, holes opened
                                   # over the edge. Checked now in build_kit (carrier webs ≥ KIT_MIN_WEB).
 KIT_MIN_WEB = 0.8                 # [FREE] thinnest web the carrier may have anywhere (2 lines of a 0.4 nozzle)
-KIT_RADAR_EDGE = (1.5, 1.0)       # [TBD] v0.9.1: small SMD parts on the antenna face along the long edge opposite the header
-                                  #        (owner 2026-10-06: they sat on the carrier plate, the board did not fit): band width
-                                  #        from the edge, height. The antenna window now spans the full board width → the
-                                  #        board rests only on its two short ends
-KIT_RADAR_STUBS = 1.0             # [TBD] header pin stubs on the antenna face (owner 2026-10-06), height
+KIT_RADAR_EDGE = (4.2, 1.1)       # [PHOTO 2026-10-06 ±0.5] SMD parts on the antenna face along the WHOLE long edge opposite
+                                  #        the header, corners included (LED, R row, caps; the chip reaches 2.3 from that edge):
+                                  #        band width from the edge, height [TBD: tallest part ≈ QFN 0.9 / SOT 1.1]
+KIT_RADAR_STUBS = 1.0             # [TBD] header pin stubs on the antenna face (photo: pins 5.0–17.0 along the long edge)
+KIT_RADAR_RAISE = 1.3             # [FREE] v0.9.2: the board sits on two LEDGES this high at its short ends (parts-free, header
+                                  #        side only) → every part on the antenna face floats above the plate (≥ 0.2), so the
+                                  #        plate under the parts edge stays and the tray is a CLOSED frame again (v0.9.1 had
+                                  #        cut it open: full-width window + the cable-loop keep-out took the +x wall → a "C")
+KIT_RADAR_LEDGE_X = 11.0          # [FREE] ledge length from the header edge (parts band starts 15.84 − 4.2 = 11.6 from it)
 KIT_RADAR_TRAY = (1.0, 0.2)       # [FREE] v0.8 radar TRAY: a closed perimeter wall round the board (thickness, play), from the
                                   # plate's front to 0.3 behind the board. The first carrier print (2026-10-04) was a floppy U of
                                   # 1.2–2.1 mm strips, open on the header side; the wall closes and stiffens the ring and

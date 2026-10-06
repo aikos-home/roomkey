@@ -63,18 +63,24 @@ def back_carrier():
     tools += [cyl(x, y, P.KIT_POST_PIN[2] / 2, c0 - 1, c1 + 1) for (x, y) in P.HUB_POSTS]
     # v0.8 radar tray: closed perimeter wall round the board (outside its footprint), plate front → 0.3 behind the board
     tw, tc = P.KIT_RADAR_TRAY
-    t1 = c1 + R.RADAR_T + 0.3
+    rz = P.KIT_RADAR_RAISE
+    t1 = c1 + rz + R.RADAR_T + 0.3
     tray = box(rx0 - tc - tw, rx1 + tc + tw, ry0 - tc - tw, ry1 + tc + tw, c0, t1).cut(
         box(rx0 - tc, rx1 + tc, ry0 - tc, ry1 + tc, c1 - EPS, t1 + 1))
     plate = fuse([plate, tray]).common(cyl(0, 0, R_BOX - 0.2, c0 - 1, t1 + 1))
     wy1 = min(ry1 - 1.5, P.HUB_POSTS[0][1] - P.KIT_POST_PIN[2] / 2 - 0.8)          # stays below the hub-post pin
-    # v0.9.1: the window spans the full board width (+x edge: small SMD parts sat on the plate, owner 2026-10-06) → the
-    # board rests on the plate only at its two short ends
-    tools.append(box(rx0 - tc, rx1 + tc, ry0 + 1.5, wy1, c0 - 1, c1 + 1).common(      # window for the antennas; its −x side
+    # v0.9.2: back to the v0.8 window (the board is raised on ledges, its parts clear the plate) → the plate strip under
+    # the parts edge closes the tray frame beside the cable-loop keep-out
+    tools.append(box(rx0 - tc, rx1 - 1.8, ry0 + 1.5, wy1, c0 - 1, c1 + 1).common(      # window for the antennas; its −x side
         cyl(0, 0, R_BOX - 0.2 - 1.0, c0 - 2, c1 + 2)))                                # ends at the tray wall, ≥ 1.0 from the
                                                                                       # box-radius trim (no skin)
     body = cut(plate, tools)
-    parts = [body]
+    # v0.9.2 ledges at the board's short ends, header side only (the parts edge stays free); the top one stops short of the
+    # hub-post pin's hole wall
+    hx = P.HUB_POSTS[0][0] - P.KIT_POST_PIN[2] / 2 - 0.8
+    ledges = [box(rx0 - tc, rx0 + P.KIT_RADAR_LEDGE_X, ry0 - tc, ry0 + 1.5, c1 - EPS, c1 + rz),
+              box(rx0 - tc, min(rx0 + P.KIT_RADAR_LEDGE_X, hx), wy1 + 0.5, ry1 + tc, c1 - EPS, c1 + rz)]
+    parts = [fuse([body] + ledges)]
     # amplifier pins (its two mounting holes, top corners) on the back face
     ax, ay = P.KIT_AMP_C
     hy = ay + R.AMP_H / 2 - R.AMP_HOLE_C[1]
@@ -104,16 +110,15 @@ def carrier_webs(bc):
 
 def kit_refs():
     rx0, rx1, ry0, ry1, rd = P.KIT_RADAR
-    c1 = P.KIT_CARRIER_D[1]
+    c1 = P.KIT_CARRIER_D[1] + P.KIT_RADAR_RAISE      # v0.9.2: the board's front face (on its ledges)
+    ew, eh = P.KIT_RADAR_EDGE
     refs = {"LD2410C": box(rx0, rx1, ry0, ry1, c1, c1 + R.RADAR_T),
             "LD2410C header": box(rx0 + 0.3, rx0 + 2.8, ry0 + 3.0, ry1 - 3.0, c1 + R.RADAR_T, c1 + R.RADAR_T_PINS - R.RADAR_T),
-            "LD2410C front parts": box(rx0 + 7.0, rx1 - 2.0, ry0 + 2.0, P.HUB_POSTS[0][1] - P.KIT_POST_PIN[2] / 2 - 1.0,
-                                       c1 - 1.0, c1),   # chip + LED on the antenna side, inside the window
-            # v0.9.1 [TBD envelopes]: SMD parts along the +x long edge and the header pin stubs, both on the antenna face
-            "LD2410C edge parts": box(rx1 - P.KIT_RADAR_EDGE[0], rx1 - 0.2, ry0 + 1.6,
-                                      P.HUB_POSTS[0][1] - P.KIT_POST_PIN[2] / 2 - 0.9, c1 - P.KIT_RADAR_EDGE[1], c1),
-            "LD2410C pin stubs": box(rx0 + 0.3, rx0 + 2.8, ry0 + 3.0, P.HUB_POSTS[0][1] - P.KIT_POST_PIN[2] / 2 - 0.9,
-                                     c1 - P.KIT_RADAR_STUBS, c1)}
+            # antenna face, from the owner's photo 2026-10-06 [±0.5]: the chip (2.3–8.2 from the parts edge), the band of
+            # SMD parts along the whole parts edge, the header pin stubs
+            "LD2410C front parts": box(rx0 + 7.0, rx1 - ew - 0.1, ry0 + 8.0, ry0 + 14.0, c1 - 1.0, c1),
+            "LD2410C edge parts": box(rx1 - ew, rx1 - 0.2, ry0 + 0.4, ry1 - 0.4, c1 - eh, c1),
+            "LD2410C pin stubs": box(rx0 + 0.3, rx0 + 2.4, ry0 + 5.0, ry0 + 17.0, c1 - P.KIT_RADAR_STUBS, c1)}
     ax, ay = P.KIT_AMP_C
     refs["MAX98357A"] = box(ax - R.AMP_W / 2, ax + R.AMP_W / 2, ay - R.AMP_H / 2, ay + R.AMP_H / 2, c1, c1 + R.AMP_T)
     cx, cy = P.KIT_MIC_C
@@ -142,11 +147,19 @@ def build_kit():
     ex = {frozenset(("box screw L", "practice box")), frozenset(("box screw R", "practice box")),
           frozenset(("MX switch 1", "switch plate")), frozenset(("MX switch 2", "switch plate")),
           frozenset(("MAX98357A", "back carrier")),                 # amp holes on the carrier pins
-          frozenset(("speaker 2030", "speaker back foam")), frozenset(("chassis (kit)", "speaker back foam")),
-          frozenset(("LD2410C front parts", "back carrier"))}       # they sit in the window (check below)
+          frozenset(("speaker 2030", "speaker back foam")), frozenset(("chassis (kit)", "speaker back foam"))}
+    # v0.9.2: the radar's front parts are no longer exempt — they must clear the carrier (the board sits on ledges)
     webs = carrier_webs(bc)
     print(f"  back carrier: thinnest web {min(webs.values()):.2f} (rule ≥ {P.KIT_MIN_WEB}) | " +
           ", ".join(f"{k} {v:.2f}" for k, v in webs.items()))
+    # v0.9.2: the radar tray must be a CLOSED frame — along the parts edge, where the cable-loop keep-out takes the tray
+    # wall, the plate strip under the board must run through (v0.9.1 lost it and the tray became an open "C")
+    rx0, rx1, ry0, ry1, _ = P.KIT_RADAR
+    c0 = P.KIT_CARRIER_D[0]
+    ys = [P.LOOP_Y[0] - 0.5 + i * 0.5 for i in range(int((P.LOOP_Y[1] - P.LOOP_Y[0]) / 0.5) + 2)]
+    gaps_ = [y for y in ys if not bc.isInside(V(rx1 - 1.1, y, -(c0 + 0.75)), 0.001, True)]
+    print(f"  radar tray frame: {'CLOSED' if not gaps_ else 'OPEN at y ' + ', '.join(f'{y:.1f}' for y in gaps_)}")
+    assert not gaps_, "radar tray frame is open along the parts edge (strip under the board missing)"
     col = L.check_state(bodies, "kit, rest", ex)
     # key pressed / rocked with the kit parts present
     kb = dict(bodies)

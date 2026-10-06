@@ -39,7 +39,7 @@ ITEMS = [
     ("Lautsprecher", lambda: refs["speaker 2030"], (0.1, 0.1, 0.1), 0, "Bauteile"),
     ("Radar_LD2410C", lambda: kr["LD2410C"], (0.1, 0.25, 0.75), 0, "Bauteile"),
     ("Radar_Stiftleiste", lambda: kr["LD2410C header"], (0.05, 0.05, 0.05), 0, "Bauteile"),
-    ("Radar_Chip_LED_vorne", lambda: kr["LD2410C front parts"], (0.85, 0.65, 0.1), 0, "Bauteile"),
+    ("Radar_Chip_vorne", lambda: kr["LD2410C front parts"], (0.85, 0.65, 0.1), 0, "Bauteile"),
     ("Radar_Randbauteile_vorne", lambda: kr["LD2410C edge parts"], (0.9, 0.2, 0.2), 0, "Bauteile"),
     ("Radar_Stiftstummel_vorne", lambda: kr["LD2410C pin stubs"], (0.9, 0.5, 0.1), 0, "Bauteile"),
     ("Verstaerker_MAX98357A", lambda: kr["MAX98357A"], (0.5, 0.15, 0.6), 0, "Bauteile"),

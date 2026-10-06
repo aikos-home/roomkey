@@ -1,4 +1,4 @@
-# RoomKey wall insert — v0.9.1 (Variant L and Variant S)
+# RoomKey wall insert — v0.9.2 (Variant L and Variant S)
 
 > **DRAFT / WIP. AI-assisted design. Not built, not tested, nothing certified.**
 > - The insert is a **SELV-only (class III) device**: it never carries 230 V.
@@ -13,9 +13,9 @@
 > - **v0.6** adds the owner's first fit test, the rocker key, wider wire slots and the kit v0.7 prototype (§0). **v0.8**
 >   makes the rocker key captive after the first kit assembly (§0, §3). **v0.9** drops the rocker: a rigid key on two
 >   MX with a fixed and a floating socket (§0, §3); **v0.9.1** fixes the speaker tab and the radar tray after the
->   first kit fit (§0). None of these was reviewed. (There is no insert v0.7; v0.7 is the kit.)
+>   first kit fit, **v0.9.2** closes the radar tray again (§0). None of these was reviewed. (There is no insert v0.7; v0.7 is the kit.)
 >
-> Date: 2026-10-01, v0.6 and v0.8 2026-10-04, v0.9 2026-10-05, v0.9.1 2026-10-06. Licence: CERN-OHL-P-2.0 (hardware), CC BY 4.0 (this text).
+> Date: 2026-10-01, v0.6 and v0.8 2026-10-04, v0.9 2026-10-05, v0.9.1 and v0.9.2 2026-10-06. Licence: CERN-OHL-P-2.0 (hardware), CC BY 4.0 (this text).
 
 **What it is.** The insert replaces the 55 × 55 mm rocker of a German flush-mount switch (or socket) position and
 keeps the frame.
@@ -60,6 +60,19 @@ outside the chamber. Floating plate on 4 tactile switches; light-guide collar; m
 **v0.2 → v0.3 (round 2: no BLOCKER, ~28 MAJORs).** No foam gaskets between plate and chassis (mic carrier bonded to
 the plate, speaker sealed at its grille); glow = translucent plate rim; flange datum + tolerance chain + shims; 8 frame
 rims; stainless load plates; T0/T4 and the switch-box inventory; hub GPIO map from the vendor schematic.
+
+**v0.9.1 → v0.9.2 (the owner's slicer view and a photo of the radar's antenna face, 2026-10-06; WIP, not printed).**
+- *My error in v0.9.1:* the full-width antenna window removed the plate strip under the board's parts edge; next to it
+  the cable-loop keep-out (x ±7) takes the tray's +x wall over y −7.8…2.5, so the tray became an open "C" — the floppy
+  shape v0.8 had fixed. No check caught it (no collision, still one solid).
+- *The photo:* SMD parts run along the **whole** long edge opposite the header, corners included, up to ≈ 4.1 from it;
+  the chip reaches 2.3 from that edge. So no plate strip can run under that edge with the board lying on the plate.
+- *Fix:* the board sits on **two 1.3 mm ledges** at its short ends, header side only (11.0 from the header edge; the
+  parts band starts at 11.6). Every part on the antenna face then floats ≥ 0.2 above the plate, the v0.8 window and the
+  plate strip under the parts edge are back, and the tray is closed. Tray 1.3 taller. Reference envelopes from the photo
+  (`KIT_RADAR_EDGE` 4.2 × 1.1 [TBD height]); the radar's front parts are no longer exempt from the collision check.
+- *New check:* `build_kit` probes the plate strip along the parts edge over the keep-out's y range → "radar tray frame:
+  CLOSED", else it fails. Kit: 0 collisions; edge parts ↔ carrier 0.2, pin stubs 0.5, chip 2.5.
 
 **v0.9 → v0.9.1 (the owner's kit fit, 2026-10-06; WIP: modelled, CAD-checked, not printed).** Key, amplifier and
 microphone fit as printed.
