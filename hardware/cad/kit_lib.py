@@ -162,10 +162,10 @@ def build_kit():
     L.export(ch, "kit_chassis", "front_down")
     L.export(bc, "kit_back_carrier", "front_down")
     import Part
-    Part.makeCompound(list(bodies.values())).exportStep(os.path.join(L.OUT, "kit-v0.7_assembly.step"))
+    Part.makeCompound(list(bodies.values())).exportStep(os.path.join(L.OUT, "kit_assembly.step"))
     L.write_stl(Part.makeCompound([bodies[k] for k in ("key shell", "switch plate", "collar", "plate", "chassis (kit)", "back carrier")]),
-                os.path.join(L.OUT, "kit-v0.7_printed-assembly.stl"), 0.05, 0.4)
+                os.path.join(L.OUT, "kit_printed-assembly.stl"), 0.05, 0.4)
     if min(webs.values()) < P.KIT_MIN_WEB:
         print(f"  ERROR back carrier web below {P.KIT_MIN_WEB}: the slicer will open it")
-    with open(os.path.join(L.OUT, "kit-v0.7_check.json"), "w", encoding="utf-8") as f:
+    with open(os.path.join(L.OUT, "kit_check.json"), "w", encoding="utf-8") as f:
         json.dump({"collisions": col, "gaps": gaps, "carrier_webs": webs}, f, indent=1, ensure_ascii=False)

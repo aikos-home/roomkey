@@ -38,7 +38,7 @@ v0.6 (the owner's first print and wishes; NOT reviewed):
   * Rocker key: both MX read separately, centre press = both (forks, stop bosses, tapered ends, rock + wobble checks).
   * Wider middle cable slot + header slots for pins / wires straight back from the touch-board header.
   * Real speaker dimensions, LED corner notches (WS2812B-MINI 3535, 2.0 high), push-out removal.
-  * §6 desk replica / practice box and §7 kit v0.7 (whole RoomKey in one box, bench supply) — prototypes only.
+  * §6 practice box and §7 kit (whole RoomKey in one box, bench supply) — prototypes only.
 v0.8 (the owner's first kit assembly, 2026-10-04: the rocker key fell out; NOT reviewed):
   * Key catch: a rigid nub on each side skirt in a groove of the collar (open to the back, closed to the room) → the key
     is captive; the collar is no longer glued. Stem fork gap 4.10 → 3.90 (the stem arm is ≈ 4.0: 4.10 clamped nothing).
@@ -537,19 +537,6 @@ DESK_FRAME_POST = (4.6, 2.6, 3.4)   # [FREE] frame post Ø, its pilot Ø, wall-p
 FRAME_RH = (-(R.RH_W / 2 - R.RH_CHIP_C[1]), 0.6, 0.6, 1.3)   # [FREE] board centre x (chip centred), face recess,
                                                                # skirt left there, chip-pocket depth
 FRAME_RH_HOLE = (0.0, -27.0, 2.5) # [FREE] wire hole in the kit chassis flange: x, y, Ø (bottom rim gap |x| < 4.5)
-# bottom position: sensor cover (55 × 55 face like the plate) + carrier (flange like the chassis + square collar)
-SENS_FACE_T = 2.0       # [FREE]
-SENS_SPIGOT = (1.2, 0.15)   # [FREE] spigot on the face back: depth into the collar, clearance per side
-SENS_COLLAR_T = 1.2     # [FREE] carrier collar wall (outer = the 55 face outline)
-SENS_RADAR_POS = (0.0, 15.0)     # [FREE] LD2410C centre; long side along x; antenna side forward behind a 1.2 thinned window
-SENS_ALS_POS = (-16.0, -13.0)    # [FREE] VEML7700 board centre (chip side forward, light hole Ø2.5 over the chip)
-SENS_RH_POS = (-0.75, -14.6)     # [FREE] SHT31-D board centre (chip side forward, Ø1.0 vent grid over the chip, below the radar)
-SENS_MIC_POS = (17.0, -13.0)     # [FREE] INMP441 centre (labelled port side forward, sealing ring around the port)
-SENS_AMP = (0.0, 0.0, WALL_D + 11.0)   # [FREE] MAX98357A on a separate tray: x, y, tray front d (it rests on 2 ledges on the
-                                       # bottom box's domes; slid in from the open back; the amp sits on its back face)
-DESK_AMP_TRAY = (25.8, 11.0, 1.6)      # [FREE] tray half-width (between the domes, 26), half-height, thickness
-DESK_LEDGE = 1.0                       # [FREE] ledge on each bottom-box dome: protrusion (45° underside, prints without support)
-SENS_STANDOFF = {"radar": 1.0, "als": 2.6, "rh": 1.4, "mic": 1.2}   # [FREE] air between face back and each board front
 
 
 # =====================================================================================================

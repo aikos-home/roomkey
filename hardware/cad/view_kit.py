@@ -2,7 +2,7 @@
 the insert, the back carrier with radar and amplifier, and the reference parts — named, coloured, grouped.
 
 Run (opens FreeCAD):  /Applications/FreeCAD.app/Contents/MacOS/FreeCAD hardware/cad/view_kit.py
-Saves hardware/models/kit-v0.7e_ansicht.FCStd (open that file directly next time; render_kit.py makes the README images
+Saves hardware/models/kit_view.FCStd (open that file directly next time; render_kit.py makes the README images
 from it).
 """
 import os
@@ -68,7 +68,7 @@ for name, build, col, tr, grp in ITEMS:
         obj.ViewObject.ShapeColor = col
         obj.ViewObject.Transparency = tr
 doc.recompute()
-out = os.path.join(os.path.dirname(HERE), "models", os.environ.get("KIT_VIEW_NAME", "kit-v0.7e_ansicht.FCStd"))
+out = os.path.join(os.path.dirname(HERE), "models", os.environ.get("KIT_VIEW_NAME", "kit_view.FCStd"))
 doc.saveAs(out)
 if App.GuiUp:
     import FreeCADGui as Gui

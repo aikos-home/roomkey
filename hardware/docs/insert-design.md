@@ -290,6 +290,13 @@ viewed from the side the key should be "funnel-shaped"; and "the press in the mi
 - **Test print** (owner, PETG, A1, 0.10): only the new key shell, on the 01.10. parts. File:
   `druck/roomkey-taste-v0.6-wippe/` with `DRUCKEN.md`.
 
+**Owner's verdict, 2026-10-05: the rocker concept is dropped.**
+> "Die Idee mit der Wippe ist an sich schlecht" — too many problems with integrity and usability: it is unclear that
+> rocking can ever glide instead of scrape, and a rocking key does not stay in the housing.
+
+A replacement key is being designed (WIP). The v0.8 key shell and collar below are interim parts. The firmware needs
+no change for a single switch on BOOT (RoomKey software, 2026-10-05).
+
 **Key catch — v0.8 (owner, 2026-10-04: "nothing stops the rocker, with the ESP32 module, from simply falling out"; WIP,
 modelled, not reviewed).**
 - *The cause (my error):* the forks had a 4.10 gap, the cross socket's slot length, which has play; the stem arm is ≈ 4.0.
@@ -1111,21 +1118,9 @@ Winners go into the parameter files as [MEAS].
 | R14 | hub rail hard short → the plate still toggles the relay, 20 × | §8.2 |
 | R15 | 20 power cuts with the light off → it stays off | §9.2 |
 
-**Desk replica v0.1 (owner's request 2026-10-03; prototype only, WIP, not reviewed).**
-`make_desk_replica.py` / `desk_lib.py`, parameters in `insert_params.py` §6. It is **powered by USB 5 V, never in a wall
-and never on 230 V.**
-- *Parts:* two coupled flush-box replicas at the 71 mm pitch (Ø59, 47 deep, open back, screw domes at ±30, a wire
-  channel between the boxes) and a 2-gang frame (4 × M3 from behind into corner posts, outside both 71 × 71 flanges).
-  - The **top** box takes the unchanged wall insert.
-  - The **bottom** box takes a sensor cover on a carrier (flange like the chassis), holding the owner's breakouts:
-    - the LD2410C behind a 1.2 skin, with a heat wall below it;
-    - the VEML7700 behind a Ø2.5 light hole;
-    - the SHT31-D behind a 3 × 3 Ø1.0 vent grid;
-    - the INMP441 on a port seal ring.
-  - Also a MAX98357A tray, slid in from the back onto ledges on the domes.
-- *Check:* 0 collisions with the insert and all reference bodies; plate ↔ frame ≥ 0.157 when pressed.
-- *Files:* print files in `druck/roomkey-tischnachbau-v0.1/`, all printable without supports.
-- *It does not replace ET4a:* a real loose box, the real frame series and real NYM.
+**Desk replica v0.1 (2026-10-03): RETIRED, files removed on 2026-10-06.** It modelled two coupled boxes with a
+sensor cover in the second box. The owner rejected that ("everything in ONE box"); the practice box and the kit below
+replace it.
 
 **Practice box v0.1 and kit v0.7 (owner 2026-10-03; prototype, WIP, not reviewed).**
 - *Owner's rules:*
@@ -1150,7 +1145,7 @@ and never on 230 V.**
     that wall and the holes opened over the edge. Now a round pad gives each hole 1.2 of wall, the radar window is cut
     cleanly open to its −x edge, and `build_kit` reports every carrier web (rule ≥ 0.8; the thinnest is now 0.8, between
     a hole and the window).
-  - *Radar tray (v0.8, second carrier print, 2026-10-04):* the radar area was a floppy U of 1.2–2.1 mm strips, 1.5
+  - *Radar tray (v0.8, second carrier print, 2026-10-04; the owner, 2026-10-06: "fits perfectly"):* the radar area was a floppy U of 1.2–2.1 mm strips, 1.5
     thick, open on the header side. The cable-loop keep-out had cut its +x strip down to 1.2. Now a **closed wall** (1.0,
     0.2 play) runs round the board from the plate's front to 0.3 behind the board, 3.4 tall. It closes and stiffens the
     ring and replaces the corner brackets. The window in front of the antennas stays open, ≥ 1.0 from the box-radius trim.

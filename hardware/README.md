@@ -4,7 +4,9 @@ Parametric FreeCAD scripts, the same method as [Klingelbox](https://github.com/a
 one file holds every dimension, generators read it, `validate()` checks the fit before anything is
 printed. Licence: [CERN-OHL-P-2.0](../LICENSES/CERN-OHL-P-2.0.txt).
 
-![Kit v0.7 in the practice box, front 3/4 (FreeCAD)](docs/img/kit-v0.7_front.png)
+**→ Build it: [BUILD.md](BUILD.md)** (desk prototype, step by step).
+
+![Kit v0.7 in the practice box, front 3/4 (FreeCAD)](docs/img/kit_front.png)
 
 *Kit v0.7 (prototype, WIP, not reviewed): the whole RoomKey in one flush box — touch key, speaker, mic, presence radar,
 amplifier, humidity sensor — behind a 1-gang frame. Practice box shown transparent. Real FreeCAD screenshots, made by
@@ -57,10 +59,10 @@ technical writing and design review. **In practice the owner runs a one-person p
 
 | | |
 |---|---|
-| ![What you see on the wall](docs/img/kit-v0.7_face.png) | ![Rear, without the box: carrier with radar and amplifier, mic, speaker, key switches](docs/img/kit-v0.7_rear-parts.png) |
+| ![What you see on the wall](docs/img/kit_face.png) | ![Rear, without the box: carrier with radar and amplifier, mic, speaker, key switches](docs/img/kit_rear-parts.png) |
 | *What you see on the wall: frame, plate with speaker and mic perforation, touch key with glow ring; humidity-sensor vents in the frame.* | *From behind: back carrier with the LD2410C radar (blue) and MAX98357A amplifier (purple), INMP441 mic (green), speaker, the two key switches.* |
-| ![Wiring](docs/img/kit-v0.7_wiring.png) | ![Rocker key from behind](docs/img/rocker-key_rear.png) |
-| *All 41 wires of the kit, routed in 3D (0.05 mm² silicone wire; cut lengths in [`models/kit-v0.7_wiring.json`](models/kit-v0.7_wiring.json)).* | *Rocker key from behind: two key switches read separately — rock up, rock down, or press the middle for both.* |
+| ![Wiring](docs/img/kit_wiring.png) | ![Rocker key from behind](docs/img/rocker-key_rear.png) |
+| *All 41 wires of the kit, routed in 3D (0.05 mm² silicone wire; cut lengths in [`models/kit_wiring.json`](models/kit_wiring.json)).* | *Rocker key from behind: two key switches read separately — rock up, rock down, or press the middle for both.* |
 
 | File | What |
 |---|---|
@@ -69,7 +71,7 @@ technical writing and design review. **In practice the owner runs a one-person p
 | [`cad/insert_params.py`](cad/insert_params.py) | **wall insert v0.8 (draft)**: box, frame, both variants, installation topologies; `python3 cad/insert_params.py` validates L and S |
 | [`cad/insert_lib.py`](cad/insert_lib.py), [`make_key_module.py`](cad/make_key_module.py), [`make_insert_L.py`](cad/make_insert_L.py), [`make_insert_S.py`](cad/make_insert_S.py) | FreeCAD generators + collision/clearance checks (rest, key pressed, rocked and wobbled with its stems, plate pressed at five points) |
 | [`docs/insert-design.md`](docs/insert-design.md) | **design of the wall insert (v0.8 DRAFT)**: concept, stack-up, installation topologies (electrician), BOM, printing, open questions, risks |
-| [`cad/desk_lib.py`](cad/desk_lib.py), [`make_practice_box.py`](cad/make_practice_box.py), [`make_desk_replica.py`](cad/make_desk_replica.py) | **practice box v0.1** (one flush-box replica + 1-gang frame with the humidity sensor) and the older 2-box desk replica — prototypes, never in a wall |
+| [`cad/desk_lib.py`](cad/desk_lib.py), [`make_practice_box.py`](cad/make_practice_box.py) | **practice box v0.1**: one flush-box replica + a 1-gang frame with the humidity sensor. Prototype, never in a wall |
 | [`cad/kit_lib.py`](cad/kit_lib.py), [`make_kit.py`](cad/make_kit.py), [`wiring_lib.py`](cad/wiring_lib.py) | **kit v0.7 (WIP)**: the whole RoomKey in one box — back carrier (radar + amplifier), mic sound tube, 41 wires with cut lengths |
 | [`cad/view_kit.py`](cad/view_kit.py), [`render_kit.py`](cad/render_kit.py) | open the kit in the FreeCAD GUI (coloured, grouped) and render the images in [`docs/img/`](docs/img/) |
 | [`drawings/`](drawings/) | to-scale front views and sections cut from the CAD solids (`tools/insert_drawings.py`) |
