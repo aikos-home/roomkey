@@ -47,7 +47,7 @@ open-hardware door intercom.
 | Touch variant of the board (tap / swipe) | 🟡 **WIP** — required by the target design; arrived 02.10.: display, tap and swipe work on the board (`esphome/roomkey_touch.yaml`); chat swipe in a real call, mic, amp and glow ring on it still untested |
 | Intercom security | ✅ incoming audio accepted only during an active call; everything else is dropped unheard |
 | Door station side | ⬜ other milestone — spec in [docs/intercom-protocol.md](docs/intercom-protocol.md) |
-| Optional sensors: VEML7700 light, SHT31-D climate, LD2410C mmWave presence | 🟡 bought; light + climate on the shared I²C bus (no extra pins), radar on one pin — radar placement behind the rocker still open |
+| Optional sensors: SHT31-D climate, LD2410C mmWave presence | 🟡 bought; climate on the shared I²C bus (no extra pins), radar on UART — radar placement still open. No light sensor (decided 06.10.) |
 | Enclosure / wall insert | 🟡 fit model + tolerance coupon ready ([hardware/](hardware/)); desk rig (v0) → wall-size fit (v1) next |
 
 ![All screens, rendered by the desktop simulator from the same code that runs on the board](docs/screens/contact_sheet.png)

@@ -15,9 +15,9 @@
 #      1 VBUS 5V   → amp, radar, glow ring          2 VBAT       (unused: no battery in aikos, E7)
 #      3 GND                                         4 GND
 #      5 TXD=IO16  → MAX98357A DIN                   6 GND
-#      7 RXD=IO17  ← INMP441 SD                      8 3V3        → mic, VEML7700, SHT31-D
-#      9 RST       (don't use)                      10 SCL=IO19   → VEML7700, SHT31-D (shared with touch + IMU)
-#     11 IO1       (LCD clock, don't use)           12 SDA=IO18   → VEML7700, SHT31-D
+#      7 RXD=IO17  ← INMP441 SD                      8 3V3        → mic, SHT31-D
+#      9 RST       (don't use)                      10 SCL=IO19   → SHT31-D (shared with touch + IMU)
+#     11 IO1       (LCD clock, don't use)           12 SDA=IO18   → SHT31-D
 #     13 IO2       (LCD data, don't use)            14 USB_P      (don't use)
 #     15 IO3       ← LD2410C TX                     16 USB_N      (don't use)
 #     17 IO4       → glow ring data (SK6812)        18 BOOT=IO9   ← key top (MX 1)

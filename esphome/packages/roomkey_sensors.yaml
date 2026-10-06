@@ -1,9 +1,9 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Room sensors (WIP · untested on hardware): light, climate, presence. Arrived 02.10., first on the touch board.
-#   VEML7700  light       I²C 0x10   VIN→3V3  GND  SDA  SCL       needs a window to the room
+# Room sensors (WIP · untested on hardware): climate, presence. Arrived 02.10., first on the touch board.
+# No light sensor: the RoomKey doesn't get one (decided 06.10.).
 #   SHT31-D   climate     I²C 0x44   VIN→3V3  GND  SDA  SCL       ADR open; room air, away from the ESP and the amp
 #   LD2410C   presence    UART 256000  VCC→5V  GND  TX→${radar_rx}  RX←${radar_tx}   not behind metal
-# The I²C sensors share the board's bus `bus_i2c` (touch 0x63, IMU 0x6B: no clash). Pins: the board package.
+# The I²C sensor shares the board's bus `bus_i2c` (touch 0x63, IMU 0x6B: no clash). Pins: the board package.
 # ─────────────────────────────────────────────────────────────────────────────
 
 uart:
@@ -19,12 +19,6 @@ ld2410:
   uart_id: radar_uart
 
 sensor:
-  - platform: veml7700
-    i2c_id: bus_i2c
-    address: 0x10
-    update_interval: 10s
-    ambient_light:
-      name: "Illuminance"
   - platform: sht3xd
     i2c_id: bus_i2c
     address: 0x44

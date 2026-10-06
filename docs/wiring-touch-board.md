@@ -10,7 +10,7 @@ The wall insert v1 differs: IO3 and IO5 go to the plate and the relay there, and
 
 ![Which part goes to which pad, colour-coded by part](wiring-touch-board.svg)
 
-*Back of the board, USB-C at the top. Next to each pad are the part pins that go there. Colours: mic purple, amp coral, SHT31-D teal, VEML7700 amber, radar blue, MX1 pink, MX2 red, glow ring green; grey = leave free. The ground wires are spread over the three GND pads by part group.*
+*Back of the board, USB-C at the top. Next to each pad are the part pins that go there. Colours: mic purple, amp coral, SHT31-D teal, radar blue, MX1 pink, MX2 red, glow ring green; grey = leave free. The ground wires are spread over the three GND pads by part group.*
 
 ## The board: Waveshare ESP32-C6-Touch-LCD-1.47
 
@@ -39,9 +39,9 @@ Header H1: 2 × 11 bare pads, 2.54 mm pitch. The silkscreen names the pads by GP
 | GND | 3, 4, 6 | — | ground for every part |
 | TXD | 5 | GPIO16 | I²S data **out** → amplifier DIN |
 | RXD | 7 | GPIO17 | I²S data **in** ← microphone SD |
-| 3V3 | 8 | — | **3.3 V** (on-board regulator, 800 mA): microphone, SHT31-D, VEML7700 |
-| SCL | 10 | GPIO19 | I²C clock: SHT31-D, VEML7700 (shared with the board's touch and IMU) |
-| SDA | 12 | GPIO18 | I²C data: SHT31-D, VEML7700 (shared with the board's touch and IMU) |
+| 3V3 | 8 | — | **3.3 V** (on-board regulator, 800 mA): microphone, SHT31-D |
+| SCL | 10 | GPIO19 | I²C clock: SHT31-D (shared with the board's touch and IMU) |
+| SDA | 12 | GPIO18 | I²C data: SHT31-D (shared with the board's touch and IMU) |
 | 3 | 15 | GPIO3 | radar TX → ESP (UART RX) |
 | 4 | 17 | GPIO4 | glow ring data → first LED's DIN |
 | 5 | 19 | GPIO5 | ESP (UART TX) → radar RX |
@@ -89,16 +89,7 @@ Microphone and amplifier share one I²S bus, so the key works half-duplex: the s
 
 Place it in room air, away from the ESP and the amplifier, which heat up.
 
-### Light VEML7700 (I²C, address 0x10) — optional
-| VEML7700 | → board pad | Note |
-|---|---|---|
-| VIN | 3V3 | |
-| GND | GND | |
-| SCL | SCL | |
-| SDA | SDA | |
-| 3Vo | — | don't use |
-
-It needs a window to the room.
+No light sensor: the RoomKey doesn't get one (decided 2026-10-06).
 
 ### Presence radar HLK-LD2410C (UART 256000 baud)
 | LD2410C | → board pad | Note |
@@ -139,9 +130,9 @@ LED flickers, add a level shifter (74AHCT1G125), or feed that LED's VDD through 
 | Line | Pad | Goes to |
 |---|---|---|
 | 5 V | VBUS | amplifier VIN, radar VCC, LED VDD |
-| 3.3 V | 3V3 | microphone VDD, SHT31-D VIN, VEML7700 VIN |
+| 3.3 V | 3V3 | microphone VDD, SHT31-D VIN |
 | GND | GND (3 pads) | every part, the microphone's L/R, both keys |
-| I²C | SCL, SDA | SHT31-D (0x44), VEML7700 (0x10); on the board: touch 0x63, IMU 0x6B |
+| I²C | SCL, SDA | SHT31-D (0x44); on the board: touch 0x63, IMU 0x6B |
 | I²S clock | 7 | microphone SCK, amplifier BCLK |
 | I²S word select | 8 | microphone WS, amplifier LRC |
 
@@ -152,12 +143,12 @@ bigger pads and no display next to it.
 | Line | Chain | Wire |
 |---|---|---|
 | 5 V | USB power: VBUS → amp VIN → radar VCC → LED 1 VDD → LED 2 …; lab supply: from the 5 V node (see "Power without USB") | AWG 26–28 (the amp draws a few hundred mA) |
-| 3.3 V | 3V3 → mic VDD → SHT31-D VIN → VEML7700 VIN | AWG 30 |
+| 3.3 V | 3V3 → mic VDD → SHT31-D VIN | AWG 30 |
 | GND 1 | GND (H1-3) → mic GND → amp GND | AWG 28 |
-| GND 2 | GND (H1-4) → SHT31-D GND → VEML7700 GND → radar GND | AWG 30 |
+| GND 2 | GND (H1-4) → SHT31-D GND → radar GND | AWG 30 |
 | GND 3 | GND (H1-6) → MX1 leg 2 → MX2 leg 2 → LED 1 GND → LED 2 … | AWG 30 |
-| I²C clock | SCL → SHT31-D SCL → VEML7700 SCL | AWG 30 |
-| I²C data | SDA → SHT31-D SDA → VEML7700 SDA | AWG 30 |
+| I²C clock | SCL → SHT31-D SCL | AWG 30 |
+| I²C data | SDA → SHT31-D SDA | AWG 30 |
 | I²S clock | 7 → mic SCK → amp BCLK | AWG 30, short |
 | I²S word select | 8 → mic WS → amp LRC | AWG 30, short |
 
@@ -215,7 +206,7 @@ that doesn't boot needs a USB flash.
 
 ## Rules
 - Unplug USB before you solder or re-plug anything.
-- **Never connect 5 V (VBUS) to a 3.3 V part:** microphone, SHT31-D, VEML7700.
+- **Never connect 5 V (VBUS) to a 3.3 V part:** microphone, SHT31-D.
 - After a flash, leave the board powered for one minute. Otherwise ESPHome rolls back to the previous firmware.
 
 ## Where this lives in the firmware
