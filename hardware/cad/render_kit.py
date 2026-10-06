@@ -1,8 +1,9 @@
 """Render real FreeCAD views of the kit v0.7 (prototype, WIP) to hardware/docs/img/ — run inside the FreeCAD GUI:
     /Applications/FreeCAD.app/Contents/MacOS/FreeCAD hardware/cad/render_kit.py
-(with RENDER_QUIT=1 it quits when done). Opens hardware/models/kit-v0.7e_ansicht.FCStd (made by view_kit.py).
+(with RENDER_QUIT=1 it quits when done). Opens hardware/models/kit-v<insert VERSION>_ansicht.FCStd (made by view_kit.py).
 """
 import os
+import sys
 import time
 
 import FreeCAD as App
@@ -11,7 +12,9 @@ import FreeCADGui as Gui
 HERE = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else \
     os.path.join(os.getcwd(), "hardware", "cad")
 ROOT = os.path.dirname(HERE)
-SRC = os.path.join(ROOT, "models", os.environ.get("KIT_VIEW_NAME", "kit-v0.7e_ansicht.FCStd"))
+sys.path.insert(0, HERE)
+import insert_params as P  # noqa: E402
+SRC = os.path.join(ROOT, "models", os.environ.get("KIT_VIEW_NAME", f"kit-v{P.VERSION}_ansicht.FCStd"))
 OUT = os.path.join(ROOT, "docs", "img")
 os.makedirs(OUT, exist_ok=True)
 W, H = 1800, 1350

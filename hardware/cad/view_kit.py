@@ -2,7 +2,8 @@
 the insert, the back carrier with radar and amplifier, and the reference parts — named, coloured, grouped.
 
 Run (opens FreeCAD):  /Applications/FreeCAD.app/Contents/MacOS/FreeCAD hardware/cad/view_kit.py
-Saves hardware/models/kit-v0.7e_ansicht.FCStd (open that file directly next time; render_kit.py makes the README images
+Saves hardware/models/kit-v<insert VERSION>_ansicht.FCStd (the parts' version, not the kit concept's v0.7; FreeCAD
+names the document after the file; open that file directly next time; render_kit.py makes the README images
 from it).
 """
 import os
@@ -53,7 +54,7 @@ ITEMS = [
     ("Schraube_rechts", lambda: refs["box screw R"], (0.8, 0.8, 0.8), 0, "Bauteile"),
 ]
 
-doc = App.newDocument("RoomKey_Bausatz_v0_7")
+doc = App.newDocument("RoomKey_Bausatz_v" + P.VERSION.replace(".", "_"))   # the parts' version, not the kit concept's (v0.7)
 groups = {}
 for no, a, b, sig, col, rgb in W.WIRES:
     ITEMS.append((f"Draht_{no:02d}", (lambda no=no, a=a, b=b: W.wire_solid(W.route(no, a, b))), rgb, 0, "Verkabelung"))
@@ -71,12 +72,12 @@ for name, build, col, tr, grp in ITEMS:
         obj.ViewObject.ShapeColor = col
         obj.ViewObject.Transparency = tr
 doc.recompute()
-out = os.path.join(os.path.dirname(HERE), "models", os.environ.get("KIT_VIEW_NAME", "kit-v0.7e_ansicht.FCStd"))
+out = os.path.join(os.path.dirname(HERE), "models", os.environ.get("KIT_VIEW_NAME", f"kit-v{P.VERSION}_ansicht.FCStd"))
 doc.saveAs(out)
 if App.GuiUp:
     import FreeCADGui as Gui
     Gui.activeDocument().activeView().viewIsometric()
     Gui.SendMsgToActiveView("ViewFit")
-print("RoomKey kit v0.7 view saved:", out)
+print(f"RoomKey kit view (parts v{P.VERSION}) saved:", out)
 if os.environ.get("KIT_VIEW_QUIT"):          # headless GUI run (QT_QPA_PLATFORM=offscreen): save with colours, then quit
     os._exit(0)
