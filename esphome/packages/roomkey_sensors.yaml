@@ -8,7 +8,11 @@
 
 uart:
   - id: radar_uart
-    rx_pin: ${radar_rx}
+    rx_pin:
+      number: ${radar_rx}
+      mode:
+        input: true
+        pullup: true          # idle high without a radar: an open wire on the pad read as a flood of garbage (07.10.)
     tx_pin: ${radar_tx}
     baud_rate: 256000
     parity: NONE
