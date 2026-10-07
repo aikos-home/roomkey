@@ -256,7 +256,7 @@ def amp_tray():
     hw, hh, tt = P.DESK_AMP_TRAY
     plate = box(-hw, hw, -hh, hh, ad, ad + tt)
     hy = ay + R.AMP_H / 2 - R.AMP_HOLE_C[1]
-    pins = [cyl(ax + sx * (R.AMP_W / 2 - R.AMP_HOLE_C[0]), hy, 1.0, ad + tt - EPS, ad + tt + 3.0) for sx in (-1, 1)]
+    pins = [cyl(ax + sx * (R.AMP_W / 2 - R.AMP_HOLE_C[0]), hy, R.AMP_PIN_D / 2, ad + tt - EPS, ad + tt + 3.0) for sx in (-1, 1)]
     return fuse([plate] + pins)
 
 

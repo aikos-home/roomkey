@@ -85,7 +85,7 @@ def back_carrier():
     # amplifier pins (its two mounting holes, top corners) on the back face
     ax, ay = P.KIT_AMP_C
     hy = ay + R.AMP_H / 2 - R.AMP_HOLE_C[1]
-    parts += [cyl(ax + sx * (R.AMP_W / 2 - R.AMP_HOLE_C[0]), hy, 1.0, c1 - EPS, c1 + 3.0) for sx in (-1, 1)]
+    parts += [cyl(ax + sx * (R.AMP_W / 2 - R.AMP_HOLE_C[0]), hy, R.AMP_PIN_D / 2, c1 - EPS, c1 + 3.0) for sx in (-1, 1)]
     return fuse(parts).common(cyl(0, 0, R_BOX, c0 - 1, c1 + 20))
 
 
