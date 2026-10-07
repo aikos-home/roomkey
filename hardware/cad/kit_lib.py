@@ -27,11 +27,12 @@ def mic_parts():
     px, py = P.KIT_MIC_PORT
     cx, cy = P.KIT_MIC_C
     bore, wall = P.KIT_MIC_TUBE
-    t0 = P.PLATE_T + P.KIT_MIC_FOAM[1]
+    t0 = P.PLATE_T + P.KIT_MIC_FOAM_FRONT[1]                    # v0.10: flush with the deck front
     t1 = P.KIT_MIC_D0 - P.KIT_MIC_FOAM[1]
     rm = R.MIC_D / 2
     tube = cyl(px, py, bore / 2 + wall, t0, t1)
-    shelf = cyl(cx, cy, rm + 1.2, t1 - 1.0, t1).common(box(-40, -(P.WELL_IN_X + 0.2), -40, 40, 0, 40))
+    shelf = cyl(cx, cy, rm + 1.2, P.COLLAR_D1, t1).common(box(-40, -(P.WELL_IN_X + 0.2), -40, 40, 0, 40))   # v0.10: down
+    # to the rear part's front face (d COLLAR_D1) — a 1 mm shelf at t1 hung in the air when the rear part prints front down
     ring = cyl(cx, cy, rm + 0.2 + 1.0, t1, P.KIT_MIC_D0 + R.MIC_T + 0.6).cut(cyl(cx, cy, rm + 0.2, 0, 40))
     body = fuse([tube, shelf, ring]).common(cyl(0, 0, R_BOX - 0.2, 0, 60))
     return body, cyl(px, py, bore / 2, P.PLATE_T - 0.5, t1 + 0.1)
@@ -180,8 +181,12 @@ def build_kit():
         print("    COLLISION", c_)
     for k, val in gaps.items():
         print(f"    gap {k:45s} {val}")
-    L.export(ch, "kit_chassis", "front_down")
+    ch.exportStep(os.path.join(L.OUT, "kit_chassis.step"))                     # the glued assembly (reference)
+    for i, (lab, part) in enumerate(zip(("front", "flange", "rear"), L.chassis_parts(ch)), 1):   # v0.10: three prints
+        L.export(part, f"kit_chassis_{i}_{lab}", "front_down")
+        L.ceilings(part, f"kit_chassis_{i}_{lab}", "front_down")
     L.export(bc, "kit_back_carrier", "front_down")
+    L.ceilings(bc, "kit_back_carrier", "front_down")
     import Part
     Part.makeCompound(list(bodies.values())).exportStep(os.path.join(L.OUT, f"kit-v{P.VERSION}_assembly.step"))
     L.write_stl(Part.makeCompound([bodies[k] for k in ("key shell", "switch plate", "collar", "plate", "chassis (kit)", "back carrier")]),

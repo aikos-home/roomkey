@@ -122,7 +122,7 @@ def shots():
     cam((0.35, -0.55, -1))
     shot("frame_humidity-sensor.png")
     # 6 the rigid key from behind: fixed / floating stem sockets, stop bosses, header slots, the two switches
-    show(("Tastenschale_starr", "MX_", "Touch_Board"))
+    show(("Taste_", "MX_", "Touch_Board"))
     cam((0.6, 0.55, -1))
     shot(f"key-v{P.VERSION}_rear.png")
 

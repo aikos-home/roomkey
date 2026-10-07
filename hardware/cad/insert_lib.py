@@ -141,7 +141,7 @@ def domes(grow, d0, d1):
 
 
 # ============================================================================ key module
-def key_shell():
+def key_shell_mono():
     s = P.KS
     fit = R.KEY_FIT
     outer = rrect(P.KEY_W / 2, P.KEY_H / 2, P.KEY_R, s["glass"], s["key_back"])
@@ -173,6 +173,29 @@ def key_shell():
                   s["key_back"] - EPS, s["key_back"] + 1.2) for sx in (-1, 1)]
     # wire channel: a KEY_BACK_CHANNEL recess in the back's inner face between the header columns and the cable slot
     return cut(fuse([shell] + skirts + nubs + [key_posts()] + stops + relief), [key_channel()] + key_sockets())
+
+
+def key_shell_parts():
+    """v0.10: the key shell as two prints — (ring, back plate). The one-piece shell printed front down had its back wall as
+    a 25 × 45 roof over the board pocket; the supports inside broke the 1.0 walls when they came out (owner 2026-10-07).
+    Ring = everything outside the pocket outline (walls, skirts, catch nubs, end taper). Plate = everything inside the
+    pocket outline − KEY_PLATE_CLEAR behind the standoffs (back wall, posts + sockets, stop bosses, slots, channel, lugs).
+    Both print front down without supports (the plate on its flat inner face; its wire channel is a short bridge)."""
+    mono = key_shell_mono()
+    s = P.KS
+    fit, c = R.KEY_FIT, P.KEY_PLATE_CLEAR
+    d0, d1 = s["standoff_end"] - 1.0, s["skirt_end"] + 20.0
+    pocket = rrect(R.TB_W / 2 + fit, R.TB_H / 2 + fit, R.TB_CORNER_R + fit, d0, d1)
+    inner = rrect(R.TB_W / 2 + fit - c, R.TB_H / 2 + fit - c, R.TB_CORNER_R + fit - c, d0, d1)
+    ring, plate = mono.cut(pocket), mono.common(inner)
+    for nm, p_ in (("key ring", ring), ("key back plate", plate)):
+        assert p_.isValid() and len(p_.Solids) == 1, f"{nm}: {len(p_.Solids)} solids"
+    return ring, plate
+
+
+def key_shell():
+    """the assembled key shell (ring + back plate glued) — what the collision checks move; 2 solids (0.1 glue gap)."""
+    return fuse(list(key_shell_parts()))
 
 
 def key_posts():
@@ -245,7 +268,10 @@ def switch_plate():
     for (x, y) in P.LED_POS:          # v0.6: corner notches for the glow LEDs (WS2812B-MINI 3535 is 2.0 tall + joints/carrier)
         h = P.LED_W / 2 + 0.4
         tools.append(box(x - h, x + h, y - h, y + h, s["plate_front"] - 1, s["plate_back"] + 1))
-    return cut(plate, tools)
+    # v0.10: the cable-loop anchor (posts + bar) stands on the switch plate's back (it hung from the chassis ledge)
+    ax0, ax1, ay0, ay1, ad0, ad1 = P.ANCHOR
+    anchor = [cyl(x, y, 1.2, s["plate_back"] - EPS, ad1) for (x, y) in P.ANCHOR_POSTS] + [box(ax0, ax1, ay0, ay1, ad0, ad1)]
+    return fuse([cut(plate, tools)] + anchor)
 
 
 def collar():
@@ -330,6 +356,59 @@ def spk_tab_slot():
     ya, yb = sy * (P.SPK_Y[1] + 0.2 - EPS), sy * (P.SPK_Y[1] + ov + pd)
     return (P.SPK_X0 - 0.2, gx + 0.2, min(ya, yb), max(ya, yb), dc - w / 2 - pw,
             P.SPK_D0 + R.SPK_W + 0.1 + P.SPK_HOOK_T + 1.0)
+
+
+def chassis_parts(ch):
+    """v0.10: split a finished chassis (insert or kit) into its three prints (P.CH_SPLIT): returns (front, flange, rear),
+    each ONE solid (EPS slivers at the cut planes are dropped), with the 2→3 pins on the flange part and their holes in the
+    rear part."""
+    fl0, c1 = P.WALL_D - P.FLANGE_T, P.COLLAR_D1
+    big = 200.0
+    front_z = box(-big, big, -big, big, -big, fl0)
+    gx, g, w = P.grille_x(), P.SPK_FACE_GASKET[2], P.DUCT_WALL
+    m0, m1, n0, n1 = P.mouth()
+    _, pd1 = P.port_d()
+    mid_z = fuse([box(-big, big, -big, big, fl0, c1),
+                  box(gx + g - 0.05, P.DUCT_X1 + w + 0.05, n0 - w - 0.05, n1 + w + 0.05, c1, pd1 + w + 1.0)])   # + the duct
+    p1 = ch.common(front_z)
+    rest = ch.cut(front_z)
+    p2, p3 = rest.common(mid_z), rest.cut(mid_z)
+    d_, L_, play = P.CH_PIN
+    p2 = fuse([p2] + [cyl(px, py, d_ / 2, c1 - 0.5, c1 + L_) for (px, py) in P.CH_PIN_POS])   # rooted 0.5 in the block
+    p3 = cut(p3, [cyl(px, py, d_ / 2 + play, c1 - 1.0, c1 + L_ + 0.3) for (px, py) in P.CH_PIN_POS])
+    out = []
+    for nm, p in (("front", p1), ("flange", p2), ("rear", p3)):
+        main = [so for so in p.Solids if so.Volume >= 0.5]
+        tiny = sum(so.Volume for so in p.Solids if so.Volume < 0.5)
+        assert len(main) == 1, f"chassis {nm}: {len(main)} solids ≥ 0.5 mm³ " + \
+            str([(round(so.Volume, 1), [round(c, 1) for c in (so.BoundBox.XMin, so.BoundBox.XMax, so.BoundBox.YMin,
+                  so.BoundBox.YMax, -so.BoundBox.ZMax, -so.BoundBox.ZMin)]) for so in main])
+        assert tiny < 0.5, f"chassis {nm}: {tiny:.2f} mm³ of slivers"
+        out.append(main[0])
+    return tuple(out)
+
+
+def ceilings(shape, name, how="front_down", max_span=16.0):
+    """printability check (model coordinates, printed `how`): planar faces that face the bed but are not on it must be
+    short bridges (their smaller extent ≤ max_span) — v0.10, after supports broke the chassis and the key."""
+    sg = 1 if how == "front_down" else -1                 # front down: the bed is the max-Z (room) side
+    bed = shape.BoundBox.ZMax if sg > 0 else shape.BoundBox.ZMin
+    rows = []
+    for f in shape.Faces:
+        if f.Surface.__class__.__name__ != "Plane" or f.Area < 0.5:
+            continue
+        u0, u1, v0, v1 = f.ParameterRange
+        near = f.BoundBox.ZMax if sg > 0 else f.BoundBox.ZMin
+        if sg * f.normalAt((u0 + u1) / 2, (v0 + v1) / 2).z < 0.7 or abs(bed - near) < 0.15:
+            continue
+        bb = f.BoundBox
+        span = min(bb.XLength, bb.YLength, 4 * f.Area / f.Length)   # 4A/P: a square's side, ≈ 2 × a strip's width (a ring)
+        rows.append((span, f.Area, -bb.ZMax))
+    worst = max(rows) if rows else (0.0, 0.0, 0.0)
+    print(f"  {name:22s} print check ({how.replace('_', ' ')}): {len(rows)} ceilings, {sum(r[1] for r in rows):.0f} mm², widest span "
+          f"{worst[0]:.1f} at d {worst[2]:.2f} (≤ {max_span})")
+    assert worst[0] <= max_span, f"{name}: a {worst[0]:.1f} mm ceiling at d {worst[2]:.2f} needs support"
+    return worst[0]
 
 
 def chassis(v):
@@ -432,11 +511,26 @@ def chassis(v):
     # hub posts from the ledge, anchor posts + bar for the cable loop
     for (x, y) in P.HUB_POSTS:
         add.append(cyl(x, y, 1.5, ledge1 - EPS, P.HUB[4]))
-    for (x, y) in P.ANCHOR_POSTS:
-        add.append(cyl(x, y, 1.2, ledge0, P.ANCHOR[5]))
-        add.append(box(x, math.copysign(P.WELL_IN_X, x), y - 1.0, y + 1.0, ledge0, ledge1))
-    ax0, ax1, ay0, ay1, ad0, ad1 = P.ANCHOR
-    add.append(box(ax0, ax1, ay0, ay1, ad0, ad1))
+    # v0.10: the cable-loop anchor moved to the switch plate (switch_plate())
+    # v0.10 split aids: webs from the deck edge to each frame rim (in the plate skirt's gaps) → the rims print with the
+    # front part; pin blocks above / below the collar join the flange part (2) and the rear part (3)
+    for (a0, a1, b0, b1) in P.loc_rims():
+        if min(abs(a0), abs(a1)) > P.DECK_HALF_X:                     # left / right rim
+            sx = 1 if a0 > 0 else -1
+            xi = min(abs(a0), abs(a1))
+            add.append(box(min(sx * (P.DECK_HALF_X - 0.3), sx * (xi + 0.01)), max(sx * (P.DECK_HALF_X - 0.3), sx * (xi + 0.01)),
+                           b0, b1, d0, d1))
+        else:                                                          # top / bottom rim
+            sy = 1 if b0 > 0 else -1
+            yi = min(abs(b0), abs(b1))
+            add.append(box(a0, a1, min(sy * (P.DECK_HALF_Y - 0.3), sy * (yi + 0.01)),
+                           max(sy * (P.DECK_HALF_Y - 0.3), sy * (yi + 0.01)), d0, d1))
+    hx_, hy_ = P.CH_PIN_BLOCK
+    for (px, py) in P.CH_PIN_POS:
+        add.append(box(px - hx_, px + hx_, py - hy_, py + hy_, fl0 - EPS, P.COLLAR_D1 + EPS))          # flange part
+        add.append(box(px - hx_, px + hx_, py - hy_, py + hy_, P.COLLAR_D1 - EPS, P.COLLAR_D1 + 2.8))  # rear part, tied
+        add.append(box(px - hx_, px + hx_, *sorted((math.copysign(P.WELL_IN_Y + 0.2, py), py)),        # to the rear wall
+                       P.COLLAR_D1 - EPS, P.COLLAR_D1 + 1.0))
     body = fuse(add)
 
     # ---------------- cuts
@@ -737,18 +831,22 @@ def export_sections(bodies, v, planes):
 
 
 # ============================================================================ drivers
-PRINTED_HOW = {"key_shell": "front_down", "switch_plate": "front_down", "collar": "back_down", "plate": "front_down",
+PRINTED_HOW = {"key_shell": "front_down", "key_ring": "front_down", "key_back_plate": "front_down",
+               "switch_plate": "front_down", "collar": "back_down", "plate": "front_down",
                "chassis": "front_down"}
 
 
 def build_key_module():
-    ks, sp, co = key_shell(), switch_plate(), collar()
-    for nm, shp in (("key_shell", ks), ("switch_plate", sp), ("collar", co)):
+    kr, kp = key_shell_parts()
+    ks, sp, co = fuse([kr, kp]), switch_plate(), collar()
+    ks.exportStep(os.path.join(OUT, "key_shell.step"))                 # the glued assembly (reference)
+    for nm, shp in (("key_ring", kr), ("key_back_plate", kp), ("switch_plate", sp), ("collar", co)):
         assert shp.isValid(), f"{nm} invalid"
         step, stl = export(shp, nm, PRINTED_HOW[nm])
         bb = shp.BoundBox
         print(f"{nm:14s} valid {shp.isValid()} | {bb.XLength:.2f} × {bb.YLength:.2f} × {bb.ZLength:.2f} mm | "
               f"{shp.Volume/1000:.2f} cm³ ≈ {shp.Volume/1000*1.27:.1f} g PETG | {os.path.basename(stl)}")
+        ceilings(shp, nm, PRINTED_HOW[nm])
     return ks, sp, co
 
 
@@ -769,7 +867,8 @@ def build_variant(v):
                                    size=[round(bb.XLength, 2), round(bb.YLength, 2), round(bb.ZLength, 2)])
         print(f"  {nm:13s} valid {ok} | solids {len(shp.Solids)} | {bb.XLength:.1f} × {bb.YLength:.1f} × {bb.ZLength:.1f} | "
               f"{shp.Volume/1000:.2f} cm³ ≈ {shp.Volume/1000*1.27:.1f} g PETG")
-        assert len(shp.Solids) == 1, f"{nm}: {len(shp.Solids)} solids — a cut left a piece loose (v0.9.1 lesson)"
+        n_ok = 2 if nm == "key shell" else 1          # v0.10: ring + back plate (each checked as one solid in key_shell_parts)
+        assert len(shp.Solids) == n_ok, f"{nm}: {len(shp.Solids)} solids — a cut left a piece loose (v0.9.1 lesson)"
     assert lost <= TRIM_FAIL_MM3, f"allowed-space trim removed {lost:.2f} mm³ of chassis — a feature leaves the frame tunnel/box"
     print(f"  chassis trimmed to the allowed space: {lost:.2f} mm³ (fails above {TRIM_FAIL_MM3})")
 
@@ -927,7 +1026,11 @@ def build_variant(v):
     bb = bbp.BoundBox
     rim_p.translate(V(-bb.Center.x, -bb.Center.y, -bb.ZMin))
     write_stl(rim_p, os.path.join(OUT, f"plate_{v}_glowrim_print.stl"))
-    export(printed["chassis"], f"chassis_{v}", PRINTED_HOW["chassis"])
+    ceilings(printed["plate"], f"plate_{v}", PRINTED_HOW["plate"])
+    printed["chassis"].exportStep(os.path.join(OUT, f"chassis_{v}.step"))          # the glued assembly (reference)
+    for i, (lab, part) in enumerate(zip(("front", "flange", "rear"), chassis_parts(printed["chassis"])), 1):
+        export(part, f"chassis_{v}_{i}_{lab}", "front_down")
+        ceilings(part, f"chassis_{v}_{i}_{lab}", "front_down")
     comp = Part.makeCompound([printed[k] for k in printed] + [refs[k] for k in refs])
     comp.exportStep(os.path.join(OUT, f"insert-{v}_assembly.step"))
     Part.makeCompound(list(env.values())).exportStep(os.path.join(OUT, f"insert-{v}_wall-reference.step"))

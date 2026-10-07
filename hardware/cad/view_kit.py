@@ -23,15 +23,28 @@ one = ((0.0, 0.0),)
 pbody, prim = L.plate_parts("S")
 refs = L.ref_bodies("S")
 kr = K.kit_refs()
+_parts = {}
+
+
+def part(kind, i):
+    """v0.10 split prints, built once: key ring / back plate, chassis front / flange / rear."""
+    if kind not in _parts:
+        _parts[kind] = L.key_shell_parts() if kind == "key" else L.chassis_parts(K.kit_chassis("S"))
+    return _parts[kind][i]
+
+
 ITEMS = [
     ("Uebungsdose", lambda: D.wall_block(one), (0.95, 0.55, 0.2), 70, "Übungsdose"),
     ("Rahmen_JungAS500", lambda: D.frame_2x(one, with_rh=True), (0.97, 0.97, 0.97), 35, "Übungsdose"),
     ("Platte", lambda: pbody, IVORY, 0, "Druckteile"),
     ("Platte_Leuchtrand", lambda: prim, (0.85, 0.92, 1.0), 40, "Druckteile"),
-    ("Tastenschale_starr", L.key_shell, IVORY, 0, "Druckteile"),
+    ("Taste_Rahmen", lambda: part("key", 0), IVORY, 0, "Druckteile"),
+    ("Taste_Rueckplatte", lambda: part("key", 1), (0.85, 0.78, 0.6), 0, "Druckteile"),
     ("Leuchtring", L.collar, (0.85, 0.92, 1.0), 40, "Druckteile"),
     ("Schalterplatte", L.switch_plate, GREY, 0, "Druckteile"),
-    ("Chassis_Bausatz", lambda: K.kit_chassis("S"), DARK, 0, "Druckteile"),
+    ("Chassis_1_vorne", lambda: part("chassis", 0), DARK, 0, "Druckteile"),
+    ("Chassis_2_Flansch", lambda: part("chassis", 1), (0.3, 0.33, 0.45), 0, "Druckteile"),
+    ("Chassis_3_hinten", lambda: part("chassis", 2), (0.42, 0.25, 0.22), 0, "Druckteile"),
     ("Technik_Traeger", K.back_carrier, (0.75, 0.75, 0.8), 0, "Druckteile"),
     ("Touch_Board", lambda: refs["touch board"], (0.05, 0.05, 0.05), 0, "Bauteile"),
     ("MX_oben", lambda: refs["MX switch 1"], (0.45, 0.3, 0.2), 0, "Bauteile"),

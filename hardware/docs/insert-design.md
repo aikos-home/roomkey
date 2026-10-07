@@ -1,4 +1,4 @@
-# RoomKey wall insert — v0.9.3 (Variant L and Variant S)
+# RoomKey wall insert — v0.10 (Variant L and Variant S)
 
 > **DRAFT / WIP. AI-assisted design. Not built, not tested, nothing certified.**
 > - The insert is a **SELV-only (class III) device**: it never carries 230 V.
@@ -13,9 +13,9 @@
 > - **v0.6** adds the owner's first fit test, the rocker key, wider wire slots and the kit v0.7 prototype (§0). **v0.8**
 >   makes the rocker key captive after the first kit assembly (§0, §3). **v0.9** drops the rocker: a rigid key on two
 >   MX with a fixed and a floating socket (§0, §3); **v0.9.1** fixes the speaker tab and the radar tray after the
->   first kit fit, **v0.9.2** closes the radar tray again, **v0.9.3** fits it to the board (§0). None of these was reviewed. (There is no insert v0.7; v0.7 is the kit.)
+>   first kit fit, **v0.9.2** closes the radar tray again, **v0.9.3** fits it to the board; **v0.10** makes every part print without supports (§0, §11). None of these was reviewed. (There is no insert v0.7; v0.7 is the kit.)
 >
-> Date: 2026-10-01, v0.6 and v0.8 2026-10-04, v0.9 2026-10-05, v0.9.1 to v0.9.3 2026-10-06. Licence: CERN-OHL-P-2.0 (hardware), CC BY 4.0 (this text).
+> Date: 2026-10-01, v0.6 and v0.8 2026-10-04, v0.9 2026-10-05, v0.9.1 to v0.9.3 2026-10-06, v0.10 2026-10-07. Licence: CERN-OHL-P-2.0 (hardware), CC BY 4.0 (this text).
 
 **What it is.** The insert replaces the 55 × 55 mm rocker of a German flush-mount switch (or socket) position and
 keeps the frame.
@@ -60,6 +60,33 @@ outside the chamber. Floating plate on 4 tactile switches; light-guide collar; m
 **v0.2 → v0.3 (round 2: no BLOCKER, ~28 MAJORs).** No foam gaskets between plate and chassis (mic carrier bonded to
 the plate, speaker sealed at its grille); glow = translucent plate rim; flange datum + tolerance chain + shims; 8 frame
 rims; stainless load plates; T0/T4 and the switch-box inventory; hub GPIO map from the vendor schematic.
+
+**v0.9.3 → v0.10 (owner, 2026-10-07: the whole kit printed with a 0.2 nozzle at 30 mm/s, PETG supports with a PLA
+interface — the key shell and the chassis still broke when the supports came out. "Open to gluing (CA) or pin → hole").
+WIP: modelled, CAD-checked, not printed.**
+- *Why they needed supports (overhang survey, front down):* the key shell's back wall is a 25 × 45 roof over the board
+  pocket. The kit chassis: the mic tube stood 1.0 in front of the deck and was the only thing on the bed — the whole
+  deck floated; the 71 × 71 flange overhangs the body by ≈ 9.5 all round (≈ 2500 mm²); the rear wall behind the collar
+  hangs over the collar seat (a 32 mm bridge on the speaker side, no room for a post); the switch-plate screw bosses and
+  the cable-anchor posts hang 3–5 mm free from the ledge.
+- **Key = 2 prints** (`key_shell_parts()`): a **ring** (walls, skirts, catch nubs) and a **back plate** (back wall, posts,
+  sockets, stop bosses) that sits inside the ring like a lid (0.1/side, `KEY_PLATE_CLEAR`) — the fit locates it, CA from
+  behind; the 4 board screws hold board and plate as before. No room for pins in the 1.0 walls; none needed.
+- **Chassis = 3 prints** (`chassis_parts()`, all variants): **1 front** (d < flange front: deck, pockets, rims, mic tube),
+  **2 flange** (flange + webs to the collar's back face + the speaker duct), **3 rear** (rear wall, ledge, speaker cradle,
+  hub posts). Joints: 1→2 glued with the collar through both openings as the jig; 2→3 on **two pins Ø1.2**
+  (`CH_PIN_POS` (±5.7, ±26.25), on the island ribs — the only free spots: the plate's tactile switches sit at the corners,
+  the speaker on +x, the box's screw domes on the axes) + the web tops, CA.
+- **Switch plate glued** onto the ledge (owner's choice) — no screws, no bosses (`SWP_SCREWS = ()`); the **cable anchor**
+  (posts + bar) now stands on the switch plate's back.
+- **Kit mic tube** flush with the deck front: foam at the plate end 1.5 compressed (`KIT_MIC_FOAM_FRONT`), the module end
+  unchanged; the module shelf filled down to the rear part's front face.
+- **Frame rims** tied to the deck by webs in the plate-skirt gaps (they print with the front part).
+- **Every part prints front down** (collar back down, as before). New check `ceilings()` in every build: planar faces that
+  face the bed must be short bridges (span ≤ 16, measured as min(bbox, 4·area/perimeter)); now the widest is 8.7 (the
+  insert's mic pocket roof), the kit's 5.7. L, S, kit: 0 collisions, nothing trimmed, key captive, radar tray closed.
+- *Open:* the amplifier pins on the carrier — unchanged in CAD since v0.8 (spacing 15.97 outer), but the 0.2-nozzle print
+  came out a little too wide; the hole positions are only [PHOTO ±0.5] → owner to measure the two holes.
 
 **v0.9.2 → v0.9.3 (owner's print, 2026-10-06).** The radar slid about in the v0.9.2 tray (≈ 0.5 too long, the short side
 just too loose). The board is **22.03** long (caliper photo), not 22.26 (10-03): `RADAR_H` corrected, `KIT_RADAR` now

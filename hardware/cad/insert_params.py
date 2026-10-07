@@ -59,7 +59,7 @@ sys.path.insert(0, HERE)
 import roomkey_params as R  # noqa: E402
 
 VARIANTS = ("L", "S")
-VERSION = "0.9.3"
+VERSION = "0.10"
 
 SOURCES = {
     "cherry":   "Cherry MX1A datasheet, datasheet.octopart.com/MX1A-11NW-Cherry-datasheet-34676.pdf",
@@ -209,7 +209,9 @@ GROOVE_CLEAR = (0.1, 0.5)   # [FREE] groove ↔ nub in x (bottom) and in y (rock
 REAR_WALL = 1.2       # [FREE] chassis well wall behind the collar (d COLLAR_D1 → ledge)
 SWP_CLEAR = 0.2       # [FREE] switch plate ↔ well wall
 LEDGE = 1.0           # [FREE] ledge under the switch plate
-SWP_SCREWS = ((-10.5, 1.5), (10.5, 1.5))   # [FREE] M2 × 4 countersunk (DIN 965) from the front, into ledge bosses
+SWP_SCREWS = ()      # v0.10: the switch plate is GLUED onto the ledge (2–3 dots CA; owner 2026-10-07) — the two screw bosses
+                     #        hung 4–5 mm free over the switch plate when the rear chassis part prints front down. Was
+                     #        ((-10.5, 1.5), (10.5, 1.5)), M2 × 4 countersunk from the front into ledge bosses
 SWP_SCREW_L = 4.0     # [FREE]
 SWP_BOSS_D, SWP_BOSS_H = 4.6, 3.8   # [FREE] boss 3.8 deep: pilot hole 3.0, 0.8 floor
 M2_CSK_D, M2_CSK_H = 3.8, 1.2    # [DS] DIN 965 M2 head
@@ -233,11 +235,25 @@ LOOP_D0 = 24.0        # [FREE] loop region starts behind the MX pins (23.6)
 LOOP_D1 = 36.5        # [FREE] incl. 2 mm roll + slack
 LOOP_LIFE = 250_000   # [FREE] key presses the cable must survive (30 years × 20/day = 219 k); desk-rig test target
 ANCHOR = (-11.5, 11.5, -8.4, -7.4, 24.0, 25.2)   # [FREE] bar that clamps the fixed leg (x0,x1,y0,y1,d0,d1)
-ANCHOR_POSTS = ((-10.5, -7.9), (10.5, -7.9))     # [FREE] posts from the ledge carrying the anchor bar
+ANCHOR_POSTS = ((-10.5, -7.9), (10.5, -7.9))     # [FREE] posts carrying the anchor bar — v0.10: on the SWITCH PLATE's back
+                                                 #        (they grow up from it in print; on the chassis they hung in the air)
 KEY_TRAVEL = 3.4     # [FREE] v0.6: the key stops on 4 STOP BOSSES landing on the switch plate (centre press), before MX
                      #        bottom-out (4.0); both switches are past their actuation point (2.0 ± 0.6) by then. v0.9 rigid
                      #        key: the bosses take the press off the stems (a keycap bottoming on the plate, not on the switch)
-STOP_X = (11.25, R.KEY_W / 2 - R.KEY_WALL)   # [FREE] |x| of the stop bosses: outside the board screws' heads (≤ 10.9) and
+CH_SPLIT = ("v0.10: the chassis is THREE prints, all front down, no supports (owner 2026-10-07: supports broke it): 1 FRONT "
+            "(d < flange front: deck, pockets, rims, mic tube), 2 FLANGE (flange + webs/ribs behind it to the collar's back "
+            "face, + the speaker duct to its roof), 3 REAR (rear wall behind the collar, ledge, speaker cradle, hub posts). "
+            "Glue: 1→2 with the collar through both openings as the jig; 2→3 on two pins + the web tops")
+CH_PIN = (1.2, 2.0, 0.1)       # [FREE] v0.10 chassis pins 2→3: Ø, length, radial play in the hole
+CH_PIN_POS = ((5.7, 26.25), (-5.7, -26.25))   # [FREE] diagonal pair 53 apart, on the island ribs above / below the collar:
+                                              #        the only free spots (corners: the plate's tactile switches; +x: the
+                                              #        speaker; on the axes: the box's screw domes; box radius 28.5)
+CH_PIN_BLOCK = (1.5, 1.2)      # [FREE] pin block half-size x, y (hole walls 0.8 / 0.5 — fine at a 0.2 nozzle)
+KEY_PLATE_CLEAR = 0.1   # [FREE] v0.10: the key shell is TWO prints (supports in the pocket broke the one-piece shell, owner
+                        #        2026-10-07): a RING (walls + skirts + catch nubs, front down, no supports) and a BACK PLATE
+                        #        (back wall + posts + stop bosses, front down = flat on its inner face) that sits INSIDE the
+                        #        ring like a lid, this much play per side (glue gap, CA from behind); located by that fit
+STOP_X = (11.25, R.TB_W / 2 + R.KEY_FIT - KEY_PLATE_CLEAR)   # [FREE] |x| of the stop bosses (v0.10: to the plate's edge): outside the board screws' heads (≤ 10.9) and
                      #        inside the key wall; they land on the switch plate inside its corner arcs
 STOP_W_Y = 2.0       # [FREE] boss length in y
 STOP_YS = (18.5, -16.5)   # [FREE] y of the boss pairs (v0.6 rocker geometry, kept: inside the plate's corner arcs)
@@ -545,7 +561,10 @@ SENS_STANDOFF = {"radar": 1.0, "als": 2.6, "rh": 1.4, "mic": 1.2}   # [FREE] air
 # =====================================================================================================
 KIT_MIC_PORT = MIC_PORT           # the plate's mic hole (left strip) stays where the design has it
 KIT_MIC_TUBE = (1.6, 1.0)         # [FREE] sound tube bore Ø, wall: plate back → INMP441 port, through deck and flange
-KIT_MIC_FOAM = (0.8, 0.5)         # [FREE] foam seal rings at both tube ends: free / compressed thickness
+KIT_MIC_FOAM = (0.8, 0.5)         # [FREE] foam seal ring at the module end of the tube: free / compressed thickness
+KIT_MIC_FOAM_FRONT = (2.0, 1.5)   # [FREE] v0.10: foam ring at the PLATE end, 1.5 compressed (was 0.5) so the tube's front is
+                                  #        flush with the deck front (d 3.5): it stood 1.0 proud and was the only thing on the
+                                  #        print bed — the whole deck floated on supports
 KIT_MIC_D0 = 17.9                 # [FREE] INMP441 front (port side) d: behind the ledge (17.8), clear of the switch plate
 KIT_MIC_PORT_OFF = 0.8            # [PHOTO] port ≈ 0.8 off the module centre towards the L/R–GND row
 KIT_MIC_C = (-19.36, 9.65)        # [FREE] module centre: 0.8 from the port, optimised → 0.29 inside the box margin (0.79 to a
@@ -1018,7 +1037,8 @@ def validate(v, verbose=True):
              f"switch-plate screw ({x:+.1f}, {y:+.1f}): web {edge:.2f} to edge, {cut:.2f} to MX cut-out, {slot:.2f} to cable slot, "
              f"{hous:.2f} clear of the MX housing")
     ledge0 = s["plate_back"]
-    rule(s["plate_front"] + SWP_SCREW_L <= ledge0 + SWP_BOSS_H - 0.3,
+    info("v0.10: switch plate glued onto the ledge (no screws, no bosses)") if not SWP_SCREWS else None
+    rule(not SWP_SCREWS or s["plate_front"] + SWP_SCREW_L <= ledge0 + SWP_BOSS_H - 0.3,
          f"switch-plate screw tip d {s['plate_front'] + SWP_SCREW_L:.1f} inside its boss (ends {ledge0 + SWP_BOSS_H:.1f})")
     mx_gap_y = min(abs(y - CABLE_Y) for (_, y) in R.MX_SW_POS) - R.MX_TOP_W / 2
     rule(CABLE_WIRE_D / 2 + 0.5 <= mx_gap_y, f"cable (flat, {CABLE_W:.1f} × {CABLE_WIRE_D}) at y {CABLE_Y} between the MX "

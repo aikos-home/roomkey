@@ -1,11 +1,11 @@
 {
  "variant": "L",
- "version": "0.9.1",
+ "version": "0.10",
  "parts": {
   "key shell": {
    "valid": true,
-   "solids": 1,
-   "volume_cm3": 3.33,
+   "solids": 2,
+   "volume_cm3": 3.3,
    "size": [
     27.95,
     46.8,
@@ -15,11 +15,11 @@
   "switch plate": {
    "valid": true,
    "solids": 1,
-   "volume_cm3": 1.16,
+   "volume_cm3": 1.28,
    "size": [
     26.95,
     46.9,
-    1.5
+    9.9
    ]
   },
   "collar": {
@@ -45,7 +45,7 @@
   "chassis": {
    "valid": true,
    "solids": 1,
-   "volume_cm3": 8.05,
+   "volume_cm3": 7.96,
    "size": [
     71.0,
     71.0,
@@ -108,7 +108,7 @@
   "plate ↔ frame (bottom band, RSS stop)": 0.193,
   "plate ↔ frame (top-left corner, RSS stop)": 0.225,
   "chassis rims ↔ frame (rest, locating clearance)": 0.1,
-  "chassis ↔ box (radial; flange sits on the rim)": 1.031,
+  "chassis ↔ box (radial; flange sits on the rim)": 0.621,
   "collar ↔ chassis (rest; glued seat, back face on the rear wall = 0 by design)": 0.0,
   "speaker ↔ chassis (rest; front edge on the plenum floor = 0 by design)": 0.0,
   "antenna chip ↔ MX switch 2 (rest)": 9.0,
@@ -137,7 +137,7 @@
   "nub pushes plunger TR (top-left corner), mm³": 1.556,
   "nub pushes plunger BL (top-left corner), mm³": 1.699
  },
- "trimmed_mm3": -0.0,
+ "trimmed_mm3": 0.0,
  "states": {
   "rest": "all pairs",
   "key pressed": "key + stems + board translated 3.4 (to the stop bosses); base exemptions only",
