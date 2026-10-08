@@ -59,7 +59,7 @@ sys.path.insert(0, HERE)
 import roomkey_params as R  # noqa: E402
 
 VARIANTS = ("L", "S")
-VERSION = "0.10.4"
+VERSION = "0.11"
 
 SOURCES = {
     "cherry":   "Cherry MX1A datasheet, datasheet.octopart.com/MX1A-11NW-Cherry-datasheet-34676.pdf",
@@ -238,7 +238,7 @@ LOOP_Y = (CABLE_Y - 2 * LOOP_R - CABLE_WIRE_D, CABLE_Y + CABLE_WIRE_D / 2 + 0.4)
 LOOP_D0 = 24.0        # [FREE] loop region starts behind the MX pins (23.6)
 LOOP_D1 = 36.5        # [FREE] incl. 2 mm roll + slack
 LOOP_LIFE = 250_000   # [FREE] key presses the cable must survive (30 years × 20/day = 219 k); desk-rig test target
-ANCHOR = (-11.5, 11.5, -8.4, -7.4, 24.0, 25.2)   # [FREE] bar that clamps the fixed leg (x0,x1,y0,y1,d0,d1)
+ANCHOR = (-11.5, 11.5, -8.4, -7.4, 24.0, 25.2)   # [FREE] bar that clamps the fixed leg (x0,x1,y0,y1,d0,d1) — v0.11: gone
 ANCHOR_POSTS = ((-10.5, -7.9), (10.5, -7.9))     # [FREE] posts carrying the anchor bar — v0.10: on the SWITCH PLATE's back
                                                  #        (they grow up from it in print; on the chassis they hung in the air)
 KEY_TRAVEL = 3.4     # [FREE] v0.6: the key stops on 4 STOP BOSSES landing on the switch plate (centre press), before MX
@@ -401,6 +401,27 @@ DUCT_WALL = 0.8
 
 HUB = (-16.0, 14.8, 3.0, 22.0, 25.5, 37.5)   # [FREE] horizontal hub board (x0,x1,y0,y1, PCB front d, component back d)
 HUB_PCB_T = 1.6
+# v0.11 (branch kit-pcb, owner 2026-10-08): the REAL hub PCB (hardware/pcb/roomkey-hub, KiCad, routed for JLCPCB) replaces
+# the placeholder hub above for the kit AND the wall insert; HUB stays only as the speaker cradle's reference numbers.
+# It carries the amplifier, the mic, the light sensor, the I/O expander and the MX hot-swap sockets; the radar stays a
+# module on a cable, in its own tray behind the hub's radar window.
+HUB_PCB_D0 = KS["mx_bottom"]          # 20.3: the board's front face = the MX housings' bottom; MX pins → sockets on its back
+HUB_PCB_STEP = ("hardware", "pcb", "roomkey-hub", "output", "roomkey-hub.step")
+HUB_PCB_STEP_XY = (-100.0, 100.0)     # KiCad X = 100 + x, Y = 100 − y (gen_layout_hub.py); its STEP has y = −Y
+HUB_PCB_STEP_TOP = 1.51               # [STEP] z of the board's front face; all parts sit on the back (z < 0)
+HUB_PCB_BACK = HUB_PCB_D0 + 1.51 + 4.79   # 26.6: deepest part behind the board [STEP]
+HUB_PCB_POSTS = ((-13.2, 20.0, True), (13.2, 20.0, True), (13.2, 4.0, False))   # (x, y, M2 screw?) ledge → hub face
+HUB_POST_R = (2.0, 1.5)               # [FREE] screw post / plain support radius
+HUB_ANCHOR_POST = (10.5, -7.9)        # third M2 screw: a post on the switch plate (was the cable-anchor post)
+M2_PILOT = (1.7, 3.5)                 # [FREE] pilot hole for an M2 self-tapping screw in PETG: Ø, depth
+HUB_WINDOW = (-40.0, -8.0, -16.1, 2.1)   # the hub's cut-out for the radar's view (gen_layout_hub.py)
+RADAR_EAR = (-25.8, -23.0, -10.6, -5.4)  # [FREE] ear on the radar tray's −x side (x0, x1, y0, y1): the only place inside the
+                                         # hub window that reaches the tray — clear of the screw domes (|y| ≤ 4) and r ≤ 28.3
+RADAR_BLADE = (-25.6, -23.2, -10.4, -5.6)   # [FREE] support blade of the chassis flange part: flange back → the ear
+RADAR_PINS = ((-24.2, -9.08), (-24.2, -6.88))  # [FREE] 2 pins on the blade top into the ear (lead-in holes, 0.8 webs)
+RADAR_PIN = (1.0, 2.0, 0.15)         # [FREE] Ø, length, radial play — thinner than CH_PIN so the ear keeps 0.8 webs
+HUB_J5 = (-15.3, -11.7, 3.5, 10.5, 26.22)   # [STEP] the radar's plug socket on the hub back (x0, x1, y0, y1, back d):
+                                     #        the tray's top end gets a notch round it
 HUB_POSTS = ((-13.2, 4.0), (13.2, 4.0), (-13.2, 20.0), (13.2, 20.0))   # [FREE] from the ledge (lower pair fused to the boss bridges)
 HUB_PARTS = {         # [TBD]/[DS] heights behind the hub PCB (mm): must stay inside HUB
     "Traco TSR 1-2450 (SIP-3, standing)": 10.1,   # [DS traco] 11.7 × 7.5 × 10.1
@@ -663,6 +684,13 @@ def mic_well():
     return x0 - c, x0 - c + MIC_WELL, y0 - c - MIC_WELL, y0 - c
 
 
+def loop_up():
+    """v0.11: the key wires' keep-out: through the hub slot (y 0.2..2.8), then a rolling loop behind the hub that turns UP
+    (+y) to the solder holes J4 (y ≈ 7.8) — (x0, x1, y0, y1, d0, d1)."""
+    d0 = HUB_PCB_D0 + HUB_PCB_STEP_TOP
+    return (-CABLE_W / 2 - 1.0, CABLE_W / 2 + 1.0, CABLE_Y - 1.3, CABLE_Y + 2 * LOOP_R + 1.5, d0, d0 + 2 * LOOP_R + 1.0)
+
+
 def mic_carrier_box():
     mx, my = MIC_PORT
     cw, ch, ct = R.MIC_CARRIER
@@ -687,7 +715,8 @@ def layout(v):
         E.append(B(f"MX switch {i+1}", x - R.MX_TOP_W / 2, x + R.MX_TOP_W / 2, y - R.MX_TOP_W / 2, y + R.MX_TOP_W / 2,
                    s["mx_top"], s["plate_front"], tag="[DS]", note="housing above the plate"))
         E.append(B(f"MX body {i+1}", x - R.MX_BODY_BELOW / 2, x + R.MX_BODY_BELOW / 2, y - R.MX_BODY_BELOW / 2,
-                   y + R.MX_BODY_BELOW / 2, s["plate_back"], s["mx_pins"], tag="[DS]", note="below the plate incl. pins"))
+                   y + R.MX_BODY_BELOW / 2, s["plate_back"], HUB_PCB_D0, tag="[DS]",
+                   note="below the plate; v0.11: the pins go on into the hub's hot-swap sockets (checked in the CAD)"))
     E.append(B("switch plate", -(WELL_IN_X - SWP_CLEAR), WELL_IN_X - SWP_CLEAR, -(WELL_IN_Y - SWP_CLEAR),
                WELL_IN_Y - SWP_CLEAR, s["plate_front"], s["plate_back"], role="part"))
     e = B("collar", -COLLAR_OUT_X, COLLAR_OUT_X, -COLLAR_OUT_Y, COLLAR_OUT_Y, COLLAR_D0, COLLAR_D1, role="part",
@@ -695,8 +724,7 @@ def layout(v):
     e["kind"], e["r"] = "rrect", COLLAR_OUT_R
     E.append(e)
     E.append(B("plate", -HALF, HALF, -HALF, HALF, 0.0, SNAP_D1, role="part", move="plate"))
-    x0, x1, y0, y1, d0, d1 = mic_carrier_box()
-    E.append(B("mic carrier", x0, x1, y0, y1, d0, d1, move="plate", tag="[FREE]", note="mic on 8 × 8 carrier, bonded to the plate"))
+    # v0.11: no mic carrier on the plate — the mic sits on the hub PCB, a sound tube leads from the plate hole to it
     for i, (x, y) in enumerate(LED_POS):
         E.append(B(f"LED {i+1}", x - LED_W / 2, x + LED_W / 2, y - LED_W / 2, y + LED_W / 2, LED_D0,
                    LED_D0 + LED_T + LED_CARRIER_T, note="SK6812 MINI on the collar's collector pad"))
@@ -717,11 +745,9 @@ def layout(v):
                tag="[DS]", note="on edge, grille faces +x"))
     E.append(B("speaker face gasket", gx, gx + SPK_FACE_GASKET[2], n0 - DUCT_WALL, n1 + DUCT_WALL, SPK_D0, pd1 + DUCT_WALL,
                note="foam frame, compressed"))
-    E.append(B("hub", HUB[0], HUB[1], HUB[2], HUB[3], HUB[4], HUB[5], tag="[TBD]",
-               note="horizontal hub: buck, amp, protection, wire pads"))
-    E.append(B("cable loop", -CABLE_W / 2 - 0.4, CABLE_W / 2 + 0.4, LOOP_Y[0], LOOP_Y[1], LOOP_D0, LOOP_D1,
-               note="rolling U-loop of the 14-wire bundle"))
-    E.append(B("loop anchor", *ANCHOR, role="part"))
+    # v0.11: the hub PCB is checked as its real STEP in the CAD (insert_lib.hub_pcb), not as an envelope here
+    lx0, lx1, ly0, ly1, ld0, ld1 = loop_up()
+    E.append(B("cable loop", lx0, lx1, ly0, ly1, ld0, ld1, note="key wires: hub slot, rolling loop behind the hub, UP to J4"))
     for i, (x0, x1, y0, y1) in enumerate(WAGO_POS):
         E.append(B(f"WAGO {i+1}", x0, x1, y0, y1, WAGO_D[0], WAGO_D[1], tag="[DS]", note="WAGO 221-412 standing"))
     E.append(B("speaker back foam", SPK_X0 - SPK_BACK_FOAM[1], SPK_X0, SPK_Y[0] + 2, SPK_Y[1] - 2, SPK_D0 + 2, SPK_D0 + R.SPK_W - 2,
@@ -1211,14 +1237,8 @@ def validate(v, verbose=True):
         rule(dg >= FIT_MARGIN, f"{e['name']}: {dg:.2f} mm from the screw domes [TBD r_in {BOX_DOME_R_IN}]")
     info("box fallback (Q5): if the measured box is up to 1 mm tighter, narrow the duct channel (3.1 → 2.1) and the hub "
          "(2 mm); if tighter still, this box type needs replacing (electrician)")
-    for nm, hgt in HUB_PARTS.items():
-        rule(HUB[4] + HUB_PCB_T + hgt <= HUB[5], f"hub part '{nm}' {hgt} tall fits behind the hub PCB")
-    area_back = (HUB[1] - HUB[0]) * (HUB[3] - HUB[2]) - len(HUB_POSTS) * math.pi * 1.5 ** 2
-    area_front = sum((b_ - a_) for a_, b_ in HUB_FRONT_STRIPS) * (HUB[3] - HUB[2])
-    need_a = sum(HUB_FOOTPRINTS.values()) * HUB_ROUTING
-    rule(need_a <= area_back + area_front, f"hub area: {sum(HUB_FOOTPRINTS.values())} mm² parts × {HUB_ROUTING} routing = "
-         f"{need_a:.0f} mm² ≤ {area_back:.0f} (back) + {area_front:.0f} (front strips beside MX1, ≤ 7.7 tall) [TBD]; fallback: "
-         f"a second board level at d {HUB[5]:.1f}–{HUB[5] + 5:.1f} beside the WAGOs (still inside the box)", hard=False)
+    info(f"v0.11 hub: the real PCB (hardware/pcb/roomkey-hub, routed, DRC 0) at d {HUB_PCB_D0:.1f}–{HUB_PCB_BACK:.1f}, "
+         f"screwed (M2) to 2 chassis posts + 1 switch-plate post; parts and outline are checked in the CAD as its STEP")
     back = max(e["d1"] for e in E)
     need = back - WALL_D + BOX_FLOOR_LOSS
     rule(need <= BOX_DEPTH, f"insert depth incl. 5 × WAGO 221-412 (standing, d {WAGO_D[0]}–{WAGO_D[1]}): parts to d {back:.1f} → "

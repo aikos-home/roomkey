@@ -113,10 +113,6 @@ def shots():
     show(None, hide=wall)
     cam((0.75, 0.5, -1))
     shot(f"kit-v{P.VERSION}_rear-parts.png")
-    # 4 the same with all 41 wires
-    show(None, hide=("Uebungsdose", "Kabelbogen"))
-    cam((0.75, 0.5, -1))
-    shot(f"kit-v{P.VERSION}_wiring.png")
     # 5 the frame from behind and below: humidity sensor flat under its bottom border
     show(("Rahmen_JungAS500", "Feuchtesensor"))
     cam((0.35, -0.55, -1))

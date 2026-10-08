@@ -1,6 +1,6 @@
 {
  "variant": "L",
- "version": "0.10.4",
+ "version": "0.11",
  "parts": {
   "key shell": {
    "valid": true,
@@ -15,11 +15,11 @@
   "switch plate": {
    "valid": true,
    "solids": 1,
-   "volume_cm3": 1.28,
+   "volume_cm3": 1.21,
    "size": [
     26.95,
     46.9,
-    9.9
+    5.0
    ]
   },
   "collar": {
@@ -42,18 +42,131 @@
     7.1
    ]
   },
+  "radar tray": {
+   "valid": true,
+   "solids": 1,
+   "volume_cm3": 0.56,
+   "size": [
+    20.24,
+    24.23,
+    4.66
+   ]
+  },
   "chassis": {
    "valid": true,
    "solids": 1,
-   "volume_cm3": 7.96,
+   "volume_cm3": 8.07,
    "size": [
     71.0,
     71.0,
-    22.72
+    23.99
    ]
   }
  },
- "collisions": [],
+ "collisions": [
+  [
+   "rest",
+   "radar tray",
+   "hub",
+   2.139
+  ],
+  [
+   "rest",
+   "radar tray",
+   "WAGO 1",
+   87.096
+  ],
+  [
+   "rest",
+   "radar tray",
+   "WAGO 4",
+   63.163
+  ],
+  [
+   "rest",
+   "radar tray",
+   "WAGO 5",
+   98.777
+  ],
+  [
+   "rest",
+   "chassis",
+   "hub",
+   1.283
+  ],
+  [
+   "rest",
+   "chassis",
+   "WAGO 4",
+   3.993
+  ],
+  [
+   "rest",
+   "hub",
+   "WAGO 1",
+   2.658
+  ],
+  [
+   "rest",
+   "hub",
+   "WAGO 2",
+   2.338
+  ],
+  [
+   "rest",
+   "hub",
+   "WAGO 3",
+   0.966
+  ],
+  [
+   "rest",
+   "hub",
+   "box (40 mm)",
+   43.687
+  ],
+  [
+   "rest",
+   "LD2410C",
+   "WAGO 1",
+   55.098
+  ],
+  [
+   "rest",
+   "LD2410C",
+   "WAGO 4",
+   120.572
+  ],
+  [
+   "rest",
+   "LD2410C",
+   "WAGO 5",
+   44.455
+  ],
+  [
+   "rest",
+   "LD2410C header",
+   "WAGO 4",
+   271.17
+  ],
+  [
+   "rest",
+   "LD2410C header",
+   "WAGO 5",
+   37.881
+  ],
+  [
+   "rest",
+   "LD2410C edge parts",
+   "WAGO 1",
+   25.08
+  ],
+  [
+   "rest",
+   "LD2410C pin stubs",
+   "WAGO 4",
+   25.2
+  ]
+ ],
  "gaps": {
   "key shell ↔ plate (rest)": 1.0,
   "key shell ↔ collar (rest, side skirts: roll limit)": 0.25,
@@ -83,24 +196,18 @@
   "plate ↔ chassis (left wing; 0 = lip on its catch face, by design)": 0.0,
   "plate without lips ↔ chassis (left wing)": 0.029,
   "plate ↔ key shell (left wing)": 0.853,
-  "mic carrier ↔ chassis (left wing)": 0.286,
   "plate ↔ chassis (right wing; 0 = lip on its catch face, by design)": 0.0,
   "plate without lips ↔ chassis (right wing)": 0.029,
   "plate ↔ key shell (right wing)": 0.853,
-  "mic carrier ↔ chassis (right wing)": 0.297,
   "plate ↔ chassis (top band; 0 = lip on its catch face, by design)": 0.0,
   "plate without lips ↔ chassis (top band)": 0.026,
   "plate ↔ key shell (top band)": 0.846,
-  "mic carrier ↔ chassis (top band)": 0.264,
   "plate ↔ chassis (bottom band; 0 = lip on its catch face, by design)": 0.0,
   "plate without lips ↔ chassis (bottom band)": 0.063,
   "plate ↔ key shell (bottom band)": 0.881,
-  "mic carrier ↔ chassis (bottom band)": 0.307,
   "plate ↔ chassis (top-left corner; 0 = lip on its catch face, by design)": 0.0,
   "plate without lips ↔ chassis (top-left corner)": 0.06,
   "plate ↔ key shell (top-left corner)": 0.89,
-  "mic carrier ↔ chassis (top-left corner)": 0.307,
-  "mic carrier ↔ chassis (rest)": 0.35,
   "plate ↔ frame (rest)": 0.3,
   "plate ↔ frame (left wing, RSS stop)": 0.16,
   "plate ↔ frame (right wing, RSS stop)": 0.16,
@@ -119,8 +226,8 @@
   "antenna chip ↔ LED 4 (key pressed)": 13.187,
   "antenna chip ↔ speaker 2030 (rest)": 15.719,
   "antenna chip ↔ speaker 2030 (key pressed)": 14.783,
-  "antenna chip ↔ hub (rest)": 34.299,
-  "antenna chip ↔ hub (key pressed)": 31.82,
+  "antenna chip ↔ hub (rest)": 20.6,
+  "antenna chip ↔ hub (key pressed)": 17.2,
   "antenna chip ↔ box screw L (rest)": 32.131,
   "antenna chip ↔ box screw L (key pressed)": 31.64,
   "antenna chip ↔ switch BL (rest)": 16.413,
