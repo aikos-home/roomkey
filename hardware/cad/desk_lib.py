@@ -182,7 +182,7 @@ def build_practice():
     col = L.check_state(bodies, "practice box, rest", ex)
     gaps = {f"{a} ↔ {b}": round(L.min_gap(bodies[a], bodies[b]), 3) for (a, b) in
             (("chassis", "practice box"), ("chassis", "frame 1-gang"), ("plate", "frame 1-gang"), ("frame 1-gang", "practice box"))}
-    for case in ("left wing", "top band", "bottom band"):
+    for case in (("left wing", "top band", "bottom band") if P.SW_POS else ()):     # v0.11: fixed plate
         gaps[f"plate pressed ({case}) ↔ frame 1-gang"] = round(L.min_gap(L.plate_pressed(bodies["plate"], case), fr), 3)
     print(f"  collisions: {len(col)}")
     for c_ in col:

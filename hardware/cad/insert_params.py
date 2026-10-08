@@ -58,7 +58,8 @@ HERE = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() els
 sys.path.insert(0, HERE)
 import roomkey_params as R  # noqa: E402
 
-VARIANTS = ("L", "S")
+VARIANTS = ("S",)     # v0.11: ONE RoomKey (owner 2026-10-08: "Es soll nur eine Art von RoomKey geben"). The code keeps the
+                      # key "S" internally; no Variant L (light switch) any more, the plate is fixed (PLATE_FIXED)
 VERSION = "0.11"
 
 SOURCES = {
@@ -306,7 +307,9 @@ DECK_R = 0.5          # [FREE] deck corner radius (keeps the tongue ends square 
 SNAP_RELIEF = (21.5, 27.3, 24.0, 27.8)   # [FREE] flange windows at the bottom corners (|x| from..to, |y| from..to): room
                                         #        for the snap lips at full press
 DECK_D0, DECK_D1 = 3.5, 5.0   # [FREE] deck front / back
-S_PLATE_FIXED = False  # [FREE] S default: plate works like L (plate → ESP only); True adds 4 rest pads → fixed plate
+S_PLATE_FIXED = True   # v0.11 (owner 2026-10-08: "Nur MX, Blende fest"): the plate is fixed on 4 rest pads, never a button
+PLATE_FIXED = S_PLATE_FIXED
+WING_SECTION = (20.7, -19.5)   # section planes through the wings (x, y) for the drawings (v0.10: the B3FS positions)
 S_REST_PADS = ((-10.0, -25.4), (10.0, -25.4), (-10.0, 25.4), (10.0, 25.4))   # [FREE] Ø2.4 pads, 1.5 high (only if fixed)
 
 PERF_D, PERF_PITCH, PERF_COLS, PERF_ROWS = 1.0, 1.6, 4, 13   # [FREE] north star: 4 × 13 fine holes per wing (render Ø~0.7,
@@ -320,7 +323,7 @@ MESH_MARGIN = 0.5     # [FREE] recess = strip ± 0.5
 # =====================================================================================================
 # 4. FLOATING-PLATE SWITCHES, PRELOAD, MIC, LEDS, SPEAKER, HUB
 # =====================================================================================================
-SW_POS = ((-20.7, 19.5), (20.7, 19.5), (-20.7, -19.5), (20.7, -19.5))   # [FREE] 4 × Omron B3FS-1002P (SMD), one per wing corner
+SW_POS = ()           # v0.11: no plate switches (fixed plate). v0.2–v0.10: 4 × Omron B3FS-1002P at (±20.7, ±19.5)
 SW_W, SW_TOTAL_H, SW_BODY_H, SW_PLUNGER_D = 6.0, 3.1, 2.6, 3.0   # [DS b3fs] body 6.0 × 6.3, 3.1 ± 0.2 incl. plunger, body 2.6
 SW_BODY_Y = 6.3       # [DS b3fs]
 SW_TERM_W = 8.0       # [DS b3fs] gull-wing lead span (x)
@@ -1098,14 +1101,15 @@ def validate(v, verbose=True):
         rule(gap2d(e, col) >= 0.5, f"{e['name']} stays {gap2d(e, col):.2f} mm outside the collar")
     tip, front, back, cback = sw_depths()
     need_wall = PLATE_T + NUB_H_MIN + NUB_GAP + SW_TOTAL_H + CARRIER[2] + FLANGE_T
-    ws_r = max(math.hypot(abs(wire_slot(x, y)[0]) + CARRIER_WIRE_SLOT[0] / 2, abs(wire_slot(x, y)[1]) + CARRIER_WIRE_SLOT[1] / 2)
-               for (x, y) in SW_POS)
-    ws_in = all(abs(wire_slot(x, y)[0]) - CARRIER_WIRE_SLOT[0] / 2 >= abs(x) - (CARRIER[0] / 2 + 0.2) + 0.1 - 1e-9 and
-                abs(wire_slot(x, y)[1]) - CARRIER_WIRE_SLOT[1] / 2 >= abs(y) - (CARRIER[1] / 2 + 0.2) + 0.1 - 1e-9
-                for (x, y) in SW_POS)
-    rule(ws_in and ws_r <= BOX_USABLE_D / 2 - 0.8, f"switch wires: the flange slots stay ≥ 0.1 inside the carrier pockets and reach r {ws_r:.1f} ≤ box inside "
-         f"{BOX_USABLE_D / 2:.1f} − 0.8 [TBD Q5] → the wires drop into the box, not onto its rim; the carrier rests on the flange "
-         f"around the slot (no solder under the datum)")
+    if SW_POS:                                        # v0.11: fixed plate, no plate switches
+        ws_r = max(math.hypot(abs(wire_slot(x, y)[0]) + CARRIER_WIRE_SLOT[0] / 2, abs(wire_slot(x, y)[1]) + CARRIER_WIRE_SLOT[1] / 2)
+                   for (x, y) in SW_POS)
+        ws_in = all(abs(wire_slot(x, y)[0]) - CARRIER_WIRE_SLOT[0] / 2 >= abs(x) - (CARRIER[0] / 2 + 0.2) + 0.1 - 1e-9 and
+                    abs(wire_slot(x, y)[1]) - CARRIER_WIRE_SLOT[1] / 2 >= abs(y) - (CARRIER[1] / 2 + 0.2) + 0.1 - 1e-9
+                    for (x, y) in SW_POS)
+        rule(ws_in and ws_r <= BOX_USABLE_D / 2 - 0.8, f"switch wires: the flange slots stay ≥ 0.1 inside the carrier pockets and reach r {ws_r:.1f} ≤ box inside "
+             f"{BOX_USABLE_D / 2:.1f} − 0.8 [TBD Q5] → the wires drop into the box, not onto its rim; the carrier rests on the flange "
+             f"around the slot (no solder under the datum)")
     wx0, wx1, wy0, wy1 = mic_well()
     rule(math.hypot(abs(wx0) + 0.8, abs(wy1)) <= BOX_USABLE_D / 2 - 0.8 and DECK_HALF_X - (abs(wx0) + 0.8) >= 0.8,
          f"mic wire well {MIC_WELL:.0f} × {MIC_WELL:.0f} beside the pocket (x {wx0:.1f}..{wx1:.1f}, y {wy0:.1f}..{wy1:.1f}), walled "
@@ -1115,9 +1119,10 @@ def validate(v, verbose=True):
          "with ±0.1 print tolerance the skirt may touch the deck edge there, where the relative motion is ≤ 0.1 mm → friction "
          "near the hinge, not a stop → coupon row D: press at the far edge 20 ×, it must click and return without sticking; "
          "fallback: sand the skirt's inner face (the plate location then grows to ±0.15, shadow gap ±0.24 RSS)")
-    rule(NUB_H >= NUB_H_MIN - 1e-9 and WALL_D >= need_wall, f"switch stack from the flange datum (carrier on the flange front "
-         f"d {cback:.1f}): plunger tip d {tip:.2f}, nub {NUB_H:.2f} → gap {NUB_GAP}; with the smallest nub {NUB_H_MIN} the "
-         f"rocker-front ↔ wall distance may drop to {need_wall:.2f} (assumed {WALL_D} [TBD Q1])")
+    if SW_POS:                                        # v0.11: fixed plate, no plate switches
+        rule(NUB_H >= NUB_H_MIN - 1e-9 and WALL_D >= need_wall, f"switch stack from the flange datum (carrier on the flange front "
+             f"d {cback:.1f}): plunger tip d {tip:.2f}, nub {NUB_H:.2f} → gap {NUB_GAP}; with the smallest nub {NUB_H_MIN} the "
+             f"rocker-front ↔ wall distance may drop to {need_wall:.2f} (assumed {WALL_D} [TBD Q1])")
 
     # --- C2. floating plate: retention, location, stops, tolerance, forces --------------------------------
     lip_ov = LIP_IN - (HALF - PLATE_SKIRT_T - DECK_HALF_Y)
@@ -1152,29 +1157,35 @@ def validate(v, verbose=True):
          f"between the bottom skirt (ends d {SKIRT_D}) and the flange at |x| {rel0:.1f}..{rel1:.1f} and pushes the tongue in "
          f"(window {rel1 - rel0:.1f} × {TONGUE_D1 - SKIRT_D:.1f} mm on the tongue's outer face)")
 
-    # nub gap and stops
-    rss_t, worst_t = gap_tol()
-    gmin, gmax = NUB_GAP - rss_t, NUB_GAP + rss_t
-    chain = "; ".join(f"{n} ±{t}" for n, t, _ in GAP_CHAIN)
-    rule(gmin >= -SW_PT_MIN + 0.1, f"nub gap {NUB_GAP} ± {rss_t:.2f} RSS → {gmin:.2f}..{gmax:.2f}: never pre-actuated at rest "
-         f"(needs > −{SW_PT_MIN}); chain: {chain}")
-    warn(f"nub gap worst-case sum ±{worst_t:.2f} → {NUB_GAP - worst_t:.2f}..{NUB_GAP + worst_t:.2f}: a single switch can pre-click "
-         f"or click late → assembly check per switch; correct with {SHIM_STEP} mm polyimide shims under the carrier or by "
-         f"sanding the nub; coupon v1 row D at ≤ 0.1 mm layers with real carriers")
-    info(f"switch bottom-out travel {SW_TRAVEL_TOTAL} is an ASSUMPTION (= PT max {SW_PT_MAX} [DS]); coupon v1 row D measures it")
-    t_click = gmax + SW_PT_MAX
-    t_stop = gmax + SW_TRAVEL_TOTAL + SEAT_ALLOW
-    t_edge = edge_travel(t_stop)
-    t_edge_w = min(edge_travel(NUB_GAP + worst_t + SW_TRAVEL_TOTAL + SEAT_ALLOW), DECK_D0 - PLATE_T)   # the deck stops it
-    rule(PLATE_T + t_edge < DECK_D0 - 0.1, f"switches are the travel stop: plate travels ≤ {t_stop:.2f} at a switch (RSS; click "
-         f"≤ {t_click:.2f}; {SEAT_ALLOW} seating allowance), ≤ {t_edge:.2f} at a plate corner; plate back {DECK_D0 - PLATE_T - t_edge:.2f} "
-         f"off the deck")
-    warn(f"worst-case stack: a late switch clicks only after {NUB_GAP + worst_t + SW_PT_MAX:.2f}, while the plate corner lands on "
-         f"the deck after {DECK_D0 - PLATE_T:.2f} (corner/switch travel ratio ≈ {edge_travel(t_stop) / t_stop:.2f}) → that switch may NOT click when pressed at "
-         f"the corner; the per-switch assembly check finds it and a shim fixes it (§11)")
-    rule(ABUSE_FORCE <= SW_MAX_FORCE, f"abuse: {ABUSE_FORCE:.0f} N palm slap, worst case on ONE switch (diagonal pivots) vs "
-         f"{SW_MAX_FORCE:.0f} N [TBD — Omron publishes no static load] → coupon row D: 30 N on one cell for 1 min; fallback: a "
-         f"printed stop ring around each nub, sanded to land 0.1 after the click", hard=False)
+    if SW_POS:                                        # nub gap and stops (v0.2–v0.10 floating plate)
+        # nub gap and stops
+        rss_t, worst_t = gap_tol()
+        gmin, gmax = NUB_GAP - rss_t, NUB_GAP + rss_t
+        chain = "; ".join(f"{n} ±{t}" for n, t, _ in GAP_CHAIN)
+        rule(gmin >= -SW_PT_MIN + 0.1, f"nub gap {NUB_GAP} ± {rss_t:.2f} RSS → {gmin:.2f}..{gmax:.2f}: never pre-actuated at rest "
+             f"(needs > −{SW_PT_MIN}); chain: {chain}")
+        warn(f"nub gap worst-case sum ±{worst_t:.2f} → {NUB_GAP - worst_t:.2f}..{NUB_GAP + worst_t:.2f}: a single switch can pre-click "
+             f"or click late → assembly check per switch; correct with {SHIM_STEP} mm polyimide shims under the carrier or by "
+             f"sanding the nub; coupon v1 row D at ≤ 0.1 mm layers with real carriers")
+        info(f"switch bottom-out travel {SW_TRAVEL_TOTAL} is an ASSUMPTION (= PT max {SW_PT_MAX} [DS]); coupon v1 row D measures it")
+        t_click = gmax + SW_PT_MAX
+        t_stop = gmax + SW_TRAVEL_TOTAL + SEAT_ALLOW
+        t_edge = edge_travel(t_stop)
+        t_edge_w = min(edge_travel(NUB_GAP + worst_t + SW_TRAVEL_TOTAL + SEAT_ALLOW), DECK_D0 - PLATE_T)   # the deck stops it
+        rule(PLATE_T + t_edge < DECK_D0 - 0.1, f"switches are the travel stop: plate travels ≤ {t_stop:.2f} at a switch (RSS; click "
+             f"≤ {t_click:.2f}; {SEAT_ALLOW} seating allowance), ≤ {t_edge:.2f} at a plate corner; plate back {DECK_D0 - PLATE_T - t_edge:.2f} "
+             f"off the deck")
+        warn(f"worst-case stack: a late switch clicks only after {NUB_GAP + worst_t + SW_PT_MAX:.2f}, while the plate corner lands on "
+             f"the deck after {DECK_D0 - PLATE_T:.2f} (corner/switch travel ratio ≈ {edge_travel(t_stop) / t_stop:.2f}) → that switch may NOT click when pressed at "
+             f"the corner; the per-switch assembly check finds it and a shim fixes it (§11)")
+        rule(ABUSE_FORCE <= SW_MAX_FORCE, f"abuse: {ABUSE_FORCE:.0f} N palm slap, worst case on ONE switch (diagonal pivots) vs "
+             f"{SW_MAX_FORCE:.0f} N [TBD — Omron publishes no static load] → coupon row D: 30 N on one cell for 1 min; fallback: a "
+             f"printed stop ring around each nub, sanded to land 0.1 after the click", hard=False)
+    else:
+        t_edge = t_edge_w = 0.0
+        info(f"v0.11 fixed plate (owner 2026-10-08: 'Nur MX, Blende fest'): it rests on {len(S_REST_PADS)} Ø2.4 pads on the deck "
+             f"front (d {DECK_D0}) and is held forward by the top lip and the bottom snap lips; no plate travel, no plate "
+             f"switches. The only buttons are the 2 MX under the key")
     rule(PLATE_T + t_edge <= LOC_RIM_D0 - 0.1, f"frame locating rims (d {LOC_RIM_D0}..{WALL_D - FLANGE_T}) stay behind the "
          f"pressed plate skin (d ≤ {PLATE_T + t_edge:.2f}, RSS)")
     rule(LOC_RIM_SPAN[0] - SKIRT_GAP[0] >= 0.5 and SKIRT_GAP[1] - LOC_RIM_SPAN[1] >= 0.5,
@@ -1193,9 +1204,9 @@ def validate(v, verbose=True):
          f"skirt clearance); pressed at an edge the front edge moves out {shift:.2f} → ≥ {gp:.2f} [TBD Q2, print tolerance not "
          f"included]; if the measured opening is < 55.6: chamfer the plate's front edge 0.2 × 45° and recut the rims", hard=False)
     rule(PLATE_T + t_edge + 0.0 <= DECK_D0, "pressed plate stays in front of the deck (RSS stack)")
-    wall_min = max(need_wall, LIP_D1 + t_edge + FLANGE_T + 0.2, SNAP_D1 + t_edge_w + 0.3)
-    warn(f"Q1 threshold: this geometry needs a rocker-front ↔ wall distance ≥ {wall_min:.1f} mm (the pressed snap lips must end "
-         f"0.3 before the wall at the worst-case press; the switch stack alone would allow {need_wall:.1f}); assumed {WALL_D} "
+    wall_min = max(need_wall if SW_POS else 0.0, LIP_D1 + t_edge + FLANGE_T + 0.2, SNAP_D1 + t_edge_w + 0.3)
+    warn(f"Q1 threshold: this geometry needs a plate-front ↔ wall distance ≥ {wall_min:.1f} mm (the snap lips must end "
+         f"0.3 before the wall{' at the worst-case press' if SW_POS else ''}); assumed {WALL_D} "
          f"[TBD Q1]. Above it the chassis is regenerated for the measured value; below it the deck, lips and tongues must be "
          f"made thinner (redesign) — Q1 gates the first print")
     rule(LIP_D1 + t_edge <= WALL_D - FLANGE_T - 0.2, f"pressed top lip (d ≤ {LIP_D1 + t_edge:.2f}) clears the flange "
@@ -1203,23 +1214,25 @@ def validate(v, verbose=True):
     rule(SNAP_D1 + t_edge_w <= WALL_D - 0.3 and SNAP_RELIEF[0] <= SNAP_X[0] - 0.5 - 0.3 and SNAP_RELIEF[2] <= DECK_HALF_Y - TONGUE_W
          - tm["tip"] - 0.1, f"pressed snap lips (d ≤ {SNAP_D1 + t_edge_w:.2f} worst case) move into the flange windows and end "
          f"{WALL_D - SNAP_D1 - t_edge_w:.2f} before the wall plane")
-    rule(SW_LIFE >= 20 * 365 * 30, f"switch life {SW_LIFE:,} per switch ≥ 30 years × 20 presses/day (worst case: every press on "
-         f"the same switch)")
+    if SW_POS:
+        rule(SW_LIFE >= 20 * 365 * 30, f"switch life {SW_LIFE:,} per switch ≥ 30 years × 20 presses/day (worst case: every press on "
+             f"the same switch)")
     kp = pad_k()
     pre = kp * (PAD_H - (DECK_D0 + PAD_POCKET - PLATE_T)) * len(PAD_POS)
     w = PLATE_MASS_G * 9.81e-3
     rule(pre >= 3 * w, f"anti-rattle preload: {len(PAD_POS)} soft pads ({PAD_SIZE[0]}×{PAD_SIZE[1]}×{PAD_H}, CLD40 {PAD_CLD40} kPa "
          f"[TBD]) give {pre:.2f} N ≥ 3 × plate weight {w:.3f} N; the nubs do not touch the plungers at rest")
-    fmap = {k: press_force(*p) for k, p in PRESS_POINTS.items()}
-    fs = [f[0] for f in fmap.values() if f]
-    txt = "; ".join(f"{k} {f[0]:.1f} N ({f[1]} sw)" for k, f in fmap.items() if f)
-    fmax_tol = max(press_force(*p, of=SW_OF + SW_OF_TOL)[0] for p in PRESS_POINTS.values())
-    rule(len(fs) == len(PRESS_POINTS) and 1.2 <= min(fs) and fmax_tol <= 5.0, f"press force {min(fs):.1f}–{max(fs):.1f} N "
-         f"nominal incl. pads, ≤ {fmax_tol:.1f} N at OF max (limit 5): {txt}")
-    info("press feel (model): the plate tips about its easiest supporting line — at every tested point a diagonal or edge "
-         "line on which ONE switch clicks (even at a band centre, where two lines tie); pressing on to the stop may click a "
-         "second switch. The 4 B3FS are in parallel, so PLATE sees one closure either way (bounce ≤ 5 ms [DS] < the ES75's "
-         "20 ms minimum command)")
+    if SW_POS:
+        fmap = {k: press_force(*p) for k, p in PRESS_POINTS.items()}
+        fs = [f[0] for f in fmap.values() if f]
+        txt = "; ".join(f"{k} {f[0]:.1f} N ({f[1]} sw)" for k, f in fmap.items() if f)
+        fmax_tol = max(press_force(*p, of=SW_OF + SW_OF_TOL)[0] for p in PRESS_POINTS.values())
+        rule(len(fs) == len(PRESS_POINTS) and 1.2 <= min(fs) and fmax_tol <= 5.0, f"press force {min(fs):.1f}–{max(fs):.1f} N "
+             f"nominal incl. pads, ≤ {fmax_tol:.1f} N at OF max (limit 5): {txt}")
+        info("press feel (model): the plate tips about its easiest supporting line — at every tested point a diagonal or edge "
+             "line on which ONE switch clicks (even at a band centre, where two lines tie); pressing on to the stop may click a "
+             "second switch. The 4 B3FS are in parallel, so PLATE sees one closure either way (bounce ≤ 5 ms [DS] < the ES75's "
+             "20 ms minimum command)")
     info("no gaskets between plate and chassis: the plate–deck gap is part of the speaker's front volume; it opens to the room "
          "(strip holes 41 mm², shadow gap ≈ 140 mm², frame gap) and, through small slots (key/collar 0.25, switch-plate cable slot, "
          "the foam-plugged mic wire well), to the box; the speaker's back is its own sealed cavity, so the box leak costs little — measure")

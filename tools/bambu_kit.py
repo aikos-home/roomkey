@@ -30,7 +30,7 @@ OUT = os.path.join(ROOT, "hardware", "print", "bambu")
 WORK = os.path.join(OUT, "_presets")          # resolved presets (not committed)
 
 PLATES = {
-    "A-petg": ["plate_S_print.stl", "kit_chassis_1_front_print.stl", "kit_chassis_2_flange_print.stl",
+    "A-petg": ["plate_print.stl", "kit_chassis_1_front_print.stl", "kit_chassis_2_flange_print.stl",
                "kit_chassis_3_rear_print.stl", "switch_plate_print.stl", "kit_back_carrier_print.stl"],
     "B-key": ["key_shell_print.stl"],
     "C-collar-pla": ["collar_print.stl"],

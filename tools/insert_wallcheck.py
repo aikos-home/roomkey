@@ -137,8 +137,8 @@ def min_wall(loops, part, axis, value):
 
 def main():
     bad = 0
-    for v in ("L", "S"):
-        fn = os.path.join(SECT, f"insert-{v}-printed_sections.json")
+    for v in ("",):                                      # v0.11: one RoomKey
+        fn = os.path.join(SECT, "insert-printed_sections.json")
         if not os.path.exists(fn):
             print("missing", fn)
             continue

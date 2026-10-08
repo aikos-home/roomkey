@@ -899,7 +899,7 @@ def export_sections(bodies, v, planes):
             if loops:
                 sec[nm] = loops
         out[key] = {"axis": axis, "value": value, "bodies": sec}
-    path = os.path.join(SECT, f"insert-{v}_sections.json")
+    path = os.path.join(SECT, "insert" + (f"-{v}" if v else "") + "_sections.json")
     with open(path, "w", encoding="utf-8") as f:
         json.dump(out, f)
     return path
@@ -925,7 +925,7 @@ def build_key_module():
 
 
 def build_variant(v):
-    print(f"\n==================== RoomKey insert v{P.VERSION} — Variant {v} ====================")
+    print(f"\n==================== RoomKey insert v{P.VERSION} (one RoomKey) ====================")
     pbody, prim = plate_parts(v)
     printed = {"key shell": key_shell(), "switch plate": switch_plate(), "collar": collar(), "plate": fuse([pbody, prim]),
                "radar tray": radar_tray()}
@@ -1021,9 +1021,10 @@ def build_variant(v):
     t_nom = P.NUB_GAP + P.SW_TRAVEL_TOTAL
     report["states"]["plate pressed"] = (f"five press points; nominal stop (travel {t_nom:.2f} at the farthest engaged switch, "
                                          f"all pairs) and RSS worst stop ({t_stop:.2f}; switch bodies exempt: in the real "
-                                         f"stack a deeper stop means a deeper switch)")
+                                         f"stack a deeper stop means a deeper switch)" if P.SW_POS else
+                                         "v0.11: none — the plate is fixed on its rest pads (no plate switches)")
     pb_all = {}
-    for case in PLATE_CASES:
+    for case in (PLATE_CASES if P.SW_POS else {}):
         ex = exempt | {frozenset(("plate", f"plunger {n}")) for n in ("TL", "TR", "BL", "BR")}
         pbn = dict(bodies)
         for nm in PLATE_MOVERS:
@@ -1075,7 +1076,7 @@ def build_variant(v):
                                                                                    env[boxname]), 3)
     report["gaps"]["collar ↔ chassis (rest; glued seat, back face on the rear wall = 0 by design)"] = g("collar", "chassis")
     report["gaps"]["speaker ↔ chassis (rest; front edge on the plenum floor = 0 by design)"] = g("speaker 2030", "chassis")
-    for m in ("MX switch 2", "LED 3", "LED 4", "speaker 2030", "hub", "box screw L", "switch BL"):
+    for m in ("MX switch 2", "LED 3", "LED 4", "speaker 2030", "hub", "box screw L") + (("switch BL",) if P.SW_POS else ()):
         report["gaps"][f"antenna chip ↔ {m} (rest)"] = g("antenna chip", m)
         report["gaps"][f"antenna chip ↔ {m} (key pressed)"] = round(min_gap(kb["antenna chip"], bodies[m]), 3)
     for case, pb in pb_all.items():                        # nub travel into each plunger in each plate case
@@ -1089,8 +1090,8 @@ def build_variant(v):
     for k, val in report["gaps"].items():
         print(f"    gap {k:60s} {val}")
 
-    export(printed["plate"], f"plate_{v}", PRINTED_HOW["plate"])
-    write_stl(rot_to_print(pbody, "front_down").copy(), os.path.join(OUT, f"plate_{v}_body_print.stl"))
+    export(printed["plate"], "plate", PRINTED_HOW["plate"])
+    write_stl(rot_to_print(pbody, "front_down").copy(), os.path.join(OUT, "plate_body_print.stl"))
     pr = pbody.fuse(prim)
     rim_p = prim.copy()
     rim_p.rotate(V(0, 0, 0), V(1, 0, 0), 180)
@@ -1098,31 +1099,30 @@ def build_variant(v):
     bbp.rotate(V(0, 0, 0), V(1, 0, 0), 180)
     bb = bbp.BoundBox
     rim_p.translate(V(-bb.Center.x, -bb.Center.y, -bb.ZMin))
-    write_stl(rim_p, os.path.join(OUT, f"plate_{v}_glowrim_print.stl"))
-    ceilings(printed["plate"], f"plate_{v}", PRINTED_HOW["plate"])
+    write_stl(rim_p, os.path.join(OUT, "plate_glowrim_print.stl"))
+    ceilings(printed["plate"], "plate", PRINTED_HOW["plate"])
     export(printed["radar tray"], "radar_tray", "front_down")
     ceilings(printed["radar tray"], "radar_tray", "front_down")
-    printed["chassis"].exportStep(os.path.join(OUT, f"chassis_{v}.step"))          # the glued assembly (reference)
+    printed["chassis"].exportStep(os.path.join(OUT, "chassis.step"))          # the glued assembly (reference)
     for i, (lab, part) in enumerate(zip(("front", "flange", "rear"), chassis_parts(printed["chassis"])), 1):
-        export(part, f"chassis_{v}_{i}_{lab}", "front_down")
-        ceilings(part, f"chassis_{v}_{i}_{lab}", "front_down")
+        export(part, f"chassis_{i}_{lab}", "front_down")
+        ceilings(part, f"chassis_{i}_{lab}", "front_down")
     comp = Part.makeCompound([printed[k] for k in printed] + [refs[k] for k in refs])
-    comp.exportStep(os.path.join(OUT, f"insert-{v}_assembly.step"))
-    Part.makeCompound(list(env.values())).exportStep(os.path.join(OUT, f"insert-{v}_wall-reference.step"))
-    write_stl(Part.makeCompound([printed[k] for k in printed]), os.path.join(OUT, f"insert-{v}_printed-assembly.stl"), 0.05, 0.4)
+    comp.exportStep(os.path.join(OUT, "insert_assembly.step"))
+    Part.makeCompound(list(env.values())).exportStep(os.path.join(OUT, "insert_wall-reference.step"))
+    write_stl(Part.makeCompound([printed[k] for k in printed]), os.path.join(OUT, "insert_printed-assembly.stl"), 0.05, 0.4)
     xs = (P.SNAP_X[0] + P.SNAP_X[1]) / 2
-    planes = {"AA_x0": ("x", 0.0), "DD_xsw": ("x", P.SW_POS[1][0]), "EE_xmic": ("x", P.MIC_PORT[0]),
-              "BB_y0": ("y", 0.0), "CC_ymic": ("y", P.MIC_PORT[1]), "GG_ysw": ("y", P.SW_POS[2][1]),
+    planes = {"AA_x0": ("x", 0.0), "DD_xsw": ("x", P.WING_SECTION[0]), "EE_xmic": ("x", P.MIC_PORT[0]),
+              "BB_y0": ("y", 0.0), "CC_ymic": ("y", P.MIC_PORT[1]), "GG_ysw": ("y", P.WING_SECTION[1]),
               "HH_xsnap": ("x", xs), "KK_ypad": ("y", P.PAD_POS[1][1]), "F_d575": ("d", 5.75),
               "F_d1": ("d", 1.0), "F_d6": ("d", 6.3), "F_d14": ("d", 13.5), "F_d30": ("d", 30.0)}
     bodies_sec = dict(bodies)
     bodies_sec["plate glow rim"] = prim
-    export_sections(bodies_sec, v, planes)
-    pp = {"plate (left wing pressed)": pb_all["left wing"]["plate"], "plate (top band pressed)": pb_all["top band"]["plate"],
-          "plate (bottom band pressed)": pb_all["bottom band"]["plate"],
-          "key shell (pressed)": kb["key shell"], "touch board (pressed)": kb["touch board"],
-          "key shell (wobble, pressed)": kpb["key shell"], "touch board (wobble, pressed)": kpb["touch board"]}
-    export_sections(pp, f"{v}-pressed", {"DD_xsw": ("x", P.SW_POS[1][0]), "AA_x0": ("x", 0.0), "GG_ysw": ("y", P.SW_POS[2][1]),
+    export_sections(bodies_sec, "", planes)
+    pp = {f"plate ({c} pressed)": pb_all[c]["plate"] for c in ("left wing", "top band", "bottom band") if c in pb_all}
+    pp.update({"key shell (pressed)": kb["key shell"], "touch board (pressed)": kb["touch board"],
+          "key shell (wobble, pressed)": kpb["key shell"], "touch board (wobble, pressed)": kpb["touch board"]})
+    export_sections(pp, "pressed", {"DD_xsw": ("x", P.WING_SECTION[0]), "AA_x0": ("x", 0.0), "GG_ysw": ("y", P.WING_SECTION[1]),
                                          "HH_xsnap": ("x", xs)})
     # dense slices of the printed parts for tools/insert_wallcheck.py (minimum wall thickness)
     wplanes = {}
@@ -1137,10 +1137,10 @@ def build_variant(v):
         wplanes[f"y-{yy}"] = ("y", -yy)
     for k, (ax_, val) in list(wplanes.items()):           # confirmation twin 0.3 mm away (filters grazing cuts)
         wplanes[k + "+"] = (ax_, val + 0.3)
-    export_sections({k: printed[k] for k in printed}, f"{v}-printed", wplanes)
-    path = os.path.join(OUT, f"insert-{v}_check.json")
+    export_sections({k: printed[k] for k in printed}, "printed", wplanes)
+    path = os.path.join(OUT, "insert_check.json")
     with open(path, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=1, ensure_ascii=False)
-    print(f"  wrote models/plate_{v} (+ body/glowrim STLs), chassis_{v} (.step + _print.stl), insert-{v}_assembly.step, "
+    print(f"  wrote models/plate (+ body/glowrim STLs), chassis (.step + _print.stl), insert_assembly.step, "
           f"{os.path.basename(path)}")
     return report

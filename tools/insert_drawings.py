@@ -324,7 +324,7 @@ def front_view(v, secs):
     title_block(fig, f"RoomKey wall insert {VER}, Variant {v}, {DATE}. mm, grid 5 mm. Dashed = behind the plate. "
                      f"[TBD] = to be measured. Plate + holes cut from the CAD solid at d = 1.")
     fig.tight_layout()
-    return save(fig, f"insert-{v}_front.png")
+    return save(fig, f"insert_front.png")
 
 
 # ================================================================================ vertical sections (y–d)
@@ -378,7 +378,7 @@ def sections_sheet(v, secs, pressed):
     title_block(fig, f"RoomKey wall insert {VER}, Variant {v}: vertical sections cut from the CAD solids, {DATE}, mm. "
                      f"Grey dashed: plate front, deck, wall plane [TBD], usable box floor.")
     fig.tight_layout(rect=(0, 0.11, 1, 1))
-    return save(fig, f"insert-{v}_sections.png")
+    return save(fig, f"insert_sections.png")
 
 
 # ================================================================================ horizontal sections (x–d)
@@ -407,7 +407,7 @@ def plan_sheet(v, secs, pressed):
     title_block(fig, f"RoomKey wall insert {VER}, Variant {v}: horizontal sections cut from the CAD solids, {DATE}, mm. "
                      f"Brown dotted: usable box Ø58 [TBD].")
     fig.tight_layout(rect=(0, 0.11, 1, 1))
-    return save(fig, f"insert-{v}_plan-sections.png")
+    return save(fig, f"insert_plan-sections.png")
 
 
 def layers_sheet(v, secs):
@@ -424,7 +424,7 @@ def layers_sheet(v, secs):
     title_block(fig, f"RoomKey wall insert {VER}, Variant {v}: cuts parallel to the wall (front-view orientation), {DATE}. "
                      f"Dotted circle = usable box Ø58 [TBD], dashed square = frame opening [TBD].")
     fig.tight_layout(rect=(0, 0.1, 1, 1))
-    return save(fig, f"insert-{v}_layers.png")
+    return save(fig, f"insert_layers.png")
 
 
 def key_module_sheet(secs, pressed):
@@ -502,7 +502,7 @@ def retention_sheet(v, secs, pressed):
     title_block(fig, f"RoomKey wall insert {VER}, Variant {v}: plate retention (top lip rigid, bottom snap tongues), cut from the "
                      f"CAD solids, {DATE}, mm. Mount: tilt, hook the top lip (shift up), press the bottom edge until both snaps click.")
     fig.tight_layout(rect=(0, 0.1, 1, 1))
-    return save(fig, f"insert-{v}_retention.png")
+    return save(fig, f"insert_retention.png")
 
 
 # ================================================================================ installation topologies (schematic)
@@ -653,10 +653,10 @@ def topologies_sheet():
 def main():
     made = []
     for v in P.VARIANTS:
-        with open(os.path.join(SECT, f"insert-{v}_sections.json"), encoding="utf-8") as f:
+        with open(os.path.join(SECT, "insert_sections.json"), encoding="utf-8") as f:
             secs = json.load(f)
         pressed = None
-        pp = os.path.join(SECT, f"insert-{v}-pressed_sections.json")
+        pp = os.path.join(SECT, "insert-pressed_sections.json")
         if os.path.exists(pp):
             with open(pp, encoding="utf-8") as f:
                 pressed = json.load(f)
