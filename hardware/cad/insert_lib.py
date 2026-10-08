@@ -145,7 +145,7 @@ def key_shell():
     """the one-piece key shell. v0.10.2: back from the v0.10 two-piece split — the owner's one-piece print WITH supports in
     the pocket fit perfectly (2026-10-08); only the chassis broke on its supports."""
     s = P.KS
-    fit = R.KEY_FIT
+    fit = R.KEY_POCKET_FIT            # v0.10.4: 0.10 for the 0.2 nozzle (outer size still from KEY_FIT)
     outer = rrect(P.KEY_W / 2, P.KEY_H / 2, P.KEY_R, s["glass"], s["key_back"])
     pocket = rrect(R.TB_W / 2 + fit, R.TB_H / 2 + fit, R.TB_CORNER_R + fit, s["glass"] - 1.0, s["standoff_end"])
     tools = [pocket]

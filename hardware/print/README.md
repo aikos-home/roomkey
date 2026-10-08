@@ -1,4 +1,4 @@
-# RoomKey kit — printing (parts v0.10.3, WIP)
+# RoomKey kit — printing (parts v0.10.4, WIP)
 
 > **Prototype for the desk. WIP: modelled and CAD-checked; the parts of this exact revision are not all printed and
 > tested yet.** The kit is the whole RoomKey in one practice box, powered from a lab supply (5.0 V, about 1 A). It is
@@ -51,9 +51,13 @@ The assembly and gluing steps, the bought parts and the first tests are in **[..
 
 ## Fits found on real prints (A1, PETG, 0.10 mm layers)
 
+**The fits are tuned for a 0.2 nozzle** (the RoomKey parts are printed with one since 2026-10-08). A 0.4 nozzle
+prints holes and pockets a little smaller: if the touch board or the radar is too tight, sand the inner walls lightly.
+
+
 | Fit | Value | How it was found |
 |---|---|---|
-| Touch board in the key shell | 0.15 / side | measured, "extremely perfect" |
+| Touch board in the key shell | 0.10 / side | 0.15 was "extremely perfect" with a 0.4 nozzle, loose with the 0.2 |
 | Key in the collar | 0.40 / side | 0.25 scraped |
 | Radar in its tray | 0.10 / side | 0.15 fit once, then was loose on the next print |
 | Amplifier pins | pitch 13.435, Ø 1.9 | 13.97 too wide, 12.9 too close |

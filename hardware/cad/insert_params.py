@@ -59,7 +59,7 @@ sys.path.insert(0, HERE)
 import roomkey_params as R  # noqa: E402
 
 VARIANTS = ("L", "S")
-VERSION = "0.10.3"
+VERSION = "0.10.4"
 
 SOURCES = {
     "cherry":   "Cherry MX1A datasheet, datasheet.octopart.com/MX1A-11NW-Cherry-datasheet-34676.pdf",

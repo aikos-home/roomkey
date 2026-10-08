@@ -161,7 +161,11 @@ RADAR_B_W, RADAR_B_H = 7.0, 35.0         # [DS] HLK-LD2410B 7 × 35 (the slim ve
 # ============================================================== design choices
 KEY_WALL = 1.0           # [FREE] keycap shell wall around the touch board
 KEY_FIT = 0.15           # [MEAS] clearance board frame ↔ shell pocket, per side: real touch board in the PETG print
-                         #        (A1, 0.10 layers) fits "extremely perfect" (owner, 2026-10-02); hard to get out → §11
+                         #        (A1, 0.4 nozzle, 0.10 layers) fits "extremely perfect" (owner, 2026-10-02); hard to get out
+                         #        → §11. Still sets the key's OUTER size (KEY_W/H/R) — that stays fixed
+KEY_POCKET_FIT = 0.10    # [FIT] the pocket's real clearance per side: the owner prints the RoomKey parts with a 0.2 nozzle
+                         #        now (2026-10-08) and 0.15 came out loose → 0.10 (the radar tray needed the same −0.05);
+                         #        the shell wall grows 0.05 inwards, the outside of the key is unchanged
 KEY_GAP = 1.0            # [FREE] shadow gap key ⇄ rocker cut-out
 KEY_PROUD = 8.0          # [FREE] key top above rocker front
 KEY_W = TB_W + 2 * (KEY_FIT + KEY_WALL)      # 26.85

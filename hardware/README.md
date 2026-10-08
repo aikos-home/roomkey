@@ -70,9 +70,9 @@ technical writing and design review. **In practice the owner runs a one-person p
 |---|---|
 | [`cad/roomkey_params.py`](cad/roomkey_params.py) | every dimension, tagged [DS] datasheet · [MEAS] measured · [FREE] design choice · [TBD] placeholder; `python3 cad/roomkey_params.py` runs the fit check |
 | [`cad/make_coupon_v0.py`](cad/make_coupon_v0.py) | tolerance coupon — print this first |
-| [`cad/insert_params.py`](cad/insert_params.py) | **wall insert v0.10.3 (draft)**: box, frame, both variants, installation topologies; `python3 cad/insert_params.py` validates L and S |
+| [`cad/insert_params.py`](cad/insert_params.py) | **wall insert v0.10.4 (draft)**: box, frame, both variants, installation topologies; `python3 cad/insert_params.py` validates L and S |
 | [`cad/insert_lib.py`](cad/insert_lib.py), [`make_key_module.py`](cad/make_key_module.py), [`make_insert_L.py`](cad/make_insert_L.py), [`make_insert_S.py`](cad/make_insert_S.py) | FreeCAD generators + collision/clearance checks (rest, key pressed and wobbled with its stems, plate pressed at five points) and print checks |
-| [`docs/insert-design.md`](docs/insert-design.md) | **design of the wall insert (v0.10.3 DRAFT)**: concept, stack-up, installation topologies (electrician), BOM, printing, open questions, risks |
+| [`docs/insert-design.md`](docs/insert-design.md) | **design of the wall insert (v0.10.4 DRAFT)**: concept, stack-up, installation topologies (electrician), BOM, printing, open questions, risks |
 | [`cad/desk_lib.py`](cad/desk_lib.py), [`make_practice_box.py`](cad/make_practice_box.py) | **practice box v0.1**: one flush-box replica + a 1-gang frame with the humidity sensor. Prototype, never in a wall |
 | [`cad/kit_lib.py`](cad/kit_lib.py), [`make_kit.py`](cad/make_kit.py), [`wiring_lib.py`](cad/wiring_lib.py) | **kit (WIP; concept v0.7, parts v0.10.3)**: the whole RoomKey in one box — back carrier (radar + amplifier), mic sound tube, 41 wires with cut lengths |
 | [`cad/view_kit.py`](cad/view_kit.py), [`render_kit.py`](cad/render_kit.py) | open the kit in the FreeCAD GUI (coloured, grouped) and render the images in [`docs/img/`](docs/img/) |
@@ -103,7 +103,7 @@ they shrink differently.
 
 **[`print/README.md`](print/README.md)**: the part list, ready-to-print Bambu Lab A1 files (0.4 and 0.2 nozzle; white PETG, clear PLA for the collar and for the key's support contact layers) and the assembly and gluing steps. WIP.
 
-## Wall insert v0.10.3 (DRAFT / WIP, 2026-10-08)
+## Wall insert v0.10.4 (DRAFT / WIP, 2026-10-08)
 
 **AI-assisted draft — nothing built, nothing certified, not approved for mains. All 230 V work only by a
 qualified electrician of a registered installation company (NAV §13).** Two variants of the in-wall part with the same printed parts, key module and look —
