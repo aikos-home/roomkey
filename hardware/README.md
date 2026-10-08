@@ -103,7 +103,13 @@ they shrink differently.
 
 **[`print/README.md`](print/README.md)**: the part list, ready-to-print Bambu Lab A1 files (0.4 and 0.2 nozzle; white PETG, clear PLA for the collar and for the key's support contact layers) and the assembly and gluing steps. WIP.
 
-## Wall insert v0.10.4 (DRAFT / WIP, 2026-10-08)
+## Wall insert (DRAFT / WIP)
+
+> **v0.11 (2026-10-08, branch `kit-pcb`): one RoomKey.** The owner decided: one kind of RoomKey (no Variant L or S),
+> a **fixed plate** (the two MX under the key are the only buttons, so RoomKey is no longer a hard-wired light
+> switch), power only as **5 V SELV** from a certified supply in the neighbouring box, and the **hub PCB** instead of
+> the separate modules. The v0.10.4 text below is kept as history until the design doc is rewritten — see
+> [docs/insert-design.md](docs/insert-design.md) §0.
 
 **AI-assisted draft — nothing built, nothing certified, not approved for mains. All 230 V work only by a
 qualified electrician of a registered installation company (NAV §13).** Two variants of the in-wall part with the same printed parts, key module and look —

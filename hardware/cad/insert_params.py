@@ -1269,6 +1269,8 @@ def validate(v, verbose=True):
          f"flange edge ({FLANGE_HALF}); the screw head (Ø{SCREW_HEAD_D}) stays clear of the rims (|y| ≥ {LOC_RIM_SPAN[0]})")
 
     # --- E. electrical: SELV-only insert, topologies ------------------------------------------------
+    warn("v0.11: the rules below still check the SUPERSEDED v0.10 power concept (12 V SELV, PLATE line, relay, eFuse); "
+         "RoomKey now takes only 5 V SELV from a certified supply in the neighbouring box (hub J1) — to be rewritten")
     info("insert is SELV-only (class III): no 230 V part in the RoomKey chamber, no barrier, no DIY power supply")
     info(f"spec: hub input {HUB_VIN[0]}–{HUB_VIN[1]} V (12 V or 15 V SELV source; 24 V not allowed: B3FS max {SW_RATING[1]:.0f} V)")
     i_pk = sum(p for _, p in LOADS_W.values()) / BUCK_EFF / 12.0

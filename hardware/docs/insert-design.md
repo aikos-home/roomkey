@@ -1,4 +1,17 @@
-# RoomKey wall insert — v0.10.4 (Variant L and Variant S)
+# RoomKey wall insert — v0.11 (one RoomKey, hub PCB)
+
+> **v0.11 (2026-10-08, branch `kit-pcb`; WIP, not printed, not reviewed): one RoomKey.** The owner decided:
+> - There is **one kind of RoomKey**. Variant L (light-switch replacement) and Variant S (socket replacement) are gone.
+> - **The plate is fixed** on 4 rest pads. The only buttons are the two MX switches under the key. RoomKey is **no
+>   longer a hard-wired light switch**: every light action goes ESP → Home Assistant.
+> - **Power:** only 5 V SELV, as a 0.5 mm² pigtail from a certified 230 V → 5 V supply in the neighbouring flush box,
+>   soldered to the hub. No 12 V, no relay, no PLATE line, no WAGO clamps in the RoomKey box.
+> - **Hub PCB** ([`../pcb/roomkey-hub`](../pcb/roomkey-hub)) replaces the separate modules. It sits directly behind
+>   the switch plate (MX hot-swap sockets, mic, amplifier, connectors); the radar has its own printed tray behind it.
+> - **Superseded, kept as the history of v0.10 until this document is rewritten:** the variant table below, the
+>   floating plate (§5), the electrical part (§8.1–8.3: 12 V, eFuse, PTC, relay drive), the installation variants
+>   (§9.2–9.4) and the mic carrier / back carrier. §0 lists what changed.
+
 
 > **DRAFT / WIP. AI-assisted design. Not built, not tested, nothing certified.**
 > - The insert is a **SELV-only (class III) device**: it never carries 230 V.
@@ -53,6 +66,17 @@ keeps the frame.
 | d | depth into the wall, d 0 = plate front (§1, coordinates) |
 
 ## 0. What changed
+
+**v0.10.4 → v0.11 (branch `kit-pcb`, 2026-10-08; the owner: the hub PCB replaces the modules, one RoomKey, fixed
+plate).**
+- The current state of the discrete kit is saved as tag `kit-v0.10.4-discrete`.
+- Hub: the real board (`roomkey-hub.step`) at d 20.3–21.8 (MX bottom = its front face), M2 on two chassis posts and
+  one switch-plate post. Mic: a printed sound tube from the plate hole to the hub's port hole. Radar: its own tray
+  (`radar_tray`) on a blade of the chassis flange part and 2 pins. Mic holder, back carrier and wiring plan are gone.
+- One variant (internal key "S"), fixed plate (`S_PLATE_FIXED`), no B3FS (`SW_POS = ()`), no WAGOs (`WAGO_POS = ()`).
+  File names lose the variant letter (`plate`, `chassis_*`, `insert_*`); `make_insert.py` builds it.
+- Checks: kit 0 collisions, radar tray closed, key captive; wall model 1 collision (hub vs the box's top and bottom
+  screw domes, to be fixed in the board outline). Open: J5 sits partly under the radar tray (asked to move +y).
 
 **v0 → v0.2 (review round 1: 7 BLOCKERs).** The insert became **SELV-only**; 230 V moved into certified devices
 outside the chamber. Floating plate on 4 tactile switches; light-guide collar; mic carrier; U-loop cable.
