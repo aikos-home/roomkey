@@ -107,6 +107,7 @@ Scripts (run in this order; KiCad's Python):
    downloaded with the owner's OK), keeps the best round, GND pours. Freerouting is randomised (`FR_ARGS=-is random`).
 4. `complete_route.py` — rip-up-and-reroute where it helps, then closes leftovers on F.Cu/B.Cu by grid search.
 5. `export_jlc.py` — Gerbers + drill zip, BOM and CPL in JLCPCB's format into `output/jlcpcb/`.
+6. `add_wire_hole.py` — a single wire hole onto its net's routed copper; `soldering_map.py` — the map.
 
 - **Where:** directly behind the switch plate, front face at d 20.3 (MX housing bottom = plate top 15.3 + 5.0);
   the two MX switches plug into hot-swap sockets on its back. 1.6 mm, **4 layers**: F.Cu signals, In1 GND plane,
@@ -119,6 +120,21 @@ Scripts (run in this order; KiCad's Python):
 - The middle of the board is narrow (radar window left, speaker right, wire slot centre): the parts are grouped so few
   lines cross it — key-wire holes, amplifier, mic, radar plug, power and expander in the top half; plate, LED ring and
   SHT plugs at the bottom.
+
+**Soldering the wires** — map: `output/roomkey-hub_soldering-map.png` (from `soldering_map.py`, seen from the back,
+holes at their real positions). Touch board pad (silkscreen name) → hub hole:
+
+| Touch pad | Hub hole | | Touch pad | Hub hole |
+|---|---|---|---|---|
+| VBUS | J4-1 (J4-2 spare) | | SDA | J4-9 |
+| GND (×3) | J4-3, J4-11, J4-14 | | SCL | J4-10 |
+| 9 (key top) | J4-4 | | TXD | J4-12 |
+| 5 | J4-7 | | 7 | J4-13 |
+| 3 | J4-8 | | 8 | J4-15 |
+| 6 (key bottom) | **J10** | | RXD | J4-16 |
+| 4 (LED data) | **J11** | | 5 V supply + / − | J1 (red / black) |
+
+J4-5 and J4-6 stay empty; the square hole is J4-1.
 
 **Kit CAD changes the hub needs** (for the CAD session; nothing changed in `hardware/cad` here):
 1. Remove the back carrier; the hub takes its place, 5 mm further forward (d 20.3–21.9, parts on the back to ≈ d 27).
