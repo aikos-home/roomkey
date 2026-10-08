@@ -141,7 +141,9 @@ def domes(grow, d0, d1):
 
 
 # ============================================================================ key module
-def key_shell_mono():
+def key_shell():
+    """the one-piece key shell. v0.10.2: back from the v0.10 two-piece split — the owner's one-piece print WITH supports in
+    the pocket fit perfectly (2026-10-08); only the chassis broke on its supports."""
     s = P.KS
     fit = R.KEY_FIT
     outer = rrect(P.KEY_W / 2, P.KEY_H / 2, P.KEY_R, s["glass"], s["key_back"])
@@ -173,29 +175,6 @@ def key_shell_mono():
                   s["key_back"] - EPS, s["key_back"] + 1.2) for sx in (-1, 1)]
     # wire channel: a KEY_BACK_CHANNEL recess in the back's inner face between the header columns and the cable slot
     return cut(fuse([shell] + skirts + nubs + [key_posts()] + stops + relief), [key_channel()] + key_sockets())
-
-
-def key_shell_parts():
-    """v0.10: the key shell as two prints — (ring, back plate). The one-piece shell printed front down had its back wall as
-    a 25 × 45 roof over the board pocket; the supports inside broke the 1.0 walls when they came out (owner 2026-10-07).
-    Ring = everything outside the pocket outline (walls, skirts, catch nubs, end taper). Plate = everything inside the
-    pocket outline − KEY_PLATE_CLEAR behind the standoffs (back wall, posts + sockets, stop bosses, slots, channel, lugs).
-    Both print front down without supports (the plate on its flat inner face; its wire channel is a short bridge)."""
-    mono = key_shell_mono()
-    s = P.KS
-    fit, c = R.KEY_FIT, P.KEY_PLATE_CLEAR
-    d0, d1 = s["standoff_end"] - 1.0, s["skirt_end"] + 20.0
-    pocket = rrect(R.TB_W / 2 + fit, R.TB_H / 2 + fit, R.TB_CORNER_R + fit, d0, d1)
-    inner = rrect(R.TB_W / 2 + fit - c, R.TB_H / 2 + fit - c, R.TB_CORNER_R + fit - c, d0, d1)
-    ring, plate = mono.cut(pocket), mono.common(inner)
-    for nm, p_ in (("key ring", ring), ("key back plate", plate)):
-        assert p_.isValid() and len(p_.Solids) == 1, f"{nm}: {len(p_.Solids)} solids"
-    return ring, plate
-
-
-def key_shell():
-    """the assembled key shell (ring + back plate glued) — what the collision checks move; 2 solids (0.1 glue gap)."""
-    return fuse(list(key_shell_parts()))
 
 
 def key_posts():
@@ -395,7 +374,7 @@ def chassis_parts(ch):
     return tuple(out)
 
 
-def ceilings(shape, name, how="front_down", max_span=16.0):
+def ceilings(shape, name, how="front_down", max_span=16.0, supports=False):
     """printability check (model coordinates, printed `how`): planar faces that face the bed but are not on it must be
     short bridges (their smaller extent ≤ max_span) — v0.10, after supports broke the chassis and the key."""
     sg = 1 if how == "front_down" else -1                 # front down: the bed is the max-Z (room) side
@@ -414,6 +393,9 @@ def ceilings(shape, name, how="front_down", max_span=16.0):
     worst = max(rows) if rows else (0.0, 0.0, 0.0)
     print(f"  {name:22s} print check ({how.replace('_', ' ')}): {len(rows)} ceilings, {sum(r[1] for r in rows):.0f} mm², widest span "
           f"{worst[0]:.1f} at d {worst[2]:.2f} (≤ {max_span})")
+    if supports:
+        print(f"  {'':22s} → printed WITH supports by design (owner): no limit")
+        return worst[0]
     assert worst[0] <= max_span, f"{name}: a {worst[0]:.1f} mm ceiling at d {worst[2]:.2f} needs support"
     return worst[0]
 
@@ -838,22 +820,20 @@ def export_sections(bodies, v, planes):
 
 
 # ============================================================================ drivers
-PRINTED_HOW = {"key_shell": "front_down", "key_ring": "front_down", "key_back_plate": "front_down",
-               "switch_plate": "front_down", "collar": "back_down", "plate": "front_down",
+PRINT_WITH_SUPPORTS = {"key_shell"}   # supports inside the board pocket only — fine for the owner (10-08); never the chassis
+PRINTED_HOW = {"key_shell": "front_down", "switch_plate": "front_down", "collar": "back_down", "plate": "front_down",
                "chassis": "front_down"}
 
 
 def build_key_module():
-    kr, kp = key_shell_parts()
-    ks, sp, co = fuse([kr, kp]), switch_plate(), collar()
-    ks.exportStep(os.path.join(OUT, "key_shell.step"))                 # the glued assembly (reference)
-    for nm, shp in (("key_ring", kr), ("key_back_plate", kp), ("switch_plate", sp), ("collar", co)):
+    ks, sp, co = key_shell(), switch_plate(), collar()
+    for nm, shp in (("key_shell", ks), ("switch_plate", sp), ("collar", co)):
         assert shp.isValid(), f"{nm} invalid"
         step, stl = export(shp, nm, PRINTED_HOW[nm])
         bb = shp.BoundBox
         print(f"{nm:14s} valid {shp.isValid()} | {bb.XLength:.2f} × {bb.YLength:.2f} × {bb.ZLength:.2f} mm | "
               f"{shp.Volume/1000:.2f} cm³ ≈ {shp.Volume/1000*1.27:.1f} g PETG | {os.path.basename(stl)}")
-        ceilings(shp, nm, PRINTED_HOW[nm])
+        ceilings(shp, nm, PRINTED_HOW[nm], supports=nm in PRINT_WITH_SUPPORTS)
     return ks, sp, co
 
 
@@ -874,8 +854,7 @@ def build_variant(v):
                                    size=[round(bb.XLength, 2), round(bb.YLength, 2), round(bb.ZLength, 2)])
         print(f"  {nm:13s} valid {ok} | solids {len(shp.Solids)} | {bb.XLength:.1f} × {bb.YLength:.1f} × {bb.ZLength:.1f} | "
               f"{shp.Volume/1000:.2f} cm³ ≈ {shp.Volume/1000*1.27:.1f} g PETG")
-        n_ok = 2 if nm == "key shell" else 1          # v0.10: ring + back plate (each checked as one solid in key_shell_parts)
-        assert len(shp.Solids) == n_ok, f"{nm}: {len(shp.Solids)} solids — a cut left a piece loose (v0.9.1 lesson)"
+        assert len(shp.Solids) == 1, f"{nm}: {len(shp.Solids)} solids — a cut left a piece loose (v0.9.1 lesson)"
     assert lost <= TRIM_FAIL_MM3, f"allowed-space trim removed {lost:.2f} mm³ of chassis — a feature leaves the frame tunnel/box"
     print(f"  chassis trimmed to the allowed space: {lost:.2f} mm³ (fails above {TRIM_FAIL_MM3})")
 

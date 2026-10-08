@@ -1,11 +1,11 @@
 {
  "variant": "S",
- "version": "0.10.1",
+ "version": "0.10.2",
  "parts": {
   "key shell": {
    "valid": true,
-   "solids": 2,
-   "volume_cm3": 3.3,
+   "solids": 1,
+   "volume_cm3": 3.33,
    "size": [
     27.95,
     46.8,

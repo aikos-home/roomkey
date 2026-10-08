@@ -3,7 +3,7 @@
  "gaps": {
   "LD2410C front parts ↔ back carrier": 2.518,
   "LD2410C edge parts ↔ back carrier": 0.2,
-  "LD2410C pin stubs ↔ back carrier": 0.45,
+  "LD2410C pin stubs ↔ back carrier": 0.4,
   "LD2410C ↔ practice box": 1.239,
   "LD2410C header ↔ practice box": 3.201,
   "MAX98357A ↔ cable loop": 1.25,
@@ -26,7 +26,7 @@
  "carrier_webs": {
   "window ↔ edge": 1.0,
   "window ↔ next opening": 0.8,
-  "hole (-13.2, +4.0) ↔ edge": 1.41,
+  "hole (-13.2, +4.0) ↔ edge": 1.37,
   "hole (-13.2, +4.0) ↔ next opening": 0.8,
   "hole (-13.2, +20.0) ↔ edge": 1.2,
   "hole (-13.2, +20.0) ↔ next opening": 13.7,

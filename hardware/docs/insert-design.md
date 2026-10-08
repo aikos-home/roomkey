@@ -1,4 +1,4 @@
-# RoomKey wall insert — v0.10.1 (Variant L and Variant S)
+# RoomKey wall insert — v0.10.2 (Variant L and Variant S)
 
 > **DRAFT / WIP. AI-assisted design. Not built, not tested, nothing certified.**
 > - The insert is a **SELV-only (class III) device**: it never carries 230 V.
@@ -61,6 +61,15 @@ outside the chamber. Floating plate on 4 tactile switches; light-guide collar; m
 the plate, speaker sealed at its grille); glow = translucent plate rim; flange datum + tolerance chain + shims; 8 frame
 rims; stainless load plates; T0/T4 and the switch-box inventory; hub GPIO map from the vendor schematic.
 
+**v0.10.1 → v0.10.2 (owner, 2026-10-08).**
+- **Key back to ONE piece** (the v0.9 shell, byte-identical print file): the owner's one-piece print with supports in
+  the pocket fit perfectly; only the chassis broke on its supports. The v0.10 ring/back-plate split is removed;
+  `PRINT_WITH_SUPPORTS = {"key_shell"}` — `ceilings()` reports it but does not fail it. Never the chassis.
+- **Amplifier pins:** 13.97 (photo) printed too wide, 12.9 (calipers) too close → `AMP_HOLE_PITCH` = their mean 13.435
+  (owner's call).
+- **Radar tray play 0.15 → 0.10/side:** the same tray fit once and was loose on the next print (print-to-print variance
+  ≈ 0.05/side); too tight is fixable with sandpaper, too loose is not. Kit, L, S: 0 collisions, key captive.
+
 **v0.10 → v0.10.1 (owner's print, 2026-10-08: the 2→3 pins did not go into their holes).** The holes open on part 3's
 bed face, where the first layers' squish closed the Ø1.4 mouths (0.1 play). Now 0.15 play, a 0.25 × 45° lead-in at
 the mouth (`CH_PIN_LEAD`) and a 0.3 point on the pin. Printed v0.10: drill the two holes to 1.5.
@@ -73,7 +82,7 @@ WIP: modelled, CAD-checked, not printed.**
   deck floated; the 71 × 71 flange overhangs the body by ≈ 9.5 all round (≈ 2500 mm²); the rear wall behind the collar
   hangs over the collar seat (a 32 mm bridge on the speaker side, no room for a post); the switch-plate screw bosses and
   the cable-anchor posts hang 3–5 mm free from the ledge.
-- **Key = 2 prints** (`key_shell_parts()`): a **ring** (walls, skirts, catch nubs) and a **back plate** (back wall, posts,
+- ~~**Key = 2 prints**~~ (reverted in v0.10.2) (`key_shell_parts()`): a **ring** (walls, skirts, catch nubs) and a **back plate** (back wall, posts,
   sockets, stop bosses) that sits inside the ring like a lid (0.1/side, `KEY_PLATE_CLEAR`) — the fit locates it, CA from
   behind; the 4 board screws hold board and plate as before. No room for pins in the 1.0 walls; none needed.
 - **Chassis = 3 prints** (`chassis_parts()`, all variants): **1 front** (d < flange front: deck, pockets, rims, mic tube),

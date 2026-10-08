@@ -59,7 +59,7 @@ sys.path.insert(0, HERE)
 import roomkey_params as R  # noqa: E402
 
 VARIANTS = ("L", "S")
-VERSION = "0.10.1"
+VERSION = "0.10.2"
 
 SOURCES = {
     "cherry":   "Cherry MX1A datasheet, datasheet.octopart.com/MX1A-11NW-Cherry-datasheet-34676.pdf",
@@ -251,11 +251,7 @@ CH_PIN_POS = ((5.7, 26.25), (-5.7, -26.25))   # [FREE] diagonal pair 53 apart, o
                                               #        the only free spots (corners: the plate's tactile switches; +x: the
                                               #        speaker; on the axes: the box's screw domes; box radius 28.5)
 CH_PIN_BLOCK = (1.5, 1.2)      # [FREE] pin block half-size x, y (hole walls 0.8 / 0.5 — fine at a 0.2 nozzle)
-KEY_PLATE_CLEAR = 0.1   # [FREE] v0.10: the key shell is TWO prints (supports in the pocket broke the one-piece shell, owner
-                        #        2026-10-07): a RING (walls + skirts + catch nubs, front down, no supports) and a BACK PLATE
-                        #        (back wall + posts + stop bosses, front down = flat on its inner face) that sits INSIDE the
-                        #        ring like a lid, this much play per side (glue gap, CA from behind); located by that fit
-STOP_X = (11.25, R.TB_W / 2 + R.KEY_FIT - KEY_PLATE_CLEAR)   # [FREE] |x| of the stop bosses (v0.10: to the plate's edge): outside the board screws' heads (≤ 10.9) and
+STOP_X = (11.25, R.KEY_W / 2 - R.KEY_WALL)   # [FREE] |x| of the stop bosses: outside the board screws' heads (≤ 10.9) and
                      #        inside the key wall; they land on the switch plate inside its corner arcs
 STOP_W_Y = 2.0       # [FREE] boss length in y
 STOP_YS = (18.5, -16.5)   # [FREE] y of the boss pairs (v0.6 rocker geometry, kept: inside the plate's corner arcs)
@@ -591,7 +587,8 @@ KIT_RADAR_RAISE = 1.3             # [FREE] v0.9.2: the board sits on two LEDGES 
                                   #        plate under the parts edge stays and the tray is a CLOSED frame again (v0.9.1 had
                                   #        cut it open: full-width window + the cable-loop keep-out took the +x wall → a "C")
 KIT_RADAR_LEDGE_X = 11.0          # [FREE] ledge length from the header edge (parts band starts 15.84 − 4.2 = 11.6 from it)
-KIT_RADAR_TRAY = (1.0, 0.15)      # [FREE] v0.9.3 play 0.15/side = KEY_FIT [MEAS] (0.2 printed just too loose, owner 2026-10-06)
+KIT_RADAR_TRAY = (1.0, 0.10)      # [FIT] play/side: 0.2 just too loose (10-06); 0.15 fit once, then loose on the next print of the
+                                  # SAME geometry (10-08: print-to-print variance ≈ 0.05/side) → 0.10; too tight = sand the wall
                                   # v0.8 radar TRAY: a closed perimeter wall round the board (thickness, play), from the
                                   # plate's front to 0.3 behind the board. The first carrier print (2026-10-04) was a floppy U of
                                   # 1.2–2.1 mm strips, open on the header side; the wall closes and stiffens the ring and

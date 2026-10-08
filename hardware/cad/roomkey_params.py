@@ -122,8 +122,8 @@ AMP_PARTS = ("7 pin holes (gold rings), header NOT soldered yet; a green 2-pin s
              "for a compact box, solder the wires straight to the pads instead (saves the terminal's height)")   # [MEAS]
 AMP_BOARD = "purple MAX98357A 'I2S Amp' breakout (Adafruit 3006 layout); parts on the front only, back flat"   # [PHOTO]
 AMP_PINS = ("LRC", "BCLK", "DIN", "GAIN", "SD", "GND", "Vin")   # [PHOTO] 2.54 pitch, row centred, ≈ 1.9 from the bottom edge
-AMP_HOLE_PITCH = 12.9                     # [MEAS] owner's calipers 2026-10-07: outer 15.1 / inner 10.7 → centres 12.9, Ø 2.2
-                                          #        (the photo's 2.4 from each side gave 13.97 → the carrier pins sat ≈ 1 too wide)
+AMP_HOLE_PITCH = (13.97 + 12.9) / 2       # [FIT] 13.435: owner 2026-10-08 — 13.97 (photo) printed too wide, 12.9 (calipers: outer
+                                          #        15.1 / inner 10.7, Ø 2.2) printed too close → the mean of the two
 AMP_HOLE_D, AMP_HOLE_C = 2.2, ((AMP_W - AMP_HOLE_PITCH) / 2, 1.9)   # [MEAS Ø + pitch, holes assumed centred; y PHOTO ±0.5] top edge
 AMP_PIN_D = AMP_HOLE_D - 0.3                # [FREE] printed locating pins for the 2 holes: 0.15 play per side
 AMP_SPK_PADS = (3.5, 3.1)                  # [PHOTO ±0.5] speaker pads (−/+) pitch, centred, centre ↔ top edge

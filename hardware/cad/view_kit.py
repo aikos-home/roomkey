@@ -27,9 +27,9 @@ _parts = {}
 
 
 def part(kind, i):
-    """v0.10 split prints, built once: key ring / back plate, chassis front / flange / rear."""
+    """v0.10 split prints, built once: chassis front / flange / rear."""
     if kind not in _parts:
-        _parts[kind] = L.key_shell_parts() if kind == "key" else L.chassis_parts(K.kit_chassis("S"))
+        _parts[kind] = L.chassis_parts(K.kit_chassis("S"))
     return _parts[kind][i]
 
 
@@ -38,8 +38,7 @@ ITEMS = [
     ("Rahmen_JungAS500", lambda: D.frame_2x(one, with_rh=True), (0.97, 0.97, 0.97), 35, "Übungsdose"),
     ("Platte", lambda: pbody, IVORY, 0, "Druckteile"),
     ("Platte_Leuchtrand", lambda: prim, (0.85, 0.92, 1.0), 40, "Druckteile"),
-    ("Taste_Rahmen", lambda: part("key", 0), IVORY, 0, "Druckteile"),
-    ("Taste_Rueckplatte", lambda: part("key", 1), (0.85, 0.78, 0.6), 0, "Druckteile"),
+    ("Tastenschale_starr", L.key_shell, IVORY, 0, "Druckteile"),
     ("Leuchtring", L.collar, (0.85, 0.92, 1.0), 40, "Druckteile"),
     ("Schalterplatte", L.switch_plate, GREY, 0, "Druckteile"),
     ("Chassis_1_vorne", lambda: part("chassis", 0), DARK, 0, "Druckteile"),
