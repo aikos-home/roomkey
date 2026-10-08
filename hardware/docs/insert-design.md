@@ -1,4 +1,4 @@
-# RoomKey wall insert — v0.10.2 (Variant L and Variant S)
+# RoomKey wall insert — v0.10.3 (Variant L and Variant S)
 
 > **DRAFT / WIP. AI-assisted design. Not built, not tested, nothing certified.**
 > - The insert is a **SELV-only (class III) device**: it never carries 230 V.
@@ -60,6 +60,12 @@ outside the chamber. Floating plate on 4 tactile switches; light-guide collar; m
 **v0.2 → v0.3 (round 2: no BLOCKER, ~28 MAJORs).** No foam gaskets between plate and chassis (mic carrier bonded to
 the plate, speaker sealed at its grille); glow = translucent plate rim; flange datum + tolerance chain + shims; 8 frame
 rims; stainless load plates; T0/T4 and the switch-box inventory; hub GPIO map from the vendor schematic.
+
+**v0.10.2 → v0.10.3 (owner, 2026-10-08: the collar fits its seat perfectly, but the key scrapes its inner walls).**
+Only the collar's inside changes: inner face set back 0.15/side (`COLLAR_IN_EXTRA`, outer unchanged) → key ↔ collar
+0.40/side; catch-nub grooves 0.15 deeper (`GROOVE_CLEAR` x 0.1 → 0.25; the groove's back wall 0.65, rule ≥ 0.6 for the
+0.2 nozzle). The nubs still overlap the inner face by 0.15; shifted fully sideways the far nub holds by 0.55 — CAD:
+key pulled → CAPTIVE at ±0.40. Smallest key ↔ collar gap 0.1 → 0.25 (rest), 0.03 → 0.08 (wobble). 0 collisions.
 
 **v0.10.1 → v0.10.2 (owner, 2026-10-08).**
 - **Key back to ONE piece** (the v0.9 shell, byte-identical print file): the owner's one-piece print with supports in

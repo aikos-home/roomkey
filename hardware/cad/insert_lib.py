@@ -256,7 +256,9 @@ def switch_plate():
 def collar():
     """translucent light guide around the key; thick (2.6) along the corner diagonals where the LEDs sit; the inner face
     at the short sides is set back over the first mm (room for the key's end when it is pressed at an end)."""
-    c = ring(P.COLLAR_OUT_X, P.COLLAR_OUT_Y, P.COLLAR_OUT_R, P.WELL_IN_X, P.WELL_IN_Y, P.WELL_R, P.COLLAR_D0, P.COLLAR_D1)
+    e = P.COLLAR_IN_EXTRA            # v0.10.3: inner face set back (the key scraped), outer face unchanged
+    c = ring(P.COLLAR_OUT_X, P.COLLAR_OUT_Y, P.COLLAR_OUT_R, P.WELL_IN_X + e, P.WELL_IN_Y + e, P.WELL_R + e, P.COLLAR_D0,
+             P.COLLAR_D1)
     rl, rd = P.COLLAR_RELIEF
     # v0.8: a groove for the key's catch nub on each long side, open to the back face, closed towards the room
     s = P.KS
@@ -265,7 +267,7 @@ def collar():
     g0 = s["skirt_end"] - P.KEY_CATCH_D - P.KEY_CATCH_GAP
     grooves = [box(sx * (P.WELL_IN_X - 0.5), sx * gx, P.KEY_CATCH_YC - gy, P.KEY_CATCH_YC + gy, g0, P.COLLAR_D1 + 1)
                for sx in (-1, 1)]
-    return cut(c, [rrect(P.WELL_IN_X, P.WELL_IN_Y + rl, P.WELL_R, P.COLLAR_D0 - 1, P.COLLAR_D0 + rd)] + grooves)
+    return cut(c, [rrect(P.WELL_IN_X + e, P.WELL_IN_Y + e + rl, P.WELL_R + e, P.COLLAR_D0 - 1, P.COLLAR_D0 + rd)] + grooves)
 
 
 # ============================================================================ plate (L and S)
@@ -910,7 +912,8 @@ def build_variant(v):
     # v0.8 key catch: the key pulled towards the room must hit the collar (groove front wall) — also when shifted sideways
     # by its full side play; and it must NOT hit it before the catch play is used up
     pulled = {}
-    for dx in (0.0, R.KEY_WELL_CLEAR, -R.KEY_WELL_CLEAR):
+    play = R.KEY_WELL_CLEAR + P.COLLAR_IN_EXTRA
+    for dx in (0.0, play, -play):
         k = bodies["key shell"].copy()
         k.translate(V(dx, 0, P.KEY_CATCH_GAP + 0.15))
         pulled[dx] = overlap(k, bodies["collar"])
@@ -919,7 +922,7 @@ def build_variant(v):
     free = overlap(k, bodies["collar"])
     ok = all(v > 0.01 for v in pulled.values()) and free < 0.01
     report["states"]["key pulled (catch)"] = (f"v0.8: key pulled {P.KEY_CATCH_GAP + 0.15:.2f} towards the room (centred and "
-                                              f"shifted ±{R.KEY_WELL_CLEAR}) → collar hit {', '.join(f'{v:.2f}' for v in pulled.values())} mm³ "
+                                              f"shifted ±{play:.2f}) → collar hit {', '.join(f'{v:.2f}' for v in pulled.values())} mm³ "
                                               f"(must be > 0); pulled {P.KEY_CATCH_GAP - 0.05:.2f} → {free:.2f} mm³ (must be 0) → "
                                               f"{'CAPTIVE' if ok else 'NOT CAPTIVE'}")
     print("  " + report["states"]["key pulled (catch)"])

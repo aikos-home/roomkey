@@ -59,7 +59,7 @@ sys.path.insert(0, HERE)
 import roomkey_params as R  # noqa: E402
 
 VARIANTS = ("L", "S")
-VERSION = "0.10.2"
+VERSION = "0.10.3"
 
 SOURCES = {
     "cherry":   "Cherry MX1A datasheet, datasheet.octopart.com/MX1A-11NW-Cherry-datasheet-34676.pdf",
@@ -188,6 +188,9 @@ WELL_IN_Y = KEY_H / 2 + R.KEY_WELL_CLEAR       # 23.65
 WELL_R = KEY_R + R.KEY_WELL_CLEAR
 KEY_SKIRT_Y = KEY_H / 2 - KEY_R                # 16.5: the key skirt covers the straight long sides only (free pitch)
 COLLAR_T = 1.2        # [FREE] translucent light-guide collar wall (natural PETG, frosted)
+COLLAR_IN_EXTRA = 0.15   # [FIT] v0.10.3: the collar's inner face only is set back this much per side (outer unchanged — it
+                         #        fits the seat perfectly): the key scraped its inner walls (owner 2026-10-08) → key ↔ collar
+                         #        0.25 + 0.15 = 0.40/side; the catch nubs still overlap the inner face by 0.15
 COLLAR_D0, COLLAR_D1 = 3.6, 12.5   # [FREE] collar front face (lights the plate's glow rim) / back face (LEDs)
 COLLAR_OUT_X, COLLAR_OUT_Y = WELL_IN_X + COLLAR_T, WELL_IN_Y + COLLAR_T
 COLLAR_OUT_R = 5.0    # [FREE] outer corner radius smaller than the inner one (8.35 would be parallel) → the collar is 2.6 thick
@@ -205,7 +208,8 @@ KEY_CATCH_D = 1.0      # [FREE] nub height along d, at the skirt's free end
 KEY_CATCH_X = 0.55     # [FREE] nub protrusion beyond the skirt's outer face → catch overlap with the collar = X − KEY_WELL_CLEAR
 KEY_CATCH_GAP = 0.45   # [FREE] nub front ↔ groove front wall at rest; > the 0.37 a ±1.5° roll lifts the nub (the MX top stop
                        #        defines rest, not the catch)
-GROOVE_CLEAR = (0.1, 0.5)   # [FREE] groove ↔ nub in x (bottom) and in y (rocking moves the nub ≈ 0.25 in y)
+GROOVE_CLEAR = (0.25, 0.5)  # [FIT] groove ↔ nub in x (bottom; v0.10.3: 0.1 → 0.25 with the collar's inner face, the key
+                            #        scraped) and in y
 REAR_WALL = 1.2       # [FREE] chassis well wall behind the collar (d COLLAR_D1 → ledge)
 SWP_CLEAR = 0.2       # [FREE] switch plate ↔ well wall
 LEDGE = 1.0           # [FREE] ledge under the switch plate
@@ -963,10 +967,12 @@ def validate(v, verbose=True):
     # --- B. key module ---------------------------------------------------------------------------------
     rule(s["skirt_end"] + KEY_TRAVEL <= COLLAR_D1 - 0.3, f"key side skirts pressed end at d {s['skirt_end'] + KEY_TRAVEL:.1f}, "
          f"inside the collar (back face {COLLAR_D1})")
-    ov = KEY_CATCH_X - R.KEY_WELL_CLEAR
+    play = R.KEY_WELL_CLEAR + COLLAR_IN_EXTRA
+    ov = KEY_CATCH_X - play
     gw = COLLAR_OUT_X - (KEY_W / 2 + KEY_CATCH_X + GROOVE_CLEAR[0])
-    rule(ov >= 0.25 and gw >= 0.8 - 1e-9, f"v0.8 key catch: nub overlaps the collar by {ov:.2f} (≥ 0.25; the key's side play "
-         f"{R.KEY_WELL_CLEAR} cannot free both sides at once), collar wall behind the groove {gw:.2f} (≥ 0.8)")
+    rule(ov >= 0.15 and gw >= 0.6 - 1e-9, f"v0.8 key catch: nub overlaps the collar's inner face by {ov:.2f} at the key's "
+         f"side play {play:.2f} (≥ 0.15 for print tolerance; shifted sideways, the far nub catches by {ov + play:.2f} — one side "
+         f"always holds), collar wall behind the groove {gw:.2f} (≥ 0.6: 3 lines of the 0.2 nozzle)")
     rule(KEY_W / 2 + KEY_CATCH_X <= COLLAR_OUT_X + COLLAR_FIT - 0.5, "v0.8 key catch: the key with its nubs passes the empty "
          f"deck opening (nubs to {KEY_W / 2 + KEY_CATCH_X:.2f}, opening {COLLAR_OUT_X + COLLAR_FIT:.2f})")
     rule(KEY_CATCH_GAP >= 0.37, f"v0.8 key catch: {KEY_CATCH_GAP} play to the groove's front wall at rest (≥ 0.37: a "
