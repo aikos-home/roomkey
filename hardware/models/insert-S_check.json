@@ -66,93 +66,9 @@
  "collisions": [
   [
    "rest",
-   "radar tray",
-   "WAGO 1",
-   87.096
-  ],
-  [
-   "rest",
-   "radar tray",
-   "WAGO 4",
-   65.374
-  ],
-  [
-   "rest",
-   "radar tray",
-   "WAGO 5",
-   98.777
-  ],
-  [
-   "rest",
-   "chassis",
-   "WAGO 4",
-   2.743
-  ],
-  [
-   "rest",
-   "hub",
-   "WAGO 1",
-   2.658
-  ],
-  [
-   "rest",
-   "hub",
-   "WAGO 2",
-   2.338
-  ],
-  [
-   "rest",
-   "hub",
-   "WAGO 3",
-   0.966
-  ],
-  [
-   "rest",
    "hub",
    "box (40 mm)",
    43.687
-  ],
-  [
-   "rest",
-   "LD2410C",
-   "WAGO 1",
-   55.098
-  ],
-  [
-   "rest",
-   "LD2410C",
-   "WAGO 4",
-   120.572
-  ],
-  [
-   "rest",
-   "LD2410C",
-   "WAGO 5",
-   44.455
-  ],
-  [
-   "rest",
-   "LD2410C header",
-   "WAGO 4",
-   271.17
-  ],
-  [
-   "rest",
-   "LD2410C header",
-   "WAGO 5",
-   37.881
-  ],
-  [
-   "rest",
-   "LD2410C edge parts",
-   "WAGO 1",
-   25.08
-  ],
-  [
-   "rest",
-   "LD2410C pin stubs",
-   "WAGO 4",
-   25.2
   ]
  ],
  "gaps": {

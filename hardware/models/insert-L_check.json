@@ -45,7 +45,7 @@
   "radar tray": {
    "valid": true,
    "solids": 1,
-   "volume_cm3": 0.56,
+   "volume_cm3": 0.53,
    "size": [
     20.24,
     24.23,
@@ -55,7 +55,7 @@
   "chassis": {
    "valid": true,
    "solids": 1,
-   "volume_cm3": 8.07,
+   "volume_cm3": 8.08,
    "size": [
     71.0,
     71.0,
@@ -66,105 +66,9 @@
  "collisions": [
   [
    "rest",
-   "radar tray",
-   "hub",
-   2.139
-  ],
-  [
-   "rest",
-   "radar tray",
-   "WAGO 1",
-   87.096
-  ],
-  [
-   "rest",
-   "radar tray",
-   "WAGO 4",
-   63.163
-  ],
-  [
-   "rest",
-   "radar tray",
-   "WAGO 5",
-   98.777
-  ],
-  [
-   "rest",
-   "chassis",
-   "hub",
-   1.283
-  ],
-  [
-   "rest",
-   "chassis",
-   "WAGO 4",
-   3.993
-  ],
-  [
-   "rest",
-   "hub",
-   "WAGO 1",
-   2.658
-  ],
-  [
-   "rest",
-   "hub",
-   "WAGO 2",
-   2.338
-  ],
-  [
-   "rest",
-   "hub",
-   "WAGO 3",
-   0.966
-  ],
-  [
-   "rest",
    "hub",
    "box (40 mm)",
    43.687
-  ],
-  [
-   "rest",
-   "LD2410C",
-   "WAGO 1",
-   55.098
-  ],
-  [
-   "rest",
-   "LD2410C",
-   "WAGO 4",
-   120.572
-  ],
-  [
-   "rest",
-   "LD2410C",
-   "WAGO 5",
-   44.455
-  ],
-  [
-   "rest",
-   "LD2410C header",
-   "WAGO 4",
-   271.17
-  ],
-  [
-   "rest",
-   "LD2410C header",
-   "WAGO 5",
-   37.881
-  ],
-  [
-   "rest",
-   "LD2410C edge parts",
-   "WAGO 1",
-   25.08
-  ],
-  [
-   "rest",
-   "LD2410C pin stubs",
-   "WAGO 4",
-   25.2
   ]
  ],
  "gaps": {
@@ -244,7 +148,7 @@
   "nub pushes plunger TR (top-left corner), mm³": 1.556,
   "nub pushes plunger BL (top-left corner), mm³": 1.699
  },
- "trimmed_mm3": 0.0,
+ "trimmed_mm3": -0.0,
  "states": {
   "rest": "all pairs",
   "key pressed": "key + stems + board translated 3.4 (to the stop bosses); base exemptions only",

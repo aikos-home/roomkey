@@ -450,10 +450,8 @@ PLATE_PTC = (0.050, 10.0, 30.0)   # [TBD part] PTC in the switch feed: hold (A),
 S_BLEEDER = 4700.0    # [FREE] Ω on PLATE in BOTH variants (≈ 2.5 mA: inside the rated 1–50 mA whatever relay input is fitted)
 SW_MIN_LOAD = 10e-6   # [DS b3fs] minimum applicable load 10 µA at 1 V DC (the 1–50 mA is the rating)
 WAGO = (13.1, 8.3, 18.6)   # [DS wago221] 221-412 (w, h, d)
-WAGO_POS = (               # [FREE] 5 × 221-412 standing (18.6 along d): 3 SELV joints + PE cap + spare-core cap
-    (-12.45, -4.15, -24.1, -11.0), (-4.15, 4.15, -24.1, -11.0), (4.15, 12.45, -24.1, -11.0),     # x0, x1, y0, y1 (bottom row)
-    (-24.9, -16.6, -13.2, -0.1), (-24.9, -16.6, 0.1, 13.2),                                        # left column
-)
+WAGO_POS = ()             # v0.11: no WAGOs. Variant S (PCB thread, 2026-10-08): only the 5 V SELV pigtail from the certified
+                          # 230 V → 5 V supply in the neighbouring box enters; it is soldered to the hub (J1). (v0.10: 5 × 221-412)
 WAGO_D = (25.6, 44.2)     # [FREE] depth range of the WAGO bodies (conductors enter from the box floor side)
 IO_MAP = {            # [DS ws_sch] header pins used by the insert (firmware change pending for IO3 — WIP)
     "IO4": "SK6812 data (via AHCT buffer)", "IO7": "I²S BCLK", "IO8": "I²S WS (+10k pull-up on the hub: download mode needs IO8 = 1)",
@@ -1241,11 +1239,10 @@ def validate(v, verbose=True):
          f"screwed (M2) to 2 chassis posts + 1 switch-plate post; parts and outline are checked in the CAD as its STEP")
     back = max(e["d1"] for e in E)
     need = back - WALL_D + BOX_FLOOR_LOSS
-    rule(need <= BOX_DEPTH, f"insert depth incl. 5 × WAGO 221-412 (standing, d {WAGO_D[0]}–{WAGO_D[1]}): parts to d {back:.1f} → "
+    rule(need <= BOX_DEPTH, f"insert depth (v0.11: hub PCB, no WAGOs): parts to d {back:.1f} → "
          f"needs a box ≥ {need:.1f} mm; standard {BOX_DEPTH:.0f} mm box: {BOX_DEPTH - need:.1f} mm left")
-    warn(f"conductors: the NYM cores (solid 1.5 mm², 11 mm stripped) bend from the box entry to the WAGO entries in the remaining "
-         f"{BOX_DEPTH - need:.1f} mm + the gaps beside the WAGOs — check with a real NYM-J 5×1.5 on the wall-fit prototype; fallback: "
-         f"a 47 mm deep box, or push-in PCB terminals for 1.5 mm² on the hub")
+    warn(f"conductors (v0.11, Variant S): only the 5 V SELV pigtail (0.5 mm², J1 on the hub) comes in from the neighbouring box; "
+         f"{BOX_DEPTH - need:.1f} mm stay free behind the parts for its bend — check on the wall-fit prototype")
     lx0, lx1, lhy, lp_t = LOAD_PLATE
     stack = FLANGE_T + SCREW_HEAD_H
     rule(stack <= FRAME_BACK_FREE and lp_t <= FLANGE_T - 0.5, f"flange {FLANGE_T} (stainless load plate {lp_t} recessed in it) + "
@@ -1447,7 +1444,7 @@ TBD_LIST = [
     ("BOX_DOME_W", BOX_DOME_W, "Q5 dome width"),
     ("TB_ANT size", R.TB_ANT[2:], "Q8 chip antenna size (drawing gives the position only)"),
     ("V-0 filament", "?", "Q10 a UL94 V-0 grade rated at ≤ 0.8 mm; its E / σy for the tongues; coupon row D bases in it"),
-    ("WAGO conductors", "?", "wall-fit prototype with a real NYM-J 5×1.5: cores to 5 × WAGO 221 in the box"),
+    ("SELV pigtail", "?", "wall-fit prototype: the 5 V pigtail from the neighbouring box to J1 on the hub (v0.11, no WAGOs)"),
     ("mic path", "?", "desk rig: tools/mic_check.py through a printed plate coupon"),
     ("S positions", "?", "Q3b per S position: height, onward feed, room for a two-chamber box, socket count of the room"),
     ("BOX_USABLE_D", BOX_USABLE_D, "Q5 usable Ø inside the boxes at 20 and 35 mm depth; solid or hollow wall"),
