@@ -1,0 +1,55 @@
+(footprint "PogoPin_MillMax_0900_SMD"
+	(version 20241229)
+	(generator "roomkey_gen_schematics")
+	(layer "F.Cu")
+	(descr "Mill-Max 0900-x-15-20-7x-14-11-0 SMT spring pin, flange 1.83 mm; place on the H1 grid (2.54 mm): seen from the pin side, odd H1 pads are on the RIGHT (mirror of the board-back view)")
+	(attr smd)
+	(property "Reference" "REF**"
+		(at 0 -1.95 0)
+		(layer "F.SilkS")
+		(effects
+			(font
+				(size 0.8 0.8)
+				(thickness 0.12)
+			)
+		)
+	)
+	(property "Value" "PogoPin_MillMax_0900_SMD"
+		(at 0 1.95 0)
+		(layer "F.Fab")
+		(effects
+			(font
+				(size 0.8 0.8)
+				(thickness 0.12)
+			)
+		)
+	)
+	(fp_rect
+		(start -0.92 -0.92)
+		(end 0.92 0.92)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill no)
+		(layer "F.Fab")
+		(uuid "76d74978-d7e8-5953-aa71-df6d12bfade1")
+	)
+	(fp_rect
+		(start -1.15 -1.15)
+		(end 1.15 1.15)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(fill no)
+		(layer "F.CrtYd")
+		(uuid "bbacdd41-c862-575f-9960-869731be54ee")
+	)
+	(pad "1" smd circle
+		(at 0 0)
+		(size 2 2)
+		(layers "F.Cu" "F.Paste" "F.Mask")
+		(uuid "8343bb59-3436-568f-b14b-1c61974c0269")
+	)
+)

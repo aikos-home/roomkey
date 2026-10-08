@@ -1,0 +1,4 @@
+"Reference","Value","MPN","Manufacturer","LCSC","Footprint","QUANTITY","DNP"
+"C1-C4","100n","CL05B104KO5NNNC","Samsung","C1525","Capacitor_SMD:C_0402_1005Metric","4",""
+"D1-D4","WS2812B-Mini","WS2812B-Mini","Worldsemi","","LED_SMD:LED_WS2812B-Mini_PLCC4_3.5x3.5mm","4",""
+"J1","TO HUB","SM03B-SRSS-TB","JST","","Connector_JST:JST_SH_SM03B-SRSS-TB_1x03-1MP_P1.00mm_Horizontal","1",""

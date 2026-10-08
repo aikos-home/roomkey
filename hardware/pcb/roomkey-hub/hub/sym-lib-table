@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "roomkey")(type "KiCad")(uri "${KIPRJMOD}/../lib/roomkey.kicad_sym")(options "")(descr "RoomKey hub set"))
+)

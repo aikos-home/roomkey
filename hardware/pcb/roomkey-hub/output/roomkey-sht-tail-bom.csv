@@ -1,0 +1,5 @@
+"Reference","Value","MPN","Manufacturer","LCSC","Footprint","QUANTITY","DNP"
+"C1,C2","100n","CL05B104KO5NNNC","Samsung","C1525","Capacitor_SMD:C_0402_1005Metric","2",""
+"J1","TO HUB","SM04B-SRSS-TB","JST","","Connector_JST:JST_SH_SM04B-SRSS-TB_1x04-1MP_P1.00mm_Horizontal","1",""
+"U1","SHT40-AD1B-R2","SHT40-AD1B-R2","Sensirion","","Sensor_Humidity:Sensirion_DFN-4_1.5x1.5mm_P0.8mm_SHT4x_NoCentralPad","1",""
+"U2","VEML6030","VEML6030","Vishay","","roomkey:Vishay_VEML6030_2x2mm","1",""

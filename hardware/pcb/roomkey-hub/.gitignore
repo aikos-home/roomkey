@@ -1,0 +1,12 @@
+# KiCad local/session files
+*-backups/
+*.kicad_prl
+*.lck
+_autosave-*
+fp-info-cache
+__pycache__/
+# routing scratch
+en/
+*.log
+*.before-ripup
+output/jlcpcb/gerbers/
