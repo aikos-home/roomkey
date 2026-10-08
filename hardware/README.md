@@ -4,9 +4,11 @@ Parametric FreeCAD scripts, the same method as [Klingelbox](https://github.com/a
 one file holds every dimension, generators read it, `validate()` checks the fit before anything is
 printed. Licence: [CERN-OHL-P-2.0](../LICENSES/CERN-OHL-P-2.0.txt).
 
+**→ Build it: [BUILD.md](BUILD.md)** (desk prototype, step by step) · **print it: [print/README.md](print/README.md)** (part list, ready-to-print Bambu Lab A1 files)
+
 ![Kit (parts v0.10.3) in the practice box, front 3/4 (FreeCAD)](docs/img/kit-v0.10.3_front.png)
 
-*Kit v0.7 (prototype, WIP, not reviewed): the whole RoomKey in one flush box — touch key, speaker, mic, presence radar,
+*Kit (concept v0.7, parts v0.10.3; prototype, WIP, not reviewed): the whole RoomKey in one flush box — touch key, speaker, mic, presence radar,
 amplifier, humidity sensor — behind a 1-gang frame. Practice box shown transparent. Real FreeCAD screenshots, made by
 [`cad/render_kit.py`](cad/render_kit.py) from the same scripts that write the print files.*
 
@@ -31,7 +33,9 @@ technical writing and design review. **In practice the owner runs a one-person p
    all parts at once.
 4. **Let the checks say no before the printer does.**
    - `validate()` runs more than 160 rules per variant (0 errors before anything is exported).
-   - Every pair of parts is checked for collisions at rest, key pressed, key rocked both ways and wobbled.
+   - Every pair of parts is checked for collisions at rest, key pressed and wobbled, plate pressed at five points.
+   - Every printed part must be one solid, and (except the key shell) print without supports: no large surface may
+     face the bed in the air.
    - Minimum wall thickness of the printed parts, and clearances reported in millimetres.
    - For the kit, all 41 wires are routed in 3D and checked against the parts; their cut lengths come out as a table.
 5. **Hand over print files.** STL per part in print orientation, plus a short print sheet (material, nozzle, layers,
@@ -60,17 +64,17 @@ technical writing and design review. **In practice the owner runs a one-person p
 | ![What you see on the wall](docs/img/kit-v0.10.3_face.png) | ![Rear, without the box: carrier with radar and amplifier, mic, speaker, key switches](docs/img/kit-v0.10.3_rear-parts.png) |
 | *What you see on the wall: frame, plate with speaker and mic perforation, touch key with glow ring; humidity-sensor vents in the frame.* | *From behind: back carrier with the LD2410C radar (blue) and MAX98357A amplifier (purple), INMP441 mic (green), speaker, the two key switches.* |
 | ![Wiring](docs/img/kit-v0.10.3_wiring.png) | ![Rigid key v0.9 from behind: fixed socket top, floating socket bottom](docs/img/key-v0.10.3_rear.png) |
-| *All 41 wires of the kit, routed in 3D (0.05 mm² silicone wire; cut lengths in [`models/kit-v0.10.3_wiring.json`](models/kit-v0.10.3_wiring.json)).* | *Rocker key from behind: two key switches read separately — rock up, rock down, or press the middle for both.* |
+| *All 41 wires of the kit, routed in 3D (0.05 mm² silicone wire; cut lengths in [`models/kit-v0.10.3_wiring.json`](models/kit-v0.10.3_wiring.json)).* | *The key from behind (v0.9+): rigid, a fixed stem socket at the top and a floating one at the bottom; both switches are one key.* |
 
 | File | What |
 |---|---|
 | [`cad/roomkey_params.py`](cad/roomkey_params.py) | every dimension, tagged [DS] datasheet · [MEAS] measured · [FREE] design choice · [TBD] placeholder; `python3 cad/roomkey_params.py` runs the fit check |
 | [`cad/make_coupon_v0.py`](cad/make_coupon_v0.py) | tolerance coupon — print this first |
 | [`cad/insert_params.py`](cad/insert_params.py) | **wall insert v0.10.3 (draft)**: box, frame, both variants, installation topologies; `python3 cad/insert_params.py` validates L and S |
-| [`cad/insert_lib.py`](cad/insert_lib.py), [`make_key_module.py`](cad/make_key_module.py), [`make_insert_L.py`](cad/make_insert_L.py), [`make_insert_S.py`](cad/make_insert_S.py) | FreeCAD generators + collision/clearance checks (rest, key pressed, rocked and wobbled with its stems, plate pressed at five points) |
+| [`cad/insert_lib.py`](cad/insert_lib.py), [`make_key_module.py`](cad/make_key_module.py), [`make_insert_L.py`](cad/make_insert_L.py), [`make_insert_S.py`](cad/make_insert_S.py) | FreeCAD generators + collision/clearance checks (rest, key pressed and wobbled with its stems, plate pressed at five points) and print checks |
 | [`docs/insert-design.md`](docs/insert-design.md) | **design of the wall insert (v0.10.3 DRAFT)**: concept, stack-up, installation topologies (electrician), BOM, printing, open questions, risks |
-| [`cad/desk_lib.py`](cad/desk_lib.py), [`make_practice_box.py`](cad/make_practice_box.py), [`make_desk_replica.py`](cad/make_desk_replica.py) | **practice box v0.1** (one flush-box replica + 1-gang frame with the humidity sensor) and the older 2-box desk replica — prototypes, never in a wall |
-| [`cad/kit_lib.py`](cad/kit_lib.py), [`make_kit.py`](cad/make_kit.py), [`wiring_lib.py`](cad/wiring_lib.py) | **kit v0.7 (WIP)**: the whole RoomKey in one box — back carrier (radar + amplifier), mic sound tube, 41 wires with cut lengths |
+| [`cad/desk_lib.py`](cad/desk_lib.py), [`make_practice_box.py`](cad/make_practice_box.py) | **practice box v0.1**: one flush-box replica + a 1-gang frame with the humidity sensor. Prototype, never in a wall |
+| [`cad/kit_lib.py`](cad/kit_lib.py), [`make_kit.py`](cad/make_kit.py), [`wiring_lib.py`](cad/wiring_lib.py) | **kit (WIP; concept v0.7, parts v0.10.3)**: the whole RoomKey in one box — back carrier (radar + amplifier), mic sound tube, 41 wires with cut lengths |
 | [`cad/view_kit.py`](cad/view_kit.py), [`render_kit.py`](cad/render_kit.py) | open the kit in the FreeCAD GUI (coloured, grouped) and render the images in [`docs/img/`](docs/img/) |
 | [`drawings/`](drawings/) | to-scale front views and sections cut from the CAD solids (`tools/insert_drawings.py`) |
 | [`reviews/insert-v0-review-log.md`](reviews/insert-v0-review-log.md) | pre-mortems, independent adversarial reviews, scores, resolutions |
