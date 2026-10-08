@@ -168,9 +168,10 @@ touchscreen:
       mirror_x: true
 
 binary_sensor:
-  # The key is a rocker with two MX switches, read separately (Akte roomkey-einsatz §4, v0.6): top = BOOT (GPIO9; held at
-  # power-up → ROM download mode), bottom = IO6 (the IMU's INT2, never enabled). Until the UI gives the rocker its own
-  # meaning, both ends are the one key (key_raw); each end is visible on its own for tests.
+  # Two MX switches, the key's only buttons, read separately (no rocker): top = BOOT (GPIO9; held at power-up → ROM download
+  # mode), bottom = IO6. The IMU's interrupts stay disabled: INT2 is IO6 (the bottom switch pulls it to GND) and INT1 is IO5
+  # (the radar's line), so never configure them as outputs. Until the UI gives each switch its own meaning, both are the
+  # one key (key_raw); each is visible on its own for tests.
   - platform: gpio
     id: key_top
     name: "Key top"

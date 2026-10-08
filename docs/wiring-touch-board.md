@@ -102,7 +102,7 @@ No light sensor: the RoomKey doesn't get one (decided 2026-10-06).
 
 It looks through plastic, but not through metal.
 
-### Keys: two MX switches (the rocker, read separately)
+### Keys: two MX switches (read separately)
 | Switch | Leg 1 → pad | Leg 2 → pad | In HA |
 |---|---|---|---|
 | top (KEY1) | 9 | GND | "Key top" |
