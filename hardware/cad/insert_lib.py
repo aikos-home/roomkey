@@ -374,8 +374,15 @@ def chassis_parts(ch):
     rest = ch.cut(front_z)
     p2, p3 = rest.common(mid_z), rest.cut(mid_z)
     d_, L_, play = P.CH_PIN
-    p2 = fuse([p2] + [cyl(px, py, d_ / 2, c1 - 0.5, c1 + L_) for (px, py) in P.CH_PIN_POS])   # rooted 0.5 in the block
-    p3 = cut(p3, [cyl(px, py, d_ / 2 + play, c1 - 1.0, c1 + L_ + 0.3) for (px, py) in P.CH_PIN_POS])
+    r_, ld = d_ / 2, P.CH_PIN_LEAD
+    pins, holes = [], []
+    for (px, py) in P.CH_PIN_POS:        # pin rooted 0.5 in the block, 0.3 point; hole with a 45° lead-in at its bed-side mouth
+        pins += [cyl(px, py, r_, c1 - 0.5, c1 + L_ - 0.3),
+                 Part.makeCone(r_, r_ - 0.3, 0.3, V(px, py, -(c1 + L_ - 0.3) + EPS), V(0, 0, -1))]
+        holes += [cyl(px, py, r_ + play, c1 - 1.0, c1 + L_ + 0.3),
+                  Part.makeCone(r_ + play + ld, r_ + play, ld, V(px, py, -c1 + 0.01), V(0, 0, -1))]
+    p2 = fuse([p2] + pins)
+    p3 = cut(p3, holes)
     out = []
     for nm, p in (("front", p1), ("flange", p2), ("rear", p3)):
         main = [so for so in p.Solids if so.Volume >= 0.5]

@@ -59,7 +59,7 @@ sys.path.insert(0, HERE)
 import roomkey_params as R  # noqa: E402
 
 VARIANTS = ("L", "S")
-VERSION = "0.10"
+VERSION = "0.10.1"
 
 SOURCES = {
     "cherry":   "Cherry MX1A datasheet, datasheet.octopart.com/MX1A-11NW-Cherry-datasheet-34676.pdf",
@@ -244,7 +244,9 @@ CH_SPLIT = ("v0.10: the chassis is THREE prints, all front down, no supports (ow
             "(d < flange front: deck, pockets, rims, mic tube), 2 FLANGE (flange + webs/ribs behind it to the collar's back "
             "face, + the speaker duct to its roof), 3 REAR (rear wall behind the collar, ledge, speaker cradle, hub posts). "
             "Glue: 1→2 with the collar through both openings as the jig; 2→3 on two pins + the web tops")
-CH_PIN = (1.2, 2.0, 0.1)       # [FREE] v0.10 chassis pins 2→3: Ø, length, radial play in the hole
+CH_PIN = (1.2, 2.0, 0.15)      # [FREE] v0.10 chassis pins 2→3: Ø, length, radial play in the hole. v0.10.1: play 0.1 → 0.15
+CH_PIN_LEAD = 0.25             #        and a 45° lead-in at the hole mouth + a 0.3 point on the pin: the holes open on part 3's
+                               #        BED face, the first layers' squish closed the Ø1.4 mouths (owner 2026-10-08: no fit)
 CH_PIN_POS = ((5.7, 26.25), (-5.7, -26.25))   # [FREE] diagonal pair 53 apart, on the island ribs above / below the collar:
                                               #        the only free spots (corners: the plate's tactile switches; +x: the
                                               #        speaker; on the axes: the box's screw domes; box radius 28.5)

@@ -1,4 +1,4 @@
-# RoomKey wall insert — v0.10 (Variant L and Variant S)
+# RoomKey wall insert — v0.10.1 (Variant L and Variant S)
 
 > **DRAFT / WIP. AI-assisted design. Not built, not tested, nothing certified.**
 > - The insert is a **SELV-only (class III) device**: it never carries 230 V.
@@ -60,6 +60,10 @@ outside the chamber. Floating plate on 4 tactile switches; light-guide collar; m
 **v0.2 → v0.3 (round 2: no BLOCKER, ~28 MAJORs).** No foam gaskets between plate and chassis (mic carrier bonded to
 the plate, speaker sealed at its grille); glow = translucent plate rim; flange datum + tolerance chain + shims; 8 frame
 rims; stainless load plates; T0/T4 and the switch-box inventory; hub GPIO map from the vendor schematic.
+
+**v0.10 → v0.10.1 (owner's print, 2026-10-08: the 2→3 pins did not go into their holes).** The holes open on part 3's
+bed face, where the first layers' squish closed the Ø1.4 mouths (0.1 play). Now 0.15 play, a 0.25 × 45° lead-in at
+the mouth (`CH_PIN_LEAD`) and a 0.3 point on the pin. Printed v0.10: drill the two holes to 1.5.
 
 **v0.9.3 → v0.10 (owner, 2026-10-07: the whole kit printed with a 0.2 nozzle at 30 mm/s, PETG supports with a PLA
 interface — the key shell and the chassis still broke when the supports came out. "Open to gluing (CA) or pin → hole").
