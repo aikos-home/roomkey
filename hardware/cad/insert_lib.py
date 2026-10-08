@@ -390,7 +390,7 @@ def hub_pcb():
     """v0.11: the hub PCB from its KiCad STEP (hardware/pcb/roomkey-hub/output), placed in the kit frame: front face at
     HUB_PCB_D0, parts on the back."""
     if "s" not in _HUB:
-        p = os.path.join(os.path.dirname(os.path.dirname(HERE)), *P.HUB_PCB_STEP)
+        p = os.environ.get("ROOMKEY_HUB_STEP") or os.path.join(os.path.dirname(os.path.dirname(HERE)), *P.HUB_PCB_STEP)
         s = Part.read(p)
         s.translate(V(P.HUB_PCB_STEP_XY[0], P.HUB_PCB_STEP_XY[1], -(P.HUB_PCB_D0 + P.HUB_PCB_STEP_TOP)))
         _HUB["s"] = s
