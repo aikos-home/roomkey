@@ -1,4 +1,4 @@
-# RoomKey wall insert — v0.10.3 (Variant L and Variant S)
+# RoomKey wall insert — v0.10.4 (Variant L and Variant S)
 
 > **DRAFT / WIP. AI-assisted design. Not built, not tested, nothing certified.**
 > - The insert is a **SELV-only (class III) device**: it never carries 230 V.
@@ -60,6 +60,11 @@ outside the chamber. Floating plate on 4 tactile switches; light-guide collar; m
 **v0.2 → v0.3 (round 2: no BLOCKER, ~28 MAJORs).** No foam gaskets between plate and chassis (mic carrier bonded to
 the plate, speaker sealed at its grille); glow = translucent plate rim; flange datum + tolerance chain + shims; 8 frame
 rims; stainless load plates; T0/T4 and the switch-box inventory; hub GPIO map from the vendor schematic.
+
+**v0.10.3 → v0.10.4 (owner, 2026-10-08: the touch board sits loose in the key shell since the parts are printed with
+a 0.2 nozzle).** New `KEY_POCKET_FIT` 0.10/side for the pocket only; `KEY_FIT` 0.15 still sets the key's outer size, so the
+shell wall grows 0.05 inwards and nothing outside changes. The fits are now tuned for the 0.2 nozzle (radar tray 0.10
+too). L, S, kit: 0 collisions, key captive.
 
 **v0.10.2 → v0.10.3 (owner, 2026-10-08: the collar fits its seat perfectly, but the key scrapes its inner walls).**
 Only the collar's inside changes: inner face set back 0.15/side (`COLLAR_IN_EXTRA`, outer unchanged) → key ↔ collar

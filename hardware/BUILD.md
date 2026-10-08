@@ -1,4 +1,4 @@
-# Build guide: RoomKey desk prototype (kit, parts v0.10.3)
+# Build guide: RoomKey desk prototype (kit, parts v0.10.4)
 
 > **WIP prototype, for the desk only.** Never put it in a wall and never connect it to 230 V. Power comes from a lab
 > supply. Nothing here is certified or reviewed. The in-wall product is designed in [docs/insert-design.md](docs/insert-design.md).
@@ -15,7 +15,7 @@ be built and tested on the bench.
 |---|---|
 | Practice box + frame | printed and fitted ✓. Frame vents centred |
 | Chassis (3 glued parts, v0.10), plate, switch plate (glued) | printed and glued ✓ |
-| Key: touch board in a rigid one-piece shell on two MX switches (v0.9) | printed, **fits perfectly** ✓ |
+| Key: touch board in a rigid one-piece shell on two MX switches (v0.9) | printed, fits ✓. v0.10.4: board pocket 0.10/side for the 0.2 nozzle (0.15 was loose) — not printed yet |
 | Collar (light guide), v0.10.3: 0.15 mm wider inside, the key scraped | not printed yet |
 | Back carrier, v0.10.2: amplifier pins 13.435 apart, radar play 0.10 | not printed yet |
 | End-press binding of the key (desk test R1) | not tested yet |
