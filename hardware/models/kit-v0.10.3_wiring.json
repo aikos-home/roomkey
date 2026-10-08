@@ -4,55 +4,61 @@
    11,
    "I²S BCLK (Verstärker)",
    "MAX98357A",
-   0.27
+   0.63
   ],
   [
    12,
    "I²S WS (Verstärker)",
    "MAX98357A",
-   0.27
+   0.63
   ],
   [
    13,
    "I²S Daten → Verstärker",
    "MAX98357A",
-   0.27
+   0.63
   ],
   [
    14,
    "5 V Verstärker",
    "MAX98357A",
-   0.27
+   1.11
   ],
   [
    15,
    "GND Verstärker",
    "MAX98357A",
-   0.27
+   1.58
   ],
   [
    16,
    "Lautsprecher +",
    "MAX98357A",
-   0.27
+   2.71
   ],
   [
    17,
    "Lautsprecher −",
    "MAX98357A",
-   0.27
+   3.64
   ],
   [
    18,
    "I²S BCLK (Mikrofon, vom Verstärker weiter)",
    "MAX98357A",
-   0.27
+   1.91
   ],
   [
    19,
    "I²S WS (Mikrofon, vom Verstärker weiter)",
    "MAX98357A",
-   0.27
+   1.11
+  ],
+  [
+   23,
+   "GND Mikrofon",
+   "MAX98357A",
+   2.73
   ]
  ],
  "table": "| Nr | von | nach | Signal | Farbe (Vorschlag) | Zuschnitt ca. |\n|---|---|---|---|---|---|\n| 1 | Board VBUS | splice 5V | 5 V → board | rot | 100 mm |\n| 2 | Board GND | splice GND | GND → board | schwarz | 100 mm |\n| 3 | Board BOOT | MX1a | KEY1 (Taste oben) | weiß | 70 mm |\n| 4 | Board IO6 | MX2a | KEY2 (Taste unten) | grau | 75 mm |\n| 5 | Board GND3 | MX1b | GND Taste oben | schwarz | 65 mm |\n| 6 | MX1b | MX2b | GND Taste unten (Brücke) | schwarz | 55 mm |\n| 7 | Board IO3 | radar TX | Radar TX → ESP RX | gelb | 100 mm |\n| 8 | Board IO5 | radar RX | ESP TX → Radar RX | grün | 100 mm |\n| 9 | splice 5V | radar VCC | 5 V Radar | rot | 70 mm |\n| 10 | splice GND | radar GND | GND Radar | schwarz | 70 mm |\n| 11 | Board IO7 | amp BCLK | I²S BCLK (Verstärker) | blau | 90 mm |\n| 12 | Board IO8 | amp LRC | I²S WS (Verstärker) | violett | 90 mm |\n| 13 | Board IO16 | amp DIN | I²S Daten → Verstärker | braun | 75 mm |\n| 14 | splice 5V | amp Vin | 5 V Verstärker | rot | 30 mm |\n| 15 | splice GND | amp GND | GND Verstärker | schwarz | 35 mm |\n| 16 | amp SPK+ | speaker | Lautsprecher + | rot | 45 mm |\n| 17 | amp SPK- | speaker | Lautsprecher − | schwarz | 45 mm |\n| 18 | amp BCLK | mic SCK | I²S BCLK (Mikrofon, vom Verstärker weiter) | blau | 55 mm |\n| 19 | amp LRC | mic WS | I²S WS (Mikrofon, vom Verstärker weiter) | violett | 55 mm |\n| 20 | Board IO17 | mic SD | I²S Daten ← Mikrofon | rosa | 70 mm |\n| 21 | Board 3V3 | mic VDD | 3,3 V Mikrofon | orange | 75 mm |\n| 22 | mic GND | mic L/R | L/R auf GND (linker Kanal) | schwarz | 35 mm |\n| 23 | splice GND | mic GND | GND Mikrofon | schwarz | 70 mm |\n| 24 | lab supply | splice 5V | Labornetzteil +5,0 V | rot | 85 mm |\n| 25 | lab supply | splice GND | Labornetzteil GND | schwarz | 85 mm |\n| 26 | Board IO4 | LED BR DIN | LED-Daten → LED unten rechts | gelb-grün | 125 mm |\n| 27 | LED BR DOUT | LED TR DIN | LED-Daten → oben rechts | gelb-grün | 110 mm |\n| 28 | LED TR DOUT | LED TL DIN | LED-Daten → oben links | gelb-grün | 85 mm |\n| 29 | LED TL DOUT | LED BL DIN | LED-Daten → unten links | gelb-grün | 110 mm |\n| 30 | splice 5V | LED BR 5V | 5 V LED unten rechts | rot | 70 mm |\n| 31 | LED BR 5V | LED TR 5V | 5 V LED oben rechts | rot | 110 mm |\n| 32 | LED TR 5V | LED TL 5V | 5 V LED oben links | rot | 85 mm |\n| 33 | LED TL 5V | LED BL 5V | 5 V LED unten links | rot | 110 mm |\n| 34 | splice GND | LED BR GND | GND LED unten rechts | schwarz | 75 mm |\n| 35 | LED BR GND | LED TR GND | GND LED oben rechts | schwarz | 110 mm |\n| 36 | LED TR GND | LED TL GND | GND LED oben links | schwarz | 85 mm |\n| 37 | LED TL GND | LED BL GND | GND LED unten links | schwarz | 110 mm |\n| 38 | Board 3V3 | RH VIN | 3,3 V Feuchtesensor (2. Draht an Pin 8) | orange | 135 mm |\n| 39 | Board GND2 | RH GND | GND Feuchtesensor | schwarz | 140 mm |\n| 40 | Board IO19 | RH SCL | I²C SCL Feuchtesensor | hellblau | 140 mm |\n| 41 | Board IO18 | RH SDA | I²C SDA Feuchtesensor | türkis | 145 mm |"

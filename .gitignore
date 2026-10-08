@@ -17,3 +17,8 @@ tools/recordings/
 
 # FreeCAD backup files
 *.FCBak
+
+# resolved Bambu Studio presets (tools/bambu_kit.py working files)
+hardware/print/bambu/_presets/
+hardware/print/bambu/*.gcode
+hardware/print/bambu/result.json
