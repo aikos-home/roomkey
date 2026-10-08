@@ -1,8 +1,9 @@
 """Render real FreeCAD views of the kit v0.7 (prototype, WIP) to hardware/docs/img/ — run inside the FreeCAD GUI:
     /Applications/FreeCAD.app/Contents/MacOS/FreeCAD hardware/cad/render_kit.py
-(with RENDER_QUIT=1 it quits when done). Opens hardware/models/kit-v0.7e_ansicht.FCStd (made by view_kit.py).
+(with RENDER_QUIT=1 it quits when done). Opens hardware/models/kit-v<insert VERSION>_ansicht.FCStd (made by view_kit.py).
 """
 import os
+import sys
 import time
 
 import FreeCAD as App
@@ -11,7 +12,9 @@ import FreeCADGui as Gui
 HERE = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else \
     os.path.join(os.getcwd(), "hardware", "cad")
 ROOT = os.path.dirname(HERE)
-SRC = os.path.join(ROOT, "models", os.environ.get("KIT_VIEW_NAME", "kit-v0.7e_ansicht.FCStd"))
+sys.path.insert(0, HERE)
+import insert_params as P  # noqa: E402
+SRC = os.path.join(ROOT, "models", os.environ.get("KIT_VIEW_NAME", f"kit-v{P.VERSION}_ansicht.FCStd"))
 OUT = os.path.join(ROOT, "docs", "img")
 os.makedirs(OUT, exist_ok=True)
 W, H = 1800, 1350
@@ -100,28 +103,28 @@ def shots():
     fr = objs["Rahmen_JungAS500"].ViewObject
     t0, fr.Transparency = fr.Transparency, 0
     cam((0, 0, 1))
-    shot("kit-v0.7_face.png")
+    shot(f"kit-v{P.VERSION}_face.png")
     fr.Transparency = t0
     # 2 front 3/4 in the practice box (box transparent)
     show(None, hide=("Draht_", "Kabelbogen"))
     cam((-0.65, 0.45, 1))
-    shot("kit-v0.7_front.png")
+    shot(f"kit-v{P.VERSION}_front.png")
     # 3 rear 3/4 without the box: back carrier with radar + amplifier, mic, speaker, switches
     show(None, hide=wall)
     cam((0.75, 0.5, -1))
-    shot("kit-v0.7_rear-parts.png")
+    shot(f"kit-v{P.VERSION}_rear-parts.png")
     # 4 the same with all 41 wires
     show(None, hide=("Uebungsdose", "Kabelbogen"))
     cam((0.75, 0.5, -1))
-    shot("kit-v0.7_wiring.png")
+    shot(f"kit-v{P.VERSION}_wiring.png")
     # 5 the frame from behind and below: humidity sensor flat under its bottom border
     show(("Rahmen_JungAS500", "Feuchtesensor"))
     cam((0.35, -0.55, -1))
     shot("frame_humidity-sensor.png")
-    # 6 the rocker key from behind: forks, stop bosses, header slots, the two switches
-    show(("Tastenschale_Wippe", "MX_", "Touch_Board"))
+    # 6 the rigid key from behind: fixed / floating stem sockets, stop bosses, header slots, the two switches
+    show(("Tastenschale", "MX_", "Touch_Board"))
     cam((0.6, 0.55, -1))
-    shot("rocker-key_rear.png")
+    shot(f"key-v{P.VERSION}_rear.png")
 
 
 from PySide import QtCore, QtGui  # noqa: E402

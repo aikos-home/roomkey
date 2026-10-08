@@ -12,4 +12,5 @@ logic, new tag).
 Still RoomKey's own: `rtp_play.py` (send a WAV as RTP: stands in for a key or the door), `mic_check.py`,
 `fake_home.py` and `ha_contract_test.py` (Home Assistant contract tests), `voice_host_check.py` (the key's voice v2 on
 the simulator against a fake door on this machine, build `esphome/sim_v2_check.yaml` first), `privacy_scan.py`, and the CAD helpers
-(`cad_preview.py`, `insert_drawings.py`, `insert_wallcheck.py`).
+(`cad_preview.py`, `insert_drawings.py`, `insert_wallcheck.py`, and `bambu_kit.py`, which slices the kit into
+ready-to-print Bambu Lab A1 files, see `hardware/print/`).

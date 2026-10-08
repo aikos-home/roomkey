@@ -142,6 +142,8 @@ def domes(grow, d0, d1):
 
 # ============================================================================ key module
 def key_shell():
+    """the one-piece key shell. v0.10.2: back from the v0.10 two-piece split — the owner's one-piece print WITH supports in
+    the pocket fit perfectly (2026-10-08); only the chassis broke on its supports."""
     s = P.KS
     fit = R.KEY_FIT
     outer = rrect(P.KEY_W / 2, P.KEY_H / 2, P.KEY_R, s["glass"], s["key_back"])
@@ -159,8 +161,8 @@ def key_shell():
     # side skirts only (straight long sides): they limit roll in the collar, the short sides stay free → free pitch
     skirts = [box(sx * (P.KEY_W / 2 - R.KEY_WALL), sx * P.KEY_W / 2, -P.KEY_SKIRT_Y, P.KEY_SKIRT_Y, s["key_back"] - EPS,
                   s["skirt_end"]) for sx in (-1, 1)]
-    # v0.6 rocker: stem forks (pinch the x-arm ends only → the key turns about x on the stems) + 4 stop bosses that land on
-    # the switch plate (centre press: all four after KEY_TRAVEL; end press: the near pair after rock_angle())
+    # v0.9 rigid key: stem posts with cross sockets (fixed on MX1, floating along y on MX2) + 4 stop bosses that land on
+    # the switch plate after KEY_TRAVEL (the press ends on the plate, not on the stems)
     stops = [box(sx * P.STOP_X[0], sx * (P.STOP_X[1] + EPS), y - P.STOP_W_Y / 2, y + P.STOP_W_Y / 2, s["key_back"] - EPS,
                  P.STOP_END_D) for sx in (-1, 1) for y in P.STOP_YS]
     # v0.8 key catch: a rigid nub at the free end of each side skirt (runs in the collar's groove; see collar())
@@ -172,22 +174,28 @@ def key_shell():
     relief = [box(sx * P.CABLE_SLOT[0] / 2, sx * lug_x1, P.CABLE_Y - 3.0, P.CABLE_Y + 3.0,
                   s["key_back"] - EPS, s["key_back"] + 1.2) for sx in (-1, 1)]
     # wire channel: a KEY_BACK_CHANNEL recess in the back's inner face between the header columns and the cable slot
-    return cut(fuse([shell] + skirts + nubs + [key_forks()] + stops + relief), [key_channel()])
+    return cut(fuse([shell] + skirts + nubs + [key_posts()] + stops + relief), [key_channel()] + key_sockets())
 
 
-def key_forks():
-    """per stem: two prongs that pinch the ends of the stem's x-arm (faces normal to x: turning about x stays free) and a
-    rocking pad between them (a cylinder about x whose lowest line rests on the stem top)."""
+def key_posts():
     s = P.KS
-    g, t, w, r = R.FORK_GAP, R.FORK_PRONG_T, R.FORK_PRONG_W, R.FORK_PAD_R
-    parts = []
-    for (x, y) in R.MX_SW_POS:
-        for sx in (-1, 1):
-            parts.append(box(x + sx * g / 2, x + sx * (g / 2 + t), y - w / 2, y + w / 2, s["key_back"] - EPS, s["post_end"]))
-        axis_d = s["stem_top"] - r
-        pad = Part.makeCylinder(r, g + 2 * EPS, V(x - g / 2 - EPS, y, -axis_d), V(1, 0, 0))
-        parts.append(pad.common(box(x - g / 2 - EPS, x + g / 2 + EPS, y - r, y + r, s["key_back"] - EPS, s["stem_top"])))
-    return fuse(parts)
+    return fuse([cyl(x, y, R.MX_POST_D / 2, s["key_back"] - EPS, s["post_end"]) for (x, y) in R.MX_SW_POS])
+
+
+def key_sockets():
+    """v0.9: the v0.5 cross sockets (coupon v0 row C fit). MX1 (top) = FIXED: full cross. MX2 (bottom) = FLOATING: the
+    y-arm slot runs through the post (the halves clamp the arm's width → held in x) and the x-arm slot is 2 ×
+    KEY_SOCKET_FLOAT wider → the stem floats along y, so a pitch error cannot strain the two stems against each other."""
+    s = P.KS
+    d_top = s["post_end"] - R.KEY_SOCKET_DEPTH
+    L, W, f = R.MX_STEM_ARM_L, R.MX_STEM_ARM_W, R.KEY_SOCKET_FLOAT
+    out = []
+    for i, (x, y) in enumerate(R.MX_SW_POS):
+        ly = L if i == 0 else R.MX_POST_D + 1.0
+        wy = W if i == 0 else W + 2 * f
+        out.append(box(x - L / 2, x + L / 2, y - wy / 2, y + wy / 2, d_top, s["post_end"] + EPS))      # x-arm
+        out.append(box(x - W / 2, x + W / 2, y - ly / 2, y + ly / 2, d_top, s["post_end"] + EPS))      # y-arm
+    return out
 
 
 def key_end_taper():
@@ -239,13 +247,18 @@ def switch_plate():
     for (x, y) in P.LED_POS:          # v0.6: corner notches for the glow LEDs (WS2812B-MINI 3535 is 2.0 tall + joints/carrier)
         h = P.LED_W / 2 + 0.4
         tools.append(box(x - h, x + h, y - h, y + h, s["plate_front"] - 1, s["plate_back"] + 1))
-    return cut(plate, tools)
+    # v0.10: the cable-loop anchor (posts + bar) stands on the switch plate's back (it hung from the chassis ledge)
+    ax0, ax1, ay0, ay1, ad0, ad1 = P.ANCHOR
+    anchor = [cyl(x, y, 1.2, s["plate_back"] - EPS, ad1) for (x, y) in P.ANCHOR_POSTS] + [box(ax0, ax1, ay0, ay1, ad0, ad1)]
+    return fuse([cut(plate, tools)] + anchor)
 
 
 def collar():
     """translucent light guide around the key; thick (2.6) along the corner diagonals where the LEDs sit; the inner face
     at the short sides is set back over the first mm (room for the key's end when it is pressed at an end)."""
-    c = ring(P.COLLAR_OUT_X, P.COLLAR_OUT_Y, P.COLLAR_OUT_R, P.WELL_IN_X, P.WELL_IN_Y, P.WELL_R, P.COLLAR_D0, P.COLLAR_D1)
+    e = P.COLLAR_IN_EXTRA            # v0.10.3: inner face set back (the key scraped), outer face unchanged
+    c = ring(P.COLLAR_OUT_X, P.COLLAR_OUT_Y, P.COLLAR_OUT_R, P.WELL_IN_X + e, P.WELL_IN_Y + e, P.WELL_R + e, P.COLLAR_D0,
+             P.COLLAR_D1)
     rl, rd = P.COLLAR_RELIEF
     # v0.8: a groove for the key's catch nub on each long side, open to the back face, closed towards the room
     s = P.KS
@@ -254,7 +267,7 @@ def collar():
     g0 = s["skirt_end"] - P.KEY_CATCH_D - P.KEY_CATCH_GAP
     grooves = [box(sx * (P.WELL_IN_X - 0.5), sx * gx, P.KEY_CATCH_YC - gy, P.KEY_CATCH_YC + gy, g0, P.COLLAR_D1 + 1)
                for sx in (-1, 1)]
-    return cut(c, [rrect(P.WELL_IN_X, P.WELL_IN_Y + rl, P.WELL_R, P.COLLAR_D0 - 1, P.COLLAR_D0 + rd)] + grooves)
+    return cut(c, [rrect(P.WELL_IN_X + e, P.WELL_IN_Y + e + rl, P.WELL_R + e, P.COLLAR_D0 - 1, P.COLLAR_D0 + rd)] + grooves)
 
 
 # ============================================================================ plate (L and S)
@@ -312,6 +325,83 @@ def plate(v):
 
 
 # ============================================================================ chassis
+def spk_tab_slot():
+    """v0.9.1: blind slot in the SPK_TAB_END cradle rib for the speaker's wire tab: from the speaker's end face out to the
+    tab + play, along d from in front of the tab to behind the rib (open to the back: the speaker goes in from behind and
+    the wires leave there), across the speaker's thickness. Returns box() arguments (x0, x1, y0, y1, d0, d1)."""
+    sy = P.SPK_TAB_END
+    gx = P.SPK_X0 + R.SPK_T
+    w, ov = R.SPK_TAB
+    pw, pd, _ = P.SPK_TAB_SLOT
+    dc = P.SPK_D0 + R.SPK_W / 2
+    ya, yb = sy * (P.SPK_Y[1] + 0.2 - EPS), sy * (P.SPK_Y[1] + ov + pd)
+    return (P.SPK_X0 - 0.2, gx + 0.2, min(ya, yb), max(ya, yb), dc - w / 2 - pw,
+            P.SPK_D0 + R.SPK_W + 0.1 + P.SPK_HOOK_T + 1.0)
+
+
+def chassis_parts(ch):
+    """v0.10: split a finished chassis (insert or kit) into its three prints (P.CH_SPLIT): returns (front, flange, rear),
+    each ONE solid (EPS slivers at the cut planes are dropped), with the 2→3 pins on the flange part and their holes in the
+    rear part."""
+    fl0, c1 = P.WALL_D - P.FLANGE_T, P.COLLAR_D1
+    big = 200.0
+    front_z = box(-big, big, -big, big, -big, fl0)
+    gx, g, w = P.grille_x(), P.SPK_FACE_GASKET[2], P.DUCT_WALL
+    m0, m1, n0, n1 = P.mouth()
+    _, pd1 = P.port_d()
+    mid_z = fuse([box(-big, big, -big, big, fl0, c1),
+                  box(gx + g - 0.05, P.DUCT_X1 + w + 0.05, n0 - w - 0.05, n1 + w + 0.05, c1, pd1 + w + 1.0)])   # + the duct
+    p1 = ch.common(front_z)
+    rest = ch.cut(front_z)
+    p2, p3 = rest.common(mid_z), rest.cut(mid_z)
+    d_, L_, play = P.CH_PIN
+    r_, ld = d_ / 2, P.CH_PIN_LEAD
+    pins, holes = [], []
+    for (px, py) in P.CH_PIN_POS:        # pin rooted 0.5 in the block, 0.3 point; hole with a 45° lead-in at its bed-side mouth
+        pins += [cyl(px, py, r_, c1 - 0.5, c1 + L_ - 0.3),
+                 Part.makeCone(r_, r_ - 0.3, 0.3, V(px, py, -(c1 + L_ - 0.3) + EPS), V(0, 0, -1))]
+        holes += [cyl(px, py, r_ + play, c1 - 1.0, c1 + L_ + 0.3),
+                  Part.makeCone(r_ + play + ld, r_ + play, ld, V(px, py, -c1 + 0.01), V(0, 0, -1))]
+    p2 = fuse([p2] + pins)
+    p3 = cut(p3, holes)
+    out = []
+    for nm, p in (("front", p1), ("flange", p2), ("rear", p3)):
+        main = [so for so in p.Solids if so.Volume >= 0.5]
+        tiny = sum(so.Volume for so in p.Solids if so.Volume < 0.5)
+        assert len(main) == 1, f"chassis {nm}: {len(main)} solids ≥ 0.5 mm³ " + \
+            str([(round(so.Volume, 1), [round(c, 1) for c in (so.BoundBox.XMin, so.BoundBox.XMax, so.BoundBox.YMin,
+                  so.BoundBox.YMax, -so.BoundBox.ZMax, -so.BoundBox.ZMin)]) for so in main])
+        assert tiny < 0.5, f"chassis {nm}: {tiny:.2f} mm³ of slivers"
+        out.append(main[0])
+    return tuple(out)
+
+
+def ceilings(shape, name, how="front_down", max_span=16.0, supports=False):
+    """printability check (model coordinates, printed `how`): planar faces that face the bed but are not on it must be
+    short bridges (their smaller extent ≤ max_span) — v0.10, after supports broke the chassis and the key."""
+    sg = 1 if how == "front_down" else -1                 # front down: the bed is the max-Z (room) side
+    bed = shape.BoundBox.ZMax if sg > 0 else shape.BoundBox.ZMin
+    rows = []
+    for f in shape.Faces:
+        if f.Surface.__class__.__name__ != "Plane" or f.Area < 0.5:
+            continue
+        u0, u1, v0, v1 = f.ParameterRange
+        near = f.BoundBox.ZMax if sg > 0 else f.BoundBox.ZMin
+        if sg * f.normalAt((u0 + u1) / 2, (v0 + v1) / 2).z < 0.7 or abs(bed - near) < 0.15:
+            continue
+        bb = f.BoundBox
+        span = min(bb.XLength, bb.YLength, 4 * f.Area / f.Length)   # 4A/P: a square's side, ≈ 2 × a strip's width (a ring)
+        rows.append((span, f.Area, -bb.ZMax))
+    worst = max(rows) if rows else (0.0, 0.0, 0.0)
+    print(f"  {name:22s} print check ({how.replace('_', ' ')}): {len(rows)} ceilings, {sum(r[1] for r in rows):.0f} mm², widest span "
+          f"{worst[0]:.1f} at d {worst[2]:.2f} (≤ {max_span})")
+    if supports:
+        print(f"  {'':22s} → printed WITH supports by design (owner): no limit")
+        return worst[0]
+    assert worst[0] <= max_span, f"{name}: a {worst[0]:.1f} mm ceiling at d {worst[2]:.2f} needs support"
+    return worst[0]
+
+
 def chassis(v):
     s = P.KS
     d0, d1 = P.DECK_D0, P.DECK_D1
@@ -397,17 +487,41 @@ def chassis(v):
         add.append(box(P.COLLAR_OUT_X + P.COLLAR_FIT, gx + 1.0, y0_, y1_, d1 - EPS, P.SPK_D0 + R.SPK_W))
         add.append(box(P.WELL_IN_X + 0.2, gx + 1.0, y0_, y1_, P.COLLAR_D1 - EPS, P.HUB[4] - 0.2))
         add.append(box(P.HUB[1] + 0.5, gx + 1.0, y0_, y1_, P.HUB[4] - 0.2 - EPS, P.SPK_D0 + R.SPK_W + 0.1 + P.SPK_HOOK_T))
-        # hook: catch face 0.1 behind the speaker's back edge, 45° lead-in on its back face (the speaker comes from behind)
-        add.append(lip_prism(P.HUB[1] + 0.5, gx - 0.5, sy, P.SPK_Y[1] - P.SPK_HOOK, P.SPK_Y[1] + 0.2 + EPS,
-                             P.SPK_D0 + R.SPK_W + 0.1, P.SPK_D0 + R.SPK_W + 0.1 + P.SPK_HOOK_T, chamfer=P.SPK_HOOK))
+        # hook: catch face 0.1 behind the speaker's back edge, 45° lead-in on its back face (the speaker comes from behind).
+        # v0.9.1: not on the tab end — the tab slot cut its root and left the tip loose (2nd solid); at the speaker's round
+        # end it caught nothing anyway (SPK_END_R)
+        if sy != P.SPK_TAB_END:
+            add.append(lip_prism(P.HUB[1] + 0.5, gx - 0.5, sy, P.SPK_Y[1] - P.SPK_HOOK, P.SPK_Y[1] + 0.2 + EPS,
+                                 P.SPK_D0 + R.SPK_W + 0.1, P.SPK_D0 + R.SPK_W + 0.1 + P.SPK_HOOK_T, chamfer=P.SPK_HOOK))
+        if sy == P.SPK_TAB_END:      # v0.9.1: the rib is thickened outward where the tab slot runs (wall stays ≥ 0.8)
+            sd0 = spk_tab_slot()[4]
+            outer = P.SPK_Y[1] + R.SPK_TAB[1] + P.SPK_TAB_SLOT[1] + P.SPK_TAB_SLOT[2]
+            ty0, ty1 = sorted((sy * (P.SPK_Y[1] + 1.2 - EPS), sy * outer))
+            add.append(box(P.COLLAR_OUT_X + P.COLLAR_FIT, gx + 1.0, ty0, ty1, sd0 - P.SPK_TAB_SLOT[2],
+                           P.SPK_D0 + R.SPK_W + 0.1 + P.SPK_HOOK_T))
     # hub posts from the ledge, anchor posts + bar for the cable loop
     for (x, y) in P.HUB_POSTS:
         add.append(cyl(x, y, 1.5, ledge1 - EPS, P.HUB[4]))
-    for (x, y) in P.ANCHOR_POSTS:
-        add.append(cyl(x, y, 1.2, ledge0, P.ANCHOR[5]))
-        add.append(box(x, math.copysign(P.WELL_IN_X, x), y - 1.0, y + 1.0, ledge0, ledge1))
-    ax0, ax1, ay0, ay1, ad0, ad1 = P.ANCHOR
-    add.append(box(ax0, ax1, ay0, ay1, ad0, ad1))
+    # v0.10: the cable-loop anchor moved to the switch plate (switch_plate())
+    # v0.10 split aids: webs from the deck edge to each frame rim (in the plate skirt's gaps) → the rims print with the
+    # front part; pin blocks above / below the collar join the flange part (2) and the rear part (3)
+    for (a0, a1, b0, b1) in P.loc_rims():
+        if min(abs(a0), abs(a1)) > P.DECK_HALF_X:                     # left / right rim
+            sx = 1 if a0 > 0 else -1
+            xi = min(abs(a0), abs(a1))
+            add.append(box(min(sx * (P.DECK_HALF_X - 0.3), sx * (xi + 0.01)), max(sx * (P.DECK_HALF_X - 0.3), sx * (xi + 0.01)),
+                           b0, b1, d0, d1))
+        else:                                                          # top / bottom rim
+            sy = 1 if b0 > 0 else -1
+            yi = min(abs(b0), abs(b1))
+            add.append(box(a0, a1, min(sy * (P.DECK_HALF_Y - 0.3), sy * (yi + 0.01)),
+                           max(sy * (P.DECK_HALF_Y - 0.3), sy * (yi + 0.01)), d0, d1))
+    hx_, hy_ = P.CH_PIN_BLOCK
+    for (px, py) in P.CH_PIN_POS:
+        add.append(box(px - hx_, px + hx_, py - hy_, py + hy_, fl0 - EPS, P.COLLAR_D1 + EPS))          # flange part
+        add.append(box(px - hx_, px + hx_, py - hy_, py + hy_, P.COLLAR_D1 - EPS, P.COLLAR_D1 + 2.8))  # rear part, tied
+        add.append(box(px - hx_, px + hx_, *sorted((math.copysign(P.WELL_IN_Y + 0.2, py), py)),        # to the rear wall
+                       P.COLLAR_D1 - EPS, P.COLLAR_D1 + 1.0))
     body = fuse(add)
 
     # ---------------- cuts
@@ -424,6 +538,7 @@ def chassis(v):
     tools.append(box(gx + g - EPS, P.DUCT_X1, n0, n1, d1 - 2 * EPS, pd1))                        # channel (opens the floor)
     tools.append(box(P.SPK_X0 - 0.2, gx + g, P.SPK_Y[0] - 0.2, P.SPK_Y[1] + 0.2, P.SPK_D0,
                      P.SPK_D0 + R.SPK_W + 0.1))                                                  # speaker + face gasket
+    tools.append(box(*spk_tab_slot()))                                                           # v0.9.1 tab slot
     for (x, y) in P.PAD_POS:                                                                     # preload pad pockets
         tools.append(box(x - P.PAD_SIZE[0] / 2 - 0.1, x + P.PAD_SIZE[0] / 2 + 0.1, y - P.PAD_SIZE[1] / 2 - 0.1,
                          y + P.PAD_SIZE[1] / 2 + 0.1, d0 - 1, d0 + P.PAD_POCKET))
@@ -509,7 +624,10 @@ def ref_bodies(v):
     m0, m1, n0, n1 = P.mouth()
     pd0, pd1 = P.port_d()
     w = P.DUCT_WALL
-    refs["speaker 2030"] = box(P.SPK_X0, gx, P.SPK_Y[0], P.SPK_Y[1], P.SPK_D0, P.SPK_D0 + R.SPK_W)
+    dc, sy = P.SPK_D0 + R.SPK_W / 2, P.SPK_TAB_END
+    tab = box(P.SPK_X0 + 0.5, gx - 0.5, min(sy * (P.SPK_Y[1] - EPS), sy * (P.SPK_Y[1] + R.SPK_TAB[1])),
+              max(sy * (P.SPK_Y[1] - EPS), sy * (P.SPK_Y[1] + R.SPK_TAB[1])), dc - R.SPK_TAB[0] / 2, dc + R.SPK_TAB[0] / 2)
+    refs["speaker 2030"] = fuse([box(P.SPK_X0, gx, P.SPK_Y[0], P.SPK_Y[1], P.SPK_D0, P.SPK_D0 + R.SPK_W), tab])   # v0.9.1 tab
     refs["speaker face gasket"] = box(gx, gx + g, n0 - w, n1 + w, P.SPK_D0, pd1 + w).cut(
         box(gx - 1, gx + g + 1, n0, n1, P.SPK_D0 - 1, pd1))
     h = P.HUB
@@ -583,26 +701,6 @@ def key_wobbled(shape, axis, deg, travel=0.0):
     ym = (R.MX_SW_POS[0][1] + R.MX_SW_POS[1][1]) / 2
     s.rotate(V(0, ym, -(P.KS["stem_top"] + travel)), V(1, 0, 0) if axis == "x" else V(0, 1, 0), deg)
     return s
-
-
-def key_rocked(shape, end):
-    """v0.6 rocker: the key turned by rock_angle() about the far stem's top line (x-parallel), so that the pressed `end`
-    (+1 top, −1 bottom) goes into the wall until its stop bosses land on the switch plate."""
-    far_y = R.MX_SW_POS[1][1] if end > 0 else R.MX_SW_POS[0][1]
-    th = P.rock_angle()
-    piv = V(0, far_y, -P.ROCK_PIVOT_D)
-    for sg in (1, -1):                  # the sense that moves the near end into the wall (−Z)
-        probe = Part.Vertex(V(0, far_y + end * 20.0, -P.ROCK_PIVOT_D))
-        probe.rotate(piv, V(1, 0, 0), sg * th)
-        if probe.Point.z < -P.ROCK_PIVOT_D:
-            s = shape.copy()
-            s.rotate(piv, V(1, 0, 0), sg * th)
-            return s
-    raise RuntimeError("rock sense not found")
-
-
-def near_stem(end):
-    return "MX stem 1" if end > 0 else "MX stem 2"
 
 
 def plate_pressed(shape, case, travel=None):
@@ -724,6 +822,7 @@ def export_sections(bodies, v, planes):
 
 
 # ============================================================================ drivers
+PRINT_WITH_SUPPORTS = {"key_shell"}   # supports inside the board pocket only — fine for the owner (10-08); never the chassis
 PRINTED_HOW = {"key_shell": "front_down", "switch_plate": "front_down", "collar": "back_down", "plate": "front_down",
                "chassis": "front_down"}
 
@@ -736,6 +835,7 @@ def build_key_module():
         bb = shp.BoundBox
         print(f"{nm:14s} valid {shp.isValid()} | {bb.XLength:.2f} × {bb.YLength:.2f} × {bb.ZLength:.2f} mm | "
               f"{shp.Volume/1000:.2f} cm³ ≈ {shp.Volume/1000*1.27:.1f} g PETG | {os.path.basename(stl)}")
+        ceilings(shp, nm, PRINTED_HOW[nm], supports=nm in PRINT_WITH_SUPPORTS)
     return ks, sp, co
 
 
@@ -756,6 +856,7 @@ def build_variant(v):
                                    size=[round(bb.XLength, 2), round(bb.YLength, 2), round(bb.ZLength, 2)])
         print(f"  {nm:13s} valid {ok} | solids {len(shp.Solids)} | {bb.XLength:.1f} × {bb.YLength:.1f} × {bb.ZLength:.1f} | "
               f"{shp.Volume/1000:.2f} cm³ ≈ {shp.Volume/1000*1.27:.1f} g PETG")
+        assert len(shp.Solids) == 1, f"{nm}: {len(shp.Solids)} solids — a cut left a piece loose (v0.9.1 lesson)"
     assert lost <= TRIM_FAIL_MM3, f"allowed-space trim removed {lost:.2f} mm³ of chassis — a feature leaves the frame tunnel/box"
     print(f"  chassis trimmed to the allowed space: {lost:.2f} mm³ (fails above {TRIM_FAIL_MM3})")
 
@@ -796,24 +897,23 @@ def build_variant(v):
                 col += check_state(kpx, f"key wobble {sg * wob:+.1f}° about {axis_} ({lab})", exempt, only=KEY_MOVERS)
                 if axis_ == "x" and sg == 1 and lab == "pressed":
                     kpb = kpx
-    # v0.6 rocker: an end press turns the key (shell, board, antenna) about the far stem's top; the near stem goes down
-    # with it (rock_stem_travel), the far stem stays at its top stop. All pairs against the movers; the near stop bosses
-    # land on the switch plate (touching = 0 by design).
-    rock_bodies = {}
-    for end, lab in ((1, "top"), (-1, "bottom")):
-        kr = dict(bodies)
-        for nm in ("key shell", "touch board", "antenna chip"):
-            kr[nm] = key_rocked(bodies[nm], end)
-        st = bodies[near_stem(end)].copy()
-        st.translate(V(0, 0, -P.rock_stem_travel()))
-        kr[near_stem(end)] = st
-        col += check_state(kr, f"key rocked ({lab} end pressed, {P.rock_angle():.2f}°)", exempt,
-                           only=("key shell", "touch board", "antenna chip", near_stem(end)))
-        rock_bodies[lab] = kr
+    # v0.9 floating socket: MX2 (housing + stem) off its nominal y by the full float (a pitch error the socket absorbs),
+    # at rest and pressed — MX2's post must still clear the housing window, the key the housing top
+    float_bodies = {}
+    for dy in (R.KEY_SOCKET_FLOAT, -R.KEY_SOCKET_FLOAT):
+        for trv, lab in ((0.0, "rest"), (P.KEY_TRAVEL, "pressed")):
+            kf = dict(kb) if trv else dict(bodies)
+            for nm in ("MX switch 2", "MX stem 2"):
+                m = kf[nm].copy()
+                m.translate(V(0, dy, 0))
+                kf[nm] = m
+            col += check_state(kf, f"MX2 off by {dy:+.2f} in y ({lab})", exempt, only=("MX switch 2", "MX stem 2"))
+            float_bodies[(dy, lab)] = kf
     # v0.8 key catch: the key pulled towards the room must hit the collar (groove front wall) — also when shifted sideways
     # by its full side play; and it must NOT hit it before the catch play is used up
     pulled = {}
-    for dx in (0.0, R.KEY_WELL_CLEAR, -R.KEY_WELL_CLEAR):
+    play = R.KEY_WELL_CLEAR + P.COLLAR_IN_EXTRA
+    for dx in (0.0, play, -play):
         k = bodies["key shell"].copy()
         k.translate(V(dx, 0, P.KEY_CATCH_GAP + 0.15))
         pulled[dx] = overlap(k, bodies["collar"])
@@ -822,14 +922,14 @@ def build_variant(v):
     free = overlap(k, bodies["collar"])
     ok = all(v > 0.01 for v in pulled.values()) and free < 0.01
     report["states"]["key pulled (catch)"] = (f"v0.8: key pulled {P.KEY_CATCH_GAP + 0.15:.2f} towards the room (centred and "
-                                              f"shifted ±{R.KEY_WELL_CLEAR}) → collar hit {', '.join(f'{v:.2f}' for v in pulled.values())} mm³ "
+                                              f"shifted ±{play:.2f}) → collar hit {', '.join(f'{v:.2f}' for v in pulled.values())} mm³ "
                                               f"(must be > 0); pulled {P.KEY_CATCH_GAP - 0.05:.2f} → {free:.2f} mm³ (must be 0) → "
                                               f"{'CAPTIVE' if ok else 'NOT CAPTIVE'}")
     print("  " + report["states"]["key pulled (catch)"])
     if not ok:
         col.append(("key catch", "fails", 0.0))
-    report["states"]["key rocked"] = (f"v0.6 rocker: key + board turned {P.rock_angle():.2f}° about the far stem's top, near "
-                                      f"stem down {P.rock_stem_travel():.2f}, far stem at its top stop; both ends; base exemptions")
+    report["states"]["MX2 floating"] = (f"v0.9: MX2 housing + stem shifted ±{R.KEY_SOCKET_FLOAT} in y against the key (the "
+                                        f"floating socket's full float), at rest and pressed {P.KEY_TRAVEL}; base exemptions")
     t_stop = stop_travel()
     t_nom = P.NUB_GAP + P.SW_TRAVEL_TOTAL
     report["states"]["plate pressed"] = (f"five press points; nominal stop (travel {t_nom:.2f} at the farthest engaged switch, "
@@ -856,20 +956,15 @@ def build_variant(v):
     report["gaps"]["key shell ↔ plate (rest)"] = g("key shell", "plate")
     report["gaps"]["key shell ↔ collar (rest, side skirts: roll limit)"] = g("key shell", "collar")
     report["gaps"]["key shell ↔ collar (key pressed)"] = g("key shell", "collar", kb)
-    forks = key_forks()
-    fx = R.FORK_GAP / 2 + R.FORK_PRONG_T + 0.05
-    grow = fuse([box(x - fx, x + fx, y - max(R.FORK_PRONG_W / 2, R.FORK_PAD_R) - 0.05, y + max(R.FORK_PRONG_W / 2, R.FORK_PAD_R) + 0.05,
-                     P.KS["key_back"] + EPS, P.KS["post_end"] + 1) for (x, y) in R.MX_SW_POS])
-    report["gaps"]["stem forks ↔ MX housing 2 window (key pressed)"] = round(min_gap(key_pressed(forks), bodies["MX switch 2"]), 3)
-    report["gaps"]["key back (without forks) ↔ MX housing 2 top (key pressed to its stop bosses)"] = round(
+    posts = key_posts()
+    grow = fuse([cyl(x, y, R.MX_POST_D / 2 + 0.05, P.KS["key_back"] + EPS, P.KS["post_end"] + 1) for (x, y) in R.MX_SW_POS])
+    report["gaps"]["stem posts ↔ MX housing 2 window (key pressed)"] = round(min_gap(key_pressed(posts), bodies["MX switch 2"]), 3)
+    for dy in (R.KEY_SOCKET_FLOAT, -R.KEY_SOCKET_FLOAT):
+        report["gaps"][f"stem post 2 ↔ MX housing 2 window (pressed, MX2 off {dy:+.2f})"] = round(
+            min_gap(key_pressed(posts), float_bodies[(dy, "pressed")]["MX switch 2"]), 3)
+    report["gaps"]["key back (without posts) ↔ MX housing 2 top (key pressed to its stop bosses)"] = round(
         min_gap(kb["key shell"].cut(key_pressed(grow)), bodies["MX switch 2"]), 3)
     report["gaps"]["stop bosses ↔ switch plate (key pressed; 0 = landed, by design)"] = g("key shell", "switch plate", kb)
-    for lab, kr in rock_bodies.items():
-        for other in ("plate", "collar", "switch plate", "MX switch 1", "MX switch 2", "chassis"):
-            report["gaps"][f"key shell ↔ {other} (rocked, {lab} end pressed)"] = g("key shell", other, kr)
-        near = 1 if lab == "top" else 2
-        report["gaps"][f"stem fork ↔ MX housing {near} (rocked, {lab} end)"] = round(
-            min_gap(key_rocked(forks, 1 if lab == "top" else -1), bodies[f"MX switch {near}"]), 3)
     report["gaps"]["key shell ↔ switch plate (key pressed)"] = g("key shell", "switch plate", kb)
     for axis_ in ("x", "y"):
         for trv, lab in ((0.0, "rest"), (P.wobble_travel(P.KEY_WOBBLE_DEG), "pressed")):
@@ -920,7 +1015,11 @@ def build_variant(v):
     bb = bbp.BoundBox
     rim_p.translate(V(-bb.Center.x, -bb.Center.y, -bb.ZMin))
     write_stl(rim_p, os.path.join(OUT, f"plate_{v}_glowrim_print.stl"))
-    export(printed["chassis"], f"chassis_{v}", PRINTED_HOW["chassis"])
+    ceilings(printed["plate"], f"plate_{v}", PRINTED_HOW["plate"])
+    printed["chassis"].exportStep(os.path.join(OUT, f"chassis_{v}.step"))          # the glued assembly (reference)
+    for i, (lab, part) in enumerate(zip(("front", "flange", "rear"), chassis_parts(printed["chassis"])), 1):
+        export(part, f"chassis_{v}_{i}_{lab}", "front_down")
+        ceilings(part, f"chassis_{v}_{i}_{lab}", "front_down")
     comp = Part.makeCompound([printed[k] for k in printed] + [refs[k] for k in refs])
     comp.exportStep(os.path.join(OUT, f"insert-{v}_assembly.step"))
     Part.makeCompound(list(env.values())).exportStep(os.path.join(OUT, f"insert-{v}_wall-reference.step"))

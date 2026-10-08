@@ -1,4 +1,4 @@
-# RoomKey wall insert — v0.8 (Variant L and Variant S)
+# RoomKey wall insert — v0.10.3 (Variant L and Variant S)
 
 > **DRAFT / WIP. AI-assisted design. Not built, not tested, nothing certified.**
 > - The insert is a **SELV-only (class III) device**: it never carries 230 V.
@@ -11,10 +11,11 @@
 >   ([review log](../reviews/insert-v0-review-log.md)).
 >
 > - **v0.6** adds the owner's first fit test, the rocker key, wider wire slots and the kit v0.7 prototype (§0). **v0.8**
->   makes the rocker key captive after the first kit assembly (§0, §3). Neither was reviewed. (There is no insert v0.7;
->   v0.7 is the kit.)
+>   makes the rocker key captive after the first kit assembly (§0, §3). **v0.9** drops the rocker: a rigid key on two
+>   MX with a fixed and a floating socket (§0, §3); **v0.9.1** fixes the speaker tab and the radar tray after the
+>   first kit fit, **v0.9.2** closes the radar tray again, **v0.9.3** fits it to the board; **v0.10** makes every part print without supports (§0, §11). None of these was reviewed. (There is no insert v0.7; v0.7 is the kit.)
 >
-> Date: 2026-10-01, v0.6 and v0.8 2026-10-04. Licence: CERN-OHL-P-2.0 (hardware), CC BY 4.0 (this text).
+> Date: 2026-10-01, v0.6 and v0.8 2026-10-04, v0.9 2026-10-05, v0.9.1 to v0.9.3 2026-10-06, v0.10 2026-10-07. Licence: CERN-OHL-P-2.0 (hardware), CC BY 4.0 (this text).
 
 **What it is.** The insert replaces the 55 × 55 mm rocker of a German flush-mount switch (or socket) position and
 keeps the frame.
@@ -59,6 +60,89 @@ outside the chamber. Floating plate on 4 tactile switches; light-guide collar; m
 **v0.2 → v0.3 (round 2: no BLOCKER, ~28 MAJORs).** No foam gaskets between plate and chassis (mic carrier bonded to
 the plate, speaker sealed at its grille); glow = translucent plate rim; flange datum + tolerance chain + shims; 8 frame
 rims; stainless load plates; T0/T4 and the switch-box inventory; hub GPIO map from the vendor schematic.
+
+**v0.10.2 → v0.10.3 (owner, 2026-10-08: the collar fits its seat perfectly, but the key scrapes its inner walls).**
+Only the collar's inside changes: inner face set back 0.15/side (`COLLAR_IN_EXTRA`, outer unchanged) → key ↔ collar
+0.40/side; catch-nub grooves 0.15 deeper (`GROOVE_CLEAR` x 0.1 → 0.25; the groove's back wall 0.65, rule ≥ 0.6 for the
+0.2 nozzle). The nubs still overlap the inner face by 0.15; shifted fully sideways the far nub holds by 0.55 — CAD:
+key pulled → CAPTIVE at ±0.40. Smallest key ↔ collar gap 0.1 → 0.25 (rest), 0.03 → 0.08 (wobble). 0 collisions.
+
+**v0.10.1 → v0.10.2 (owner, 2026-10-08).**
+- **Key back to ONE piece** (the v0.9 shell, byte-identical print file): the owner's one-piece print with supports in
+  the pocket fit perfectly; only the chassis broke on its supports. The v0.10 ring/back-plate split is removed;
+  `PRINT_WITH_SUPPORTS = {"key_shell"}` — `ceilings()` reports it but does not fail it. Never the chassis.
+- **Amplifier pins:** 13.97 (photo) printed too wide, 12.9 (calipers) too close → `AMP_HOLE_PITCH` = their mean 13.435
+  (owner's call).
+- **Radar tray play 0.15 → 0.10/side:** the same tray fit once and was loose on the next print (print-to-print variance
+  ≈ 0.05/side); too tight is fixable with sandpaper, too loose is not. Kit, L, S: 0 collisions, key captive.
+
+**v0.10 → v0.10.1 (owner's print, 2026-10-08: the 2→3 pins did not go into their holes).** The holes open on part 3's
+bed face, where the first layers' squish closed the Ø1.4 mouths (0.1 play). Now 0.15 play, a 0.25 × 45° lead-in at
+the mouth (`CH_PIN_LEAD`) and a 0.3 point on the pin. Printed v0.10: drill the two holes to 1.5.
+
+**v0.9.3 → v0.10 (owner, 2026-10-07: the whole kit printed with a 0.2 nozzle at 30 mm/s, PETG supports with a PLA
+interface — the key shell and the chassis still broke when the supports came out. "Open to gluing (CA) or pin → hole").
+WIP: modelled, CAD-checked, not printed.**
+- *Why they needed supports (overhang survey, front down):* the key shell's back wall is a 25 × 45 roof over the board
+  pocket. The kit chassis: the mic tube stood 1.0 in front of the deck and was the only thing on the bed — the whole
+  deck floated; the 71 × 71 flange overhangs the body by ≈ 9.5 all round (≈ 2500 mm²); the rear wall behind the collar
+  hangs over the collar seat (a 32 mm bridge on the speaker side, no room for a post); the switch-plate screw bosses and
+  the cable-anchor posts hang 3–5 mm free from the ledge.
+- ~~**Key = 2 prints**~~ (reverted in v0.10.2) (`key_shell_parts()`): a **ring** (walls, skirts, catch nubs) and a **back plate** (back wall, posts,
+  sockets, stop bosses) that sits inside the ring like a lid (0.1/side, `KEY_PLATE_CLEAR`) — the fit locates it, CA from
+  behind; the 4 board screws hold board and plate as before. No room for pins in the 1.0 walls; none needed.
+- **Chassis = 3 prints** (`chassis_parts()`, all variants): **1 front** (d < flange front: deck, pockets, rims, mic tube),
+  **2 flange** (flange + webs to the collar's back face + the speaker duct), **3 rear** (rear wall, ledge, speaker cradle,
+  hub posts). Joints: 1→2 glued with the collar through both openings as the jig; 2→3 on **two pins Ø1.2**
+  (`CH_PIN_POS` (±5.7, ±26.25), on the island ribs — the only free spots: the plate's tactile switches sit at the corners,
+  the speaker on +x, the box's screw domes on the axes) + the web tops, CA.
+- **Switch plate glued** onto the ledge (owner's choice) — no screws, no bosses (`SWP_SCREWS = ()`); the **cable anchor**
+  (posts + bar) now stands on the switch plate's back.
+- **Kit mic tube** flush with the deck front: foam at the plate end 1.5 compressed (`KIT_MIC_FOAM_FRONT`), the module end
+  unchanged; the module shelf filled down to the rear part's front face.
+- **Frame rims** tied to the deck by webs in the plate-skirt gaps (they print with the front part).
+- **Every part prints front down** (collar back down, as before). New check `ceilings()` in every build: planar faces that
+  face the bed must be short bridges (span ≤ 16, measured as min(bbox, 4·area/perimeter)); now the widest is 8.7 (the
+  insert's mic pocket roof), the kit's 5.7. L, S, kit: 0 collisions, nothing trimmed, key captive, radar tray closed.
+- *Open:* the amplifier pins on the carrier — unchanged in CAD since v0.8 (spacing 15.97 outer), but the 0.2-nozzle print
+  came out a little too wide; the hole positions are only [PHOTO ±0.5] → owner to measure the two holes.
+
+**v0.9.2 → v0.9.3 (owner's print, 2026-10-06).** The radar slid about in the v0.9.2 tray (≈ 0.5 too long, the short side
+just too loose). The board is **22.03** long (caliper photo), not 22.26 (10-03): `RADAR_H` corrected, `KIT_RADAR` now
+derived from `RADAR_W/H`, tray play 0.2 → **0.15/side** (= `KEY_FIT` [MEAS]). Pocket 16.14 × 22.33. Kit: 0 collisions,
+frame closed.
+
+**v0.9.1 → v0.9.2 (the owner's slicer view and a photo of the radar's antenna face, 2026-10-06; WIP, not printed).**
+- *My error in v0.9.1:* the full-width antenna window removed the plate strip under the board's parts edge; next to it
+  the cable-loop keep-out (x ±7) takes the tray's +x wall over y −7.8…2.5, so the tray became an open "C" — the floppy
+  shape v0.8 had fixed. No check caught it (no collision, still one solid).
+- *The photo:* SMD parts run along the **whole** long edge opposite the header, corners included, up to ≈ 4.1 from it;
+  the chip reaches 2.3 from that edge. So no plate strip can run under that edge with the board lying on the plate.
+- *Fix:* the board sits on **two 1.3 mm ledges** at its short ends, header side only (11.0 from the header edge; the
+  parts band starts at 11.6). Every part on the antenna face then floats ≥ 0.2 above the plate, the v0.8 window and the
+  plate strip under the parts edge are back, and the tray is closed. Tray 1.3 taller. Reference envelopes from the photo
+  (`KIT_RADAR_EDGE` 4.2 × 1.1 [TBD height]); the radar's front parts are no longer exempt from the collision check.
+- *New check:* `build_kit` probes the plate strip along the parts edge over the keep-out's y range → "radar tray frame:
+  CLOSED", else it fails. Kit: 0 collisions; edge parts ↔ carrier 0.2, pin stubs 0.5, chip 2.5.
+
+**v0.9 → v0.9.1 (the owner's kit fit, 2026-10-06; WIP: modelled, CAD-checked, not printed).** Key, amplifier and
+microphone fit as printed.
+
+| Input | v0.9.1 |
+|---|---|
+| The speaker does not go in: a ≈ 0.5 mm wire tab at the centre of one short end hits the cradle rib. "A hole in one of the towers, not a fork (integrity)." | **Blind tab slot** in the +y cradle rib (towards the amplifier): open to the back (the speaker and its wires come from behind), closed to the front, 4.4 wide (tab 3.4 [TBD] + 0.5/side), 0.9 beyond the speaker end; the rib is thickened outward there so 0.8 of wall stays behind the slot. The +y snap hook is dropped (the slot cut its root and left it as a loose 2nd solid; at the round speaker end it caught nothing). `SPK_TAB` overhang 1.8 (photo) → 0.5 (owner). The speaker reference now carries the tab. New hard check: every printed part is exactly ONE solid. |
+| The radar does not sit flat in the intended orientation (header to the wall): small SMD parts on the antenna face, along the long edge opposite the header, land on the carrier. (Turned by 180°, the header pin stubs do the same.) | The antenna **window spans the full board width** → the board rests only on its two short ends (1.5 / ≈ 3 mm). New references: "LD2410C edge parts" (`KIT_RADAR_EDGE` [TBD]) and "LD2410C pin stubs" (`KIT_RADAR_STUBS` [TBD]); both clear the carrier by 0.1. |
+
+CAD: L, S and the kit 0 collisions; key still captive. Print folder `roomkey-bausatz-v0.9.1/` (new: chassis, carrier).
+
+**v0.8 → v0.9 (the owner's verdict on the rocker, 2026-10-05; WIP: modelled, CAD-checked, not printed, not reviewed).**
+
+| Input | v0.9 |
+|---|---|
+| "Die Idee mit der Wippe ist an sich schlecht. Es führt zu zu vielen Problemen mit der Integrität und Usability." Two problems: a rocking key on stem tops, skirts in the collar and stop bosses may scrape instead of gliding; and it did not stay in (v0.7 fell out, the v0.8 catch was a patch). | **Rigid key on the two MX** (the owner chose it from three options: this, one centre MX + a 2u stabiliser, a printed plunger). The forks and rocking pads are gone; the v0.5 **stem posts with cross sockets** are back (coupon v0 row C fit): **fixed** on MX1 (top), **floating** on MX2 (bottom: its y-arm slot runs through the post, its x-arm slot is 1.80 wide → the stem floats ±0.25 along y, so a pitch error cannot strain the two stems against each other). The key moves straight in and out only. — §3 |
+| Keep the key captive | The **v0.8 catch** (nubs in the collar grooves) and the **4 stop bosses** (stop at 3.4, before MX bottom-out) stay unchanged; socket friction holds the key as well. CAD: 0 collisions in L, S and the kit; key pulled → **CAPTIVE**; MX2 shifted ±0.25 → its post still clears the housing window (0.10). |
+| Top / bottom functions | Not needed by the firmware today: it already ORs both switches into one key (`key_raw`). If they are ever wanted, they come from the touch point at the click (the AXS5106L touch panel), not from the mechanics. Wiring unchanged (KEY1 = BOOT, KEY2 = IO6). |
+| Still open | End-press binding (desk test **R1**) — the reason v0.6 went to the rocker. If R1 fails, the documented fallback is one centre MX + a 2u plate-mount stabiliser. |
 
 **v0.6 → v0.8 (the owner's first kit assembly, 2026-10-04; WIP, not reviewed).**
 
@@ -211,11 +295,14 @@ The 1.0 mm ivory walls have no black core: backlight/glow bleed through the key 
 - Back wall 1.6, screw heads flush. A **0.4 mm channel** in its inner face carries the 14 wires: a band x ±10.4,
   y −6.5 … 9.5 to the cable slot, plus a strip along each header column (|x| 7.4–10.4, y −16.6 … 10.5: the pins run
   y +9.65 … −15.75 [DS drawing]).
-- Two stem posts Ø5.5 with MX cross sockets 4.10 × 1.30, 3.4 deep (coupon v0 row C, v1 row E).
+- Two stem posts Ø5.5 with MX cross sockets 4.10 × 1.30, 3.4 deep (coupon v0 row C, v1 row E). v0.9: MX1 (top) is
+  the **fixed** socket (full cross); MX2 (bottom) **floats** ±0.25 along y (its y-arm slot runs through the post, the
+  x-arm slot is 1.80 wide). The fixed socket locates the key; the floating one only holds it in x.
 
 **Guidance: the two MX stems guide the key**, on the long axis at (0, +15.0) and (0, −13.0), pitch 28.
 - The key overhangs the stems by **8.4 (top) / 10.4 (bottom)** — about a 1u keycap's stem-to-edge distance (9.1).
-- **Both switches are the same brown (tactile)**, wired in parallel, so both ends feel the same.
+- **Both switches are the same brown (tactile)**, so both ends feel the same. v0.9: each stays on its own pin (KEY1 =
+  BOOT, KEY2 = IO6) and the firmware ORs them into one key.
 - The **side skirts** (long sides only, |y| ≤ 16.5) run in the collar with 0.25 clearance per side. They limit roll
   and keep the key off the plate.
 
@@ -233,13 +320,14 @@ R13:* 3 people, 100 swipes from each end and the centre, 100 taps → 0 key-down
 (≥ 1 N each, then repeat R1), firmware: a touch that moved > 2 mm suppresses key-down, and Ringing answers on key-up
 after a still press (WIP — the firmware is not changed in this revision).
 
-**Travel and stop.** The key stops at **MX bottom-out (4.0)**, like any keycap. The key back is then 0.50 above the
-modelled MX housing top (the real top is tapered, so more). The stem posts enter the housing windows with 0.35 per
-side. There are no stop bosses.
+**Travel and stop.** v0.9 (kept from v0.6): the key stops on **4 stop bosses** that land on the switch plate after
+**3.4**, before MX bottom-out (4.0), with both switches past their worst actuation point (2.6). The press ends on the
+plate, not on the stems. The key back is then 1.1 above the modelled MX housing top. The stem posts enter the housing
+windows with 0.35 per side (0.10 when MX2 sits at the end of its ±0.25 float).
 
 **Wobble (CAD).** The key, its board and **both stems** are tilted ±1.5° (KEY_WOBBLE_DEG [TBD], typical MX stem play
 1–2°) about x and about y, at rest and pressed. Only the stem-in-housing and stem-in-socket pairs are exempt.
-- No collision. Smallest gaps: key ↔ collar 0.11 (roll, pressed), key ↔ MX housing 0.23, key ↔ plate 0.76.
+- No collision. Smallest gaps (v0.9): key ↔ collar 0.03 (roll, about y), key ↔ MX housing 0.26, key ↔ plate 0.79.
 - The collar's inner face is set back 0.4 at the short sides over its first 2.4 mm, for the key ends.
 
 **End presses — BLOCKED-ON-DATA, binding likely.**
@@ -252,6 +340,10 @@ side. There are no stop bosses.
   It **collides with today's cable path** (11.2 mm wide at y +1.5, through the key back and the switch plate): the
   cable must be split into two bundles beside the centre switch. **Not modelled yet** — build this fallback key module
   alongside the first rig and test both.
+
+**Rocker key — SUPERSEDED by v0.9 (owner, 2026-10-05: the rocker idea is bad in itself).** The rocker text below and
+the v0.8 catch reasoning are kept as history. The catch nubs, grooves and stop bosses are still in the model; the forks,
+rocking pads and the rocked CAD state are not.
 
 **Rocker key — owner's wish, 2026-10-02 (v0.6, WIP: modelled, not reviewed, test print pending).** Both MX are read
 **separately** and the key **rocks**: top end → top switch, bottom end → bottom switch, centre → both. The owner's words:
@@ -289,6 +381,13 @@ viewed from the side the key should be "funnel-shaped"; and "the press in the mi
   - the real MX window shape (6.2 [TBD]).
 - **Test print** (owner, PETG, A1, 0.10): only the new key shell, on the 01.10. parts. File:
   `druck/roomkey-taste-v0.6-wippe/` with `DRUCKEN.md`.
+
+**Owner's verdict, 2026-10-05: the rocker concept is dropped.**
+> "Die Idee mit der Wippe ist an sich schlecht" — too many problems with integrity and usability: it is unclear that
+> rocking can ever glide instead of scrape, and a rocking key does not stay in the housing.
+
+A replacement key is being designed (WIP). The v0.8 key shell and collar below are interim parts. The firmware needs
+no change for a single switch on BOOT (RoomKey software, 2026-10-05).
 
 **Key catch — v0.8 (owner, 2026-10-04: "nothing stops the rocker, with the ESP32 module, from simply falling out"; WIP,
 modelled, not reviewed).**
@@ -1111,21 +1210,9 @@ Winners go into the parameter files as [MEAS].
 | R14 | hub rail hard short → the plate still toggles the relay, 20 × | §8.2 |
 | R15 | 20 power cuts with the light off → it stays off | §9.2 |
 
-**Desk replica v0.1 (owner's request 2026-10-03; prototype only, WIP, not reviewed).**
-`make_desk_replica.py` / `desk_lib.py`, parameters in `insert_params.py` §6. It is **powered by USB 5 V, never in a wall
-and never on 230 V.**
-- *Parts:* two coupled flush-box replicas at the 71 mm pitch (Ø59, 47 deep, open back, screw domes at ±30, a wire
-  channel between the boxes) and a 2-gang frame (4 × M3 from behind into corner posts, outside both 71 × 71 flanges).
-  - The **top** box takes the unchanged wall insert.
-  - The **bottom** box takes a sensor cover on a carrier (flange like the chassis), holding the owner's breakouts:
-    - the LD2410C behind a 1.2 skin, with a heat wall below it;
-    - the VEML7700 behind a Ø2.5 light hole;
-    - the SHT31-D behind a 3 × 3 Ø1.0 vent grid;
-    - the INMP441 on a port seal ring.
-  - Also a MAX98357A tray, slid in from the back onto ledges on the domes.
-- *Check:* 0 collisions with the insert and all reference bodies; plate ↔ frame ≥ 0.157 when pressed.
-- *Files:* print files in `druck/roomkey-tischnachbau-v0.1/`, all printable without supports.
-- *It does not replace ET4a:* a real loose box, the real frame series and real NYM.
+**Desk replica v0.1 (2026-10-03): RETIRED, files removed on 2026-10-06.** It modelled two coupled boxes with a
+sensor cover in the second box. The owner rejected that ("everything in ONE box"); the practice box and the kit below
+replace it.
 
 **Practice box v0.1 and kit v0.7 (owner 2026-10-03; prototype, WIP, not reviewed).**
 - *Owner's rules:*
@@ -1150,7 +1237,7 @@ and never on 230 V.**
     that wall and the holes opened over the edge. Now a round pad gives each hole 1.2 of wall, the radar window is cut
     cleanly open to its −x edge, and `build_kit` reports every carrier web (rule ≥ 0.8; the thinnest is now 0.8, between
     a hole and the window).
-  - *Radar tray (v0.8, second carrier print, 2026-10-04):* the radar area was a floppy U of 1.2–2.1 mm strips, 1.5
+  - *Radar tray (v0.8, second carrier print, 2026-10-04; the owner, 2026-10-06: "fits perfectly"):* the radar area was a floppy U of 1.2–2.1 mm strips, 1.5
     thick, open on the header side. The cable-loop keep-out had cut its +x strip down to 1.2. Now a **closed wall** (1.0,
     0.2 play) runs round the board from the plate's front to 0.3 behind the board, 3.4 tall. It closes and stiffens the
     ring and replaces the corner brackets. The window in front of the antennas stays open, ≥ 1.0 from the box-radius trim.
@@ -1177,8 +1264,9 @@ and never on 230 V.**
 2. **Switch plate.** Both MX switches, **wired first** (2 wires), clipped in; switch plate through the collar opening
    into the chassis, 2 × M2 × 4.
 3. **Chassis front.**
-   - v0.8: **key module onto the stems first, then the collar from the front over the key** (its catch nubs enter the
-     collar's grooves from behind). Not glued — the plate holds the collar.
+   - v0.8/v0.9: **key module onto the stems first, then the collar from the front over the key** (its catch nubs enter
+     the collar's grooves from behind). Not glued — the plate holds the collar. v0.9: press the key straight onto both
+     stems like a keycap (top socket fixed, bottom one floating).
    - LEDs onto the collar's thick corners through the rear-wall windows (tape mask); daisy-chain wires.
    - B3FS carriers from the front: wires through the flange slots first, then the carrier onto the flat seat — **held
      with tape, not glued**, until the per-switch check (step 6) passes; then a glue dot.

@@ -84,19 +84,15 @@ MX_STEM_ARM_L = 4.10     # [FREE] keycap socket cross: arm length (coupon: 4.05 
 MX_STEM_ARM_W = 1.30     # [FREE] arm width (coupon: 1.25 / 1.30 / 1.35)
 MX_STEM_DEPTH = 3.8      # [FREE] coupon v0 socket depth (the drawing gives no engagement value)
 KEY_SOCKET_DEPTH = 3.4   # [FREE] key socket depth = stem top ↔ post end, so the stem bottoms at the design position
-# v0.6 ROCKER KEY (owner's wish 2026-10-02: the key rocks, top end = top switch, bottom end = bottom switch, centre = both).
-# The full cross socket made the key a rigid frame on two stems (no rocking, end presses bind). Now each stem is held by a
-# FORK: two prongs pinch only the ends of the stem's x-arm (faces normal to x), so the key can turn about x on the stems
-# (pinch friction still holds it on) and rests on a rocking PAD (cylinder about x) on the stem top.
-FORK_GAP = 3.90              # [FREE] inner distance of the prongs. v0.6 used 4.10 (the cross SOCKET's slot length, which has
-                             #        play — that socket clamped through its 1.30 width) → the forks clamped nothing on the ≈ 4.0
-                             #        stem arm and the key fell out (owner, 2026-10-04). 3.90 [TBD coupon] gives a light pinch;
-                             #        what keeps the key in is the v0.8 catch in the collar (insert_params KEY_CATCH_*)
-FORK_PRONG_T = 0.8           # [FREE] prong thickness in x (2 perimeters)
-FORK_PRONG_W = 2.0           # [FREE] prong width in y (grips the 1.3 wide arm end; stays inside the housing window when rocked)
-FORK_PAD_R = 1.5             # [FREE] rocking pad on the stem top: cylinder about x, its lowest line at stem_top
+# v0.9 RIGID KEY (owner 2026-10-05: "Die Idee mit der Wippe ist an sich schlecht" — the v0.6–v0.8 rocker on stem forks
+# scraped and did not stay in). Back to the v0.5 full cross sockets on Ø MX_POST_D posts (fit proven, coupon v0 row C), as a
+# FIXED / FLOATING pair: the top socket (MX1) holds the stem in x and y; the bottom one (MX2) is slotted along y, so a pitch
+# error between the plate cut-outs and the key's sockets cannot strain the two stems against each other (a rigid frame on
+# two stems is over-constrained only along the line through them). Both switches are one key (firmware ORs them).
+KEY_SOCKET_FLOAT = 0.25      # [FREE] MX2 socket: the y-arm slot runs through the post (open ends) and the x-arm slot is wider
+                             #        by 2 × this → the stem floats ± this along y; still clamped in x by its y-arm's 1.30 width
 KEY_END_TAPER = 0.2          # [FREE] the "funnel": the short-end walls are set back by this much from 5.6 behind the glass on
-KEY_END_TAPER_RUN = 5.6      #        (linear from 0 at the glass): room for the dipping end under the plate edge when rocked
+KEY_END_TAPER_RUN = 5.6      #        (linear from 0 at the glass); v0.6 rocker room, kept for the ±KEY_WOBBLE_DEG pitch
 MX_PINCOUNT = 3          # [MEAS] 2 metal pins + centre post, no side pegs → plate mount (needs the 1.5 mm plate)
 
 # ============================================================== audio
@@ -116,7 +112,8 @@ SPK_END_R = SPK_W / 2                    # [MEAS] "almost oval": near-semicircul
                                          #        v0.6: the hooks at the box corners catch nothing → move them onto the straight part
 SPK_RING = (1.4, 0.1)                    # [TBD] white ring on the grille face: width (photo), thickness ("paper-thin", owner) →
                                          #        NOT a compressible gasket. Possibly the release liner of an adhesive ring [TBD]
-SPK_TAB = (3.4, 1.8)                     # [TBD] wire-exit tab at the CENTRE of one short end: width, overhang (from the photo, ±0.5)
+SPK_TAB = (3.4, 0.5)                     # wire-exit tab at the CENTRE of one short end: width [TBD photo ±0.5], overhang [MEAS ≈ 0.5,
+                                         #        owner 2026-10-06: it stopped the speaker at the cradle rib in the first kit print]
 SPK_PORT_FACE = "large"                  # [DS] vendor outline: mesh grille on one 20 × 30 face
 SPK_PORT_W, SPK_PORT_H = 16.5, 27.0      # [TBD] mesh inside the white ring, from the photo (±1); diaphragm behind it ≈ 8.6 × 12.6
 AMP_W, AMP_H, AMP_T = 18.77, 17.7, 3.0   # [MEAS] MAX98357A breakout, owner's calipers 2026-10-03; 3.0 = PCB + tallest part
@@ -125,7 +122,10 @@ AMP_PARTS = ("7 pin holes (gold rings), header NOT soldered yet; a green 2-pin s
              "for a compact box, solder the wires straight to the pads instead (saves the terminal's height)")   # [MEAS]
 AMP_BOARD = "purple MAX98357A 'I2S Amp' breakout (Adafruit 3006 layout); parts on the front only, back flat"   # [PHOTO]
 AMP_PINS = ("LRC", "BCLK", "DIN", "GAIN", "SD", "GND", "Vin")   # [PHOTO] 2.54 pitch, row centred, ≈ 1.9 from the bottom edge
-AMP_HOLE_D, AMP_HOLE_C = 2.5, (2.4, 1.9)   # [PHOTO ±0.5] 2 mounting holes in the top corners: Ø, centre ↔ side / top edge
+AMP_HOLE_PITCH = (13.97 + 12.9) / 2       # [FIT] 13.435: owner 2026-10-08 — 13.97 (photo) printed too wide, 12.9 (calipers: outer
+                                          #        15.1 / inner 10.7, Ø 2.2) printed too close → the mean of the two
+AMP_HOLE_D, AMP_HOLE_C = 2.2, ((AMP_W - AMP_HOLE_PITCH) / 2, 1.9)   # [MEAS Ø + pitch, holes assumed centred; y PHOTO ±0.5] top edge
+AMP_PIN_D = AMP_HOLE_D - 0.3                # [FREE] printed locating pins for the 2 holes: 0.15 play per side
 AMP_SPK_PADS = (3.5, 3.1)                  # [PHOTO ±0.5] speaker pads (−/+) pitch, centred, centre ↔ top edge
 
 # ============================================================== optional sensors (bought 2026-09-29)
@@ -147,7 +147,9 @@ RH_PINS = ("VIN", "GND", "SCL", "SDA")   # [PHOTO] 4 pins at 2.54 along the bott
 RH_HOLE_D, RH_HOLE_C = 2.3, (2.5, 2.9)   # [PHOTO ±0.5] the one large hole (top left, front view): Ø, centre ↔ left / top edge
 RH_CHIP_C = (7.2, 3.75)                  # [PHOTO ±0.5] SHT31 chip (≈ 2.5 × 2.5) centre ↔ left / top edge (front view): it needs
                                          #        room air → vents in front of it, low in the box, walled off from ESP and amp heat
-RADAR_W, RADAR_H, RADAR_T = 15.84, 22.26, 1.56   # [MEAS] HLK-LD2410C, owner's calipers 2026-10-03 (manual: 16 × 22); 5 V;
+RADAR_W, RADAR_H, RADAR_T = 15.84, 22.03, 1.56   # [MEAS] HLK-LD2410C, owner's calipers 2026-10-03 (manual: 16 × 22); 5 V;
+                                         #        H 22.03: caliper photo 2026-10-06 (10-03 said 22.26 → the v0.9.2 tray was
+                                         #        ≈ 0.5 too long, the board slid about);
                                          #        sees through thin plastic, not metal
 RADAR_T_PINS = 11.4                      # [MEAS] total height with the soldered pin header (thickest point)
 RADAR_PINS = ("TX", "RX", "OUT", "GND", "VCC")   # [PHOTO] 5 pins at 2.54 along one LONG edge, ≈ 1.3 from it, roughly centred
@@ -175,8 +177,8 @@ MX_SW_POS = ((0.0, 15.0), (0.0, -13.0))      # [FREE] two switches on the long a
                                              #        8.4 (top) / 10.4 (bottom) — about a 1u keycap's stem-to-edge — so end
                                              #        presses act like edge presses on a keycap (desk-rig test, insert doc §3);
                                              #        MX2's spring stays ≈ 8 mm from the antenna chip (RF test)
-MX_GUIDE = ("2 × the same brown (tactile) switch, read SEPARATELY (v0.6 rocker): an end press rocks the key about the other "
-            "stem and moves only the near switch; a centre press moves both (firmware: both within a window = centre) — desk rig")
+MX_GUIDE = ("2 × the same brown (tactile) switch under one rigid key (v0.9): fixed socket on MX1, floating on MX2; wired on "
+            "their own pins and ORed in firmware (key_raw) — end-press binding: desk rig R1")
 SWITCH_PITCH_Y = MX_SW_POS[0][1] - MX_SW_POS[1][1]
 SPK_ON_EDGE = True       # [FREE] speaker stands on its 5.5 mm edge behind the right wing
 CLEAR = 0.5              # [FREE] minimum clearance between parts
@@ -221,11 +223,11 @@ def validate(verbose=True):
     for (x, y) in MX_SW_POS:
         mx_x = KEY_W / 2 + KEY_WELL_CLEAR - (abs(x) + MX_TOP_W / 2)
         mx_y = KEY_H / 2 + KEY_WELL_CLEAR - (abs(y) + MX_TOP_W / 2)
-        post = KEY_W / 2 - KEY_WALL - (abs(x) + FORK_GAP / 2 + FORK_PRONG_T)
+        post = KEY_W / 2 - KEY_WALL - (abs(x) + MX_POST_D / 2)
         ok = min(mx_x, mx_y) >= 0.3 and post >= 1.0
         (oks if ok else errs).append(
             f"switch at ({x:+.1f}, {y:+.1f}): housing {min(mx_x, mx_y):.2f} mm inside the key well, "
-            f"stem fork {post:.1f} mm inside the key back")
+            f"stem post {post:.1f} mm inside the key back")
     gap_y = SWITCH_PITCH_Y - MX_TOP_W
     (oks if gap_y >= 6.0 else warns).append(
         f"{gap_y:.1f} mm between the two switch housings (ribbon cable passes there, needs ≥ 6)")

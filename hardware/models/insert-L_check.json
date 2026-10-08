@@ -1,11 +1,11 @@
 {
  "variant": "L",
- "version": "0.8",
+ "version": "0.10.3",
  "parts": {
   "key shell": {
    "valid": true,
    "solids": 1,
-   "volume_cm3": 3.24,
+   "volume_cm3": 3.33,
    "size": [
     27.95,
     46.8,
@@ -15,17 +15,17 @@
   "switch plate": {
    "valid": true,
    "solids": 1,
-   "volume_cm3": 1.16,
+   "volume_cm3": 1.28,
    "size": [
     26.95,
     46.9,
-    1.5
+    9.9
    ]
   },
   "collar": {
    "valid": true,
    "solids": 1,
-   "volume_cm3": 1.76,
+   "volume_cm3": 1.58,
    "size": [
     29.75,
     49.7,
@@ -45,7 +45,7 @@
   "chassis": {
    "valid": true,
    "solids": 1,
-   "volume_cm3": 8.06,
+   "volume_cm3": 7.96,
    "size": [
     71.0,
     71.0,
@@ -56,40 +56,28 @@
  "collisions": [],
  "gaps": {
   "key shell ↔ plate (rest)": 1.0,
-  "key shell ↔ collar (rest, side skirts: roll limit)": 0.1,
-  "key shell ↔ collar (key pressed)": 0.1,
-  "stem forks ↔ MX housing 2 window (key pressed)": 0.35,
-  "key back (without forks) ↔ MX housing 2 top (key pressed to its stop bosses)": 1.1,
+  "key shell ↔ collar (rest, side skirts: roll limit)": 0.25,
+  "key shell ↔ collar (key pressed)": 0.25,
+  "stem posts ↔ MX housing 2 window (key pressed)": 0.35,
+  "stem post 2 ↔ MX housing 2 window (pressed, MX2 off +0.25)": 0.1,
+  "stem post 2 ↔ MX housing 2 window (pressed, MX2 off -0.25)": 0.1,
+  "key back (without posts) ↔ MX housing 2 top (key pressed to its stop bosses)": 1.1,
   "stop bosses ↔ switch plate (key pressed; 0 = landed, by design)": 0.0,
-  "key shell ↔ plate (rocked, top end pressed)": 0.266,
-  "key shell ↔ collar (rocked, top end pressed)": 0.1,
-  "key shell ↔ switch plate (rocked, top end pressed)": 0.0,
-  "key shell ↔ MX switch 1 (rocked, top end pressed)": 0.35,
-  "key shell ↔ MX switch 2 (rocked, top end pressed)": 0.368,
-  "key shell ↔ chassis (rocked, top end pressed)": 0.987,
-  "stem fork ↔ MX housing 1 (rocked, top end)": 0.35,
-  "key shell ↔ plate (rocked, bottom end pressed)": 0.254,
-  "key shell ↔ collar (rocked, bottom end pressed)": 0.1,
-  "key shell ↔ switch plate (rocked, bottom end pressed)": 0.0,
-  "key shell ↔ MX switch 1 (rocked, bottom end pressed)": 0.368,
-  "key shell ↔ MX switch 2 (rocked, bottom end pressed)": 0.35,
-  "key shell ↔ chassis (rocked, bottom end pressed)": 1.0,
-  "stem fork ↔ MX housing 2 (rocked, bottom end)": 0.35,
   "key shell ↔ switch plate (key pressed)": 0.0,
   "key shell ↔ plate (wobble ±1.5° about x, rest)": 0.862,
-  "key shell ↔ collar (wobble ±1.5° about x, rest)": 0.1,
-  "key shell ↔ MX switch 1 (wobble ±1.5° about x, rest)": 0.35,
-  "key shell ↔ MX switch 2 (wobble ±1.5° about x, rest)": 0.35,
+  "key shell ↔ collar (wobble ±1.5° about x, rest)": 0.25,
+  "key shell ↔ MX switch 1 (wobble ±1.5° about x, rest)": 0.257,
+  "key shell ↔ MX switch 2 (wobble ±1.5° about x, rest)": 0.335,
   "key shell ↔ plate (wobble ±1.5° about x, pressed)": 0.788,
-  "key shell ↔ collar (wobble ±1.5° about x, pressed)": 0.1,
-  "key shell ↔ MX switch 1 (wobble ±1.5° about x, pressed)": 0.35,
-  "key shell ↔ MX switch 2 (wobble ±1.5° about x, pressed)": 0.35,
+  "key shell ↔ collar (wobble ±1.5° about x, pressed)": 0.25,
+  "key shell ↔ MX switch 1 (wobble ±1.5° about x, pressed)": 0.257,
+  "key shell ↔ MX switch 2 (wobble ±1.5° about x, pressed)": 0.335,
   "key shell ↔ plate (wobble ±1.5° about y, rest)": 0.862,
-  "key shell ↔ collar (wobble ±1.5° about y, rest)": 0.029,
+  "key shell ↔ collar (wobble ±1.5° about y, rest)": 0.084,
   "key shell ↔ MX switch 1 (wobble ±1.5° about y, rest)": 0.378,
   "key shell ↔ MX switch 2 (wobble ±1.5° about y, rest)": 0.378,
   "key shell ↔ plate (wobble ±1.5° about y, pressed)": 0.787,
-  "key shell ↔ collar (wobble ±1.5° about y, pressed)": 0.029,
+  "key shell ↔ collar (wobble ±1.5° about y, pressed)": 0.179,
   "key shell ↔ MX switch 1 (wobble ±1.5° about y, pressed)": 0.262,
   "key shell ↔ MX switch 2 (wobble ±1.5° about y, pressed)": 0.262,
   "plate ↔ chassis (left wing; 0 = lip on its catch face, by design)": 0.0,
@@ -120,7 +108,7 @@
   "plate ↔ frame (bottom band, RSS stop)": 0.193,
   "plate ↔ frame (top-left corner, RSS stop)": 0.225,
   "chassis rims ↔ frame (rest, locating clearance)": 0.1,
-  "chassis ↔ box (radial; flange sits on the rim)": 1.031,
+  "chassis ↔ box (radial; flange sits on the rim)": 0.621,
   "collar ↔ chassis (rest; glued seat, back face on the rear wall = 0 by design)": 0.0,
   "speaker ↔ chassis (rest; front edge on the plenum floor = 0 by design)": 0.0,
   "antenna chip ↔ MX switch 2 (rest)": 9.0,
@@ -149,13 +137,13 @@
   "nub pushes plunger TR (top-left corner), mm³": 1.556,
   "nub pushes plunger BL (top-left corner), mm³": 1.699
  },
- "trimmed_mm3": -0.0,
+ "trimmed_mm3": 0.0,
  "states": {
   "rest": "all pairs",
   "key pressed": "key + stems + board translated 3.4 (to the stop bosses); base exemptions only",
   "key wobble": "key + stems + board tilted ±1.5° about x and y (through the stem tops' mid-point), at rest and pressed 2.87 (deepest travel before a stop boss lands); base exemptions only (stems in their housings and sockets) — end presses beyond the stem play: desk rig",
-  "key pulled (catch)": "v0.8: key pulled 0.60 towards the room (centred and shifted ±0.25) → collar hit 0.54, 1.31, 1.31 mm³ (must be > 0); pulled 0.40 → 0.00 mm³ (must be 0) → CAPTIVE",
-  "key rocked": "v0.6 rocker: key + board turned 6.07° about the far stem's top, near stem down 2.96, far stem at its top stop; both ends; base exemptions",
+  "key pulled (catch)": "v0.8: key pulled 0.60 towards the room (centred and shifted ±0.40) → collar hit 0.27, 1.26, 1.26 mm³ (must be > 0); pulled 0.40 → 0.00 mm³ (must be 0) → CAPTIVE",
+  "MX2 floating": "v0.9: MX2 housing + stem shifted ±0.25 in y against the key (the floating socket's full float), at rest and pressed 3.4; base exemptions",
   "plate pressed": "five press points; nominal stop (travel 0.75 at the farthest engaged switch, all pairs) and RSS worst stop (1.12; switch bodies exempt: in the real stack a deeper stop means a deeper switch)"
  }
 }
