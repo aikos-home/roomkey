@@ -14,6 +14,7 @@ HERE = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() els
 sys.path.insert(0, HERE)
 import FreeCAD as App  # noqa: E402
 import kit_lib as K  # noqa: E402
+import wiring_pcb as W  # noqa: E402
 
 L, D, P = K.L, K.D, K.P
 IVORY, DARK, GREY = (0.95, 0.93, 0.85), (0.18, 0.18, 0.18), (0.55, 0.55, 0.55)
@@ -66,7 +67,9 @@ ITEMS = [
 
 doc = App.newDocument("RoomKey_Bausatz_v" + P.VERSION.replace(".", "_"))   # the parts' version, not the kit concept's (v0.7)
 groups = {}
-for g in ("Übungsdose", "Druckteile", "Bauteile"):            # v0.11: the wiring is the hub's soldering map now
+for no, a, b, sig, col, rgb, rt, dia, _ in W.wires():          # v0.11: the wires that the hub PCB leaves
+    ITEMS.append((f"Draht_{no:02d}", (lambda rt=rt, dia=dia: W.wire_solid(rt(), dia)), rgb, 0, "Verkabelung"))
+for g in ("Übungsdose", "Druckteile", "Bauteile", "Verkabelung"):
     groups[g] = doc.addObject("App::DocumentObjectGroup", g.replace("ü", "ue"))
     groups[g].Label = g
 for name, build, col, tr, grp in ITEMS:

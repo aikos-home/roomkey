@@ -52,20 +52,54 @@ def tray_webs(bc):
     return webs
 
 
-def build_kit():
-    print(f"\n==================== RoomKey KIT (concept v0.7: one box, lab supply 5 V) — parts v{P.VERSION} ====")
+HUB_MX_HOLES = ((5.08, 15.0, 1.75), (2.54, 20.08, 3.0), (0.0, 15.0, 4.0), (-3.81, 17.54, 3.0), (-5.08, 15.0, 1.75),
+                (-5.08, -13.0, 1.75), (-2.54, -18.08, 3.0), (0.0, -13.0, 4.0), (3.81, -15.54, 3.0), (5.08, -13.0, 1.75))
+# [KiCad] the hub's SW1/SW2 (Kailh hot-swap) holes (x, y, drill): kept open through the socket blocks of the dummy, so
+#         the real MX switches plug in for the fit test (board 2026-10-09 00:28)
+
+
+def hub_dummy():
+    """v0.11: a printable stand-in for the hub PCB, to try the fit before ordering: the board (outline, slot, cut-outs,
+    drill holes) from its STEP, and every part on its back as a block of its real footprint and height (the part models
+    float on their pads, so they are not fused as they are). Printed front face down; ONE solid."""
+    h = L.hub_pcb()
+    sol = sorted(h.Solids, key=lambda q: -q.Volume)
+    board = sol[0]
+    back = P.HUB_PCB_D0 + P.HUB_PCB_STEP_TOP
+    blocks = []
+    for q in sol[1:]:
+        bb = q.BoundBox
+        top = -bb.ZMin                                   # deepest point (d) of the part
+        if top <= back + 0.05 or bb.XLength < 0.2 or bb.YLength < 0.2:
+            continue                                     # front-side bits / flat pads: not printed
+        blocks.append(L.box(bb.XMin, bb.XMax, bb.YMin, bb.YMax, back - 0.05, top))
+    body = board.fuse(blocks).removeSplitter() if blocks else board
+    holes = [L.cyl(x, y, d / 2 + 0.1, P.HUB_PCB_D0 - 1.0, back + 8.0) for (x, y, d) in HUB_MX_HOLES]
+    body = body.cut([L.box(-40, 40, -40, 40, P.HUB_PCB_D0 - 5.0, P.HUB_PCB_D0)] + holes)
+    assert len(body.Solids) == 1, f"hub dummy: {len(body.Solids)} solids"
+    return body.Solids[0]
+
+
+def kit_bodies():
+    """every printed part and reference body of the kit in the practice box, at rest (also used by the wiring)."""
     one = ((0.0, 0.0),)
     pbody, prim = L.plate_parts("S")
-    ch, bc = kit_chassis("S"), L.radar_tray()
     bodies = {"practice box": D.wall_block(one), "frame 1-gang": D.frame_2x(one, with_rh=True), "key shell": L.key_shell(),
-              "switch plate": L.switch_plate(), "collar": L.collar(), "plate": fuse([pbody, prim]), "chassis (kit)": ch,
-              "radar tray": bc}
+              "switch plate": L.switch_plate(), "collar": L.collar(), "plate": fuse([pbody, prim]),
+              "chassis (kit)": kit_chassis("S"), "radar tray": L.radar_tray()}
     refs = L.ref_bodies("S")
     for k in ("touch board", "antenna chip", "MX switch 1", "MX switch 2", "speaker 2030", "LED 1", "LED 2", "LED 3", "LED 4",
               "box screw L", "box screw R", "load plate L", "load plate R", "cable loop", "speaker back foam", "hub",
               "LD2410C", "LD2410C header", "LD2410C front parts", "LD2410C edge parts", "LD2410C pin stubs"):
         bodies[k] = refs[k]
     bodies.update(kit_refs())
+    return bodies
+
+
+def build_kit():
+    print(f"\n==================== RoomKey KIT (concept v0.7: one box, lab supply 5 V) — parts v{P.VERSION} ====")
+    bodies = kit_bodies()
+    ch, bc = bodies["chassis (kit)"], bodies["radar tray"]
     for nm in ("chassis (kit)", "radar tray"):
         bb = bodies[nm].BoundBox
         print(f"  {nm:15s} valid {bodies[nm].isValid()} | solids {len(bodies[nm].Solids)} | {bb.XLength:.1f} × {bb.YLength:.1f} × "
@@ -112,6 +146,9 @@ def build_kit():
         L.ceilings(part, f"kit_chassis_{i}_{lab}", "front_down")
     L.export(bc, "radar_tray", "front_down")
     L.ceilings(bc, "radar_tray", "front_down")
+    hd = hub_dummy()
+    L.export(hd, "hub_dummy", "front_down")
+    L.ceilings(hd, "hub_dummy", "front_down")
     import Part
     Part.makeCompound(list(bodies.values())).exportStep(os.path.join(L.OUT, f"kit-v{P.VERSION}_assembly.step"))
     L.write_stl(Part.makeCompound([bodies[k] for k in ("key shell", "switch plate", "collar", "plate", "chassis (kit)", "radar tray")]),

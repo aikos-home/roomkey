@@ -423,7 +423,7 @@ RADAR_EAR = (-25.8, -23.0, -10.6, -5.4)  # [FREE] ear on the radar tray's −x s
 RADAR_BLADE = (-25.6, -23.2, -10.4, -5.6)   # [FREE] support blade of the chassis flange part: flange back → the ear
 RADAR_PINS = ((-24.2, -9.08), (-24.2, -6.88))  # [FREE] 2 pins on the blade top into the ear (lead-in holes, 0.8 webs)
 RADAR_PIN = (1.0, 2.0, 0.15)         # [FREE] Ø, length, radial play — thinner than CH_PIN so the ear keeps 0.8 webs
-HUB_J5 = (-15.3, -11.7, 3.5, 10.5, 26.22)   # [STEP] the radar's plug socket on the hub back (x0, x1, y0, y1, back d):
+HUB_J5 = (-15.3, -11.7, 7.0, 14.0, 26.22)   # [STEP] the radar's plug socket on the hub back (x0, x1, y0, y1, back d):
                                      #        the tray's top end gets a notch round it
 HUB_POSTS = ((-13.2, 4.0), (13.2, 4.0), (-13.2, 20.0), (13.2, 20.0))   # [FREE] from the ledge (lower pair fused to the boss bridges)
 HUB_PARTS = {         # [TBD]/[DS] heights behind the hub PCB (mm): must stay inside HUB

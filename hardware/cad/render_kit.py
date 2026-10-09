@@ -15,7 +15,7 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 import insert_params as P  # noqa: E402
 SRC = os.path.join(ROOT, "models", os.environ.get("KIT_VIEW_NAME", f"kit-v{P.VERSION}_ansicht.FCStd"))
-OUT = os.path.join(ROOT, "docs", "img")
+OUT = os.environ.get("RENDER_OUT") or os.path.join(ROOT, "docs", "img")
 os.makedirs(OUT, exist_ok=True)
 W, H = 1800, 1350
 
@@ -113,6 +113,16 @@ def shots():
     show(None, hide=wall)
     cam((0.75, 0.5, -1))
     shot(f"kit-v{P.VERSION}_rear-parts.png")
+    # 4 straight from behind: the hub PCB, the radar in its tray, the speaker (v0.11)
+    cam((0, 0, -1))
+    shot(f"kit-v{P.VERSION}_rear.png")
+    # 4b wiring (v0.11, PCB version): everything but the box, from behind and from the front without plate, collar, key
+    show(None, hide=("Uebungsdose", "Kabelbogen"))
+    cam((0.75, 0.5, -1))
+    shot(f"kit-v{P.VERSION}_wiring-rear.png")
+    show(None, hide=("Uebungsdose", "Rahmen_", "Platte", "Leuchtring", "Tastenschale", "Touch_Board", "Antenne"))
+    cam((-0.35, 0.3, 1))
+    shot(f"kit-v{P.VERSION}_wiring-front.png")
     # 5 the frame from behind and below: humidity sensor flat under its bottom border
     show(("Rahmen_JungAS500", "Feuchtesensor"))
     cam((0.35, -0.55, -1))
