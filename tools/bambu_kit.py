@@ -32,10 +32,11 @@ OUT = os.path.join(ROOT, "hardware", "print", "bambu")
 WORK = os.path.join(OUT, "_presets")          # resolved presets (not committed)
 
 BUILD = sys.argv[1] if len(sys.argv) > 1 else "pcb"
-_A = ["plate_print.stl", "kit_chassis_1_front_print.stl", "kit_chassis_2_flange_print.stl", "kit_chassis_3_rear_print.stl",
-      "switch_plate_print.stl"]
+_K = f"kit-{BUILD}_"
+_A = ["plate_print.stl", _K + "chassis_1_front_print.stl", _K + "chassis_2_flange_print.stl", _K + "chassis_3_rear_print.stl",
+      _K + "switch_plate_print.stl"]
 PLATES = {
-    "A-petg": _A + (["radar_tray_print.stl", "hub_dummy_print.stl"] if BUILD == "pcb" else ["kit_back_carrier_print.stl"]),
+    "A-petg": _A + ([_K + "radar_tray_print.stl", _K + "hub_dummy_print.stl"] if BUILD == "pcb" else [_K + "back_carrier_print.stl"]),
     "B-key": ["key_shell_print.stl"],
     "C-collar-pla": ["collar_print.stl"],
 }

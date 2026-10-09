@@ -45,7 +45,7 @@
   "radar tray": {
    "valid": true,
    "solids": 1,
-   "volume_cm3": 0.53,
+   "volume_cm3": 0.56,
    "size": [
     20.24,
     24.23,
@@ -63,14 +63,7 @@
    ]
   }
  },
- "collisions": [
-  [
-   "rest",
-   "hub",
-   "box (40 mm)",
-   43.687
-  ]
- ],
+ "collisions": [],
  "gaps": {
   "key shell ↔ plate (rest)": 1.0,
   "key shell ↔ collar (rest, side skirts: roll limit)": 0.25,
