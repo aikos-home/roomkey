@@ -404,6 +404,35 @@ def led_board_xy(x, y):
     xs, ys = sorted((x - sx * a_in, x + sx * a_out)), sorted((y - sy * a_in, y + sy * a_out))
     return xs[0], xs[1], ys[0], ys[1]
 
+
+# the PCB thread's glow corner board (KiCad, 2026-10-12): its STEP has the origin at the board's INNER corner, X/Y along
+# the inner edges, Z 0 = back face. One design, rotated per corner (u, v = board X, Y → kit x, y):
+LED_BOARD_STEP = ("hardware", "pcb", "roomkey-hub", "output", "roomkey-glow-corner.step")
+LED_BOARD_ROT = {"TR": ((1, 0), (0, 1)), "TL": ((0, 1), (-1, 0)), "BR": ((0, -1), (1, 0)), "BL": ((-1, 0), (0, -1))}
+#                 corner: (direction of u, direction of v) in kit x, y
+LED_BOARD_PADS = {"DIN": (3.9, 2.5), "GND": (3.9, 0.9), "5V": (2.325, 3.9), "DOUT": (0.8, 3.9)}   # [KiCad] back-pad centres
+LED_CORNER = {"TL": 0, "TR": 1, "BL": 2, "BR": 3}           # corner → index in LED_POS
+
+
+def led_board_origin(corner):
+    """the board's inner corner (kit x, y) at a corner name."""
+    x, y = LED_POS[LED_CORNER[corner]]
+    a_in = LED_BOARD[0]
+    return x - math.copysign(a_in, x), y - math.copysign(a_in, y)
+
+
+def led_board_uv(corner, u, v, dz=0.0):
+    """board coordinates (u, v; dz in front of its back face) → kit (x, y, d)."""
+    ox, oy = led_board_origin(corner)
+    (ux, uy), (vx, vy) = LED_BOARD_ROT[corner]
+    return (ox + u * ux + v * vx, oy + u * uy + v * vy, LED_D0 + LED_T + LED_BOARD_T - dz)
+
+
+def led_board_pad(corner, pin, dz=-0.3):
+    """kit (x, y, d) of a back pad; dz −0.3 = the solder joint behind the board."""
+    u, v = LED_BOARD_PADS[pin]
+    return led_board_uv(corner, u, v, dz)
+
 SPK_X0 = COLLAR_OUT_X + 0.55    # [FREE] speaker on its edge right of the collar, grille faces +x into the duct
 SPK_Y = (-15.0, 15.0)           # [FREE]
 SPK_D0 = DECK_D1 + 0.6          # [FREE] the speaker's front edge rests on the plenum floor (d 5.0..5.6, 0.6 thick)

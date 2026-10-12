@@ -405,6 +405,26 @@ def hub_pcb():
     return _HUB["s"].copy()
 
 
+_GLOW = {}
+
+
+def glow_board(corner):
+    """v0.11: the PCB thread's glow corner board (its STEP: board + LED), placed and rotated at a corner; None if the STEP
+    is not there (then the refs use the LED_BOARD envelope)."""
+    if "s" not in _GLOW:
+        p = os.environ.get("ROOMKEY_GLOW_STEP") or os.path.join(os.path.dirname(os.path.dirname(HERE)), *P.LED_BOARD_STEP)
+        _GLOW["s"] = Part.read(p) if os.path.exists(p) else None
+    if _GLOW["s"] is None:
+        return None
+    s = _GLOW["s"].copy()
+    (ux, uy), (vx, vy) = P.LED_BOARD_ROT[corner]
+    m = App.Matrix(ux, vx, 0, 0, uy, vy, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
+    s.transformShape(m)
+    ox, oy = P.led_board_origin(corner)
+    s.translate(V(ox, oy, -(P.LED_D0 + P.LED_T + P.LED_BOARD_T)))
+    return s
+
+
 def radar_tray():
     """v0.11: the radar's own tray (the radar half of the old back carrier): closed frame, antenna window, the board on
     two ledges at its short ends, plus an ear on the −x side that sits on the support blade of the chassis flange part
@@ -698,7 +718,12 @@ def ref_bodies(v, build="pcb"):
             box(x - R.MX_STEM_ARM_W / 2, x + R.MX_STEM_ARM_W / 2, y - R.MX_STEM_ARM_L / 2, y + R.MX_STEM_ARM_L / 2,
                 s["stem_top"], s["mx_top"] - 0.1))
     # v0.11: no mic carrier on the plate (the mic is on the hub PCB; a sound tube in the chassis)
+    corners = {v: k for k, v in P.LED_CORNER.items()}
     for i, (x, y) in enumerate(P.LED_POS):             # v0.11: the LED on its corner board (the board's full keep-in)
+        gb = glow_board(corners[i])
+        if gb is not None:                             # the real board (its STEP)
+            refs[f"LED {i+1}"] = gb
+            continue
         x0, x1, y0, y1 = P.led_board_xy(x, y)
         bd0 = P.LED_D0 + P.LED_T
         board = box(x0, x1, y0, y1, bd0 - EPS, bd0 + P.LED_BOARD_T)
