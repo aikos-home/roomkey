@@ -656,6 +656,53 @@ KIT_RADAR_TRAY = (1.0, 0.10)      # [FIT] play/side: 0.2 just too loose (10-06);
 
 
 # =====================================================================================================
+# 8. PLUG-IN HOUSING ("Steckdosen-RoomKey", owner 2026-10-27, CONCEPT v0.1, WIP, not certified): the SAME RoomKey (kit,
+#    PCB build) in a housing of the 1-gang frame size that plugs straight into a SCHUKO socket. Front = practice frame
+#    (Jung AS 500 look), plate and key, unchanged ("die Frontblende soll dieselbe sein"). 230 V stays inside an
+#    UNMODIFIED, certified plug-in USB charger: the housing only holds it, its USB-A port feeds hub J1 with 5 V SELV.
+#    Owner: "möglichst flach an der Wand", "1-fach, Netzteil dahinter", charger "such mir eins aus".
+#    G1 SHELL = frame + side walls (one print, back down); its frame tunnel, lengthened, is the flange's front stop.
+#    G2 BOX = back plate + charger sleeve + square cup (one print, back down); the cup's front edge presses the insert's
+#    flange against G1 (no box screws); 4 × M3 countersunk through the back plate into G1 (hidden on the socket).
+#    Depth: the charger's front face sits behind the deepest insert part on the axis (the key wires' U-loop) + the plug.
+# =====================================================================================================
+PLUG_CHARGER = dict(d=39.0, l=32.0, out=14.0, pin=(4.8, 19.0, 19.0), port=(12.5, 5.1, 14.0))
+                    # [DS] revolt PX-8884 (Pearl, 9.99 €, EAN 4022107346085): 5 V 2.1 A USB-A, contour plug, 0.06 W no load,
+                    # "Ø 39 × 51 mm", "ragt nur 14 mm heraus" → body 32 = 51 − 19 [TBD], pins Ø4.8 × 19, 19 apart [DS CEE 7/17];
+                    # port (w, h, depth) centred on the FRONT face [TBD: the shop photo looks onto the port from above]
+PLUG_USB = (12.0, 4.5, 15.0, 7.5, 7.0)   # [TBD] solder-type USB-A plug: shell w, h (12 deep in the port); body w, h, length
+                    # outside the charger face (2 of the 4 solder cups used: VBUS, GND)
+PLUG_CLEAR = 0.5    # [FREE] USB plug ↔ the key wires' U-loop envelope (the loop moves, the plug does not)
+PLUG_WALL = 1.6     # [FREE] shell side walls, cup, sleeve (4 lines of a 0.4 nozzle)
+PLUG_BACK_T = 2.0   # [FREE] G2 back plate (on the socket face); the M3 countersunk heads sit flush in it
+PLUG_FIT = 0.3      # [FREE] G2 ↔ G1 inner walls per side (G2 slides in from the back)
+PLUG_STOP_D = 7.7   # [FREE] G1's lengthened frame tunnel ends here: 0.1 in front of the flange (d 7.8) → flange play 0.1
+PLUG_STOP_GAP_X = 14.0   # [FREE] no tunnel extension at the bottom for |x| < this: the SHT31-D and its wires (FRAME_RH)
+PLUG_CUP = (29.5, 2.7, 33.5)   # [FREE] square cup: inner half width (just outside the frame tunnel, 29.4 → the flange is
+                    # clamped ring on ring), inner corner R, front rim half width (backs the flange to 2 mm off its edge)
+PLUG_SLEEVE = (0.5, 0.6, 1.2, 8, 2.0, 1.0)   # [FREE] charger sleeve: bore play per side, crush-rib height (tips 0.1 into
+                    # the body: press fit), rib width, rib count, front lip width and thickness (the charger's face rests on it)
+PLUG_SCREW = (35.6, 3.4, 6.4, 2.6, 6.5, 10.0)   # [FREE] 4 × M3 × 12 countersunk (ISO 10642) at |x| = |y|: clearance hole,
+                    # countersink Ø, pilot Ø, G1 corner boss Ø, pilot depth
+PLUG_SOCKET = (10.0, 39.5, 55.0)   # [TBD] reference Jung AS 500 SCHUKO socket: face ↔ wall (the frame's inner rim height),
+                    # recess Ø [DS CEE 7/3 ≈ 39–40], central plate; recess depth = body − out (18.0, Pearl's "14 mm")
+PLUG_WIRE = 1.6     # [FREE] 2 × 0.5 mm² silicone, USB plug → hub J1 (5V, GND), as the kit's pigtail
+PLUG_MOMENT_MAX = 0.25   # [DS IEC 60950-1 §4.3.6 / IEC 62368-1 §4.7: direct plug-in equipment ≤ 0.25 N·m on the socket]
+PLUG_MASS_G = {"touch board": 9.0, "hub": 7.0, "speaker 2030": 4.0, "LD2410C": 2.0, "MX switch 1": 3.5,
+               "MX switch 2": 3.5, "USB plug": 3.0, "charger": 39.0}   # [TBD] g; the charger [DS pearl]; printed parts by volume
+
+
+def plug_depths():
+    """the plug-in housing's depths (d) along the axis, from the deepest insert part to the socket face."""
+    loop = loop_up()[5]                                  # the key wires' U-loop: deepest thing on the axis (30.81)
+    usb0 = loop + PLUG_CLEAR                             # USB plug body front
+    face = usb0 + PLUG_USB[4]                            # charger front face (rests on the sleeve lip)
+    sock = face + PLUG_CHARGER["out"]                    # socket face = the housing's back face
+    return dict(loop=loop, usb0=usb0, face=face, socket=sock, back0=sock - PLUG_BACK_T,
+                wall=sock + PLUG_SOCKET[0], recess=PLUG_CHARGER["l"] - PLUG_CHARGER["out"])
+
+
+# =====================================================================================================
 # helpers
 # =====================================================================================================
 def B(name, x0, x1, y0, y1, d0, d1, zone="SELV", role="ref", note="", tag="[FREE]", move=None):

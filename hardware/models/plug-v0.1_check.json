@@ -1,0 +1,130 @@
+{
+ "depths": {
+  "loop": 30.810000000000002,
+  "usb0": 31.310000000000002,
+  "face": 38.31,
+  "socket": 52.31,
+  "back0": 50.31,
+  "wall": 62.31,
+  "recess": 18.0
+ },
+ "collisions": [],
+ "gaps": {
+  "USB plug ↔ cable loop": 0.5,
+  "USB plug ↔ radar tray": 1.15,
+  "USB plug ↔ hub": 7.359,
+  "USB plug ↔ LD2410C header": 12.2,
+  "charger ↔ cable loop": 7.5,
+  "charger ↔ hub": 11.715,
+  "charger ↔ LD2410C header": 0.262,
+  "wire 5V ↔ wire GND": 1.953,
+  "wire 5V ↔ cable loop": 0.8,
+  "wire GND ↔ cable loop": 0.8,
+  "wire 5V ↔ radar tray": 5.383,
+  "wire GND ↔ LD2410C header": 10.4,
+  "G1 shell ↔ chassis (kit)": 0.1,
+  "G2 box ↔ chassis (kit)": 0.0,
+  "G2 box ↔ hub": 1.833,
+  "G2 box ↔ radar tray": 3.7,
+  "G2 box ↔ speaker 2030": 9.505,
+  "G2 box ↔ LD2410C header": 0.5,
+  "G1 shell ↔ G2 box": 0.0,
+  "G1 shell ↔ plate": 0.3,
+  "G1 shell ↔ SHT31-D": 0.2,
+  "G2 box ↔ socket (ref)": 0.0,
+  "charger ↔ socket (ref)": 0.0
+ },
+ "press_fit_mm3": 13.0,
+ "dims": {
+  "outline": "80.5 × 80.5",
+  "glass → back face": 60.31,
+  "frame rim → back face": 53.31,
+  "glass → wall (Jung AS 500 socket)": 70.31,
+  "mass g": 175,
+  "centre of mass in front of the socket face": 21.0,
+  "moment on the socket N·m": 0.036,
+  "moment limit N·m": 0.25
+ },
+ "mass_rows": [
+  [
+   "G1 shell",
+   41.6,
+   21.2
+  ],
+  [
+   "G2 box",
+   39.2,
+   37.1
+  ],
+  [
+   "key shell",
+   4.3,
+   1.3
+  ],
+  [
+   "switch plate",
+   1.5,
+   16.1
+  ],
+  [
+   "collar",
+   2.0,
+   8.1
+  ],
+  [
+   "plate",
+   4.4,
+   1.2
+  ],
+  [
+   "chassis (kit)",
+   10.3,
+   9.3
+  ],
+  [
+   "radar tray",
+   0.7,
+   27.3
+  ],
+  [
+   "touch board",
+   9.0,
+   -2.7
+  ],
+  [
+   "hub",
+   7.0,
+   23.4
+  ],
+  [
+   "speaker 2030",
+   4.0,
+   15.3
+  ],
+  [
+   "LD2410C",
+   2.0,
+   29.1
+  ],
+  [
+   "MX switch 1",
+   3.5,
+   16.2
+  ],
+  [
+   "MX switch 2",
+   3.5,
+   16.2
+  ],
+  [
+   "USB plug",
+   3.0,
+   40.8
+  ],
+  [
+   "charger",
+   39.0,
+   63.8
+  ]
+ ]
+}
