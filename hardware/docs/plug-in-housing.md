@@ -51,6 +51,23 @@ safety mark was found yet.
 
 4 × M3 × 12 countersunk (ISO 10642) through the back plate into G1 — hidden on the socket.
 
+## Materials (recommendation 2026-10-27, Bambu A1 = open printer)
+
+| part | material | why |
+|---|---|---|
+| G2 box + charger sleeve | **PETG UL94 V-0**, black (Prusament PETG V0 Jet Black; Spectrum PET-G FR V0) | touches the charger; hidden; prints like PETG (230 °C / 80 °C) |
+| chassis (3), switch plate, radar tray | PETG V-0, black | as insert-design §10 already demands for the chassis |
+| G1 frame + shell | ivory PETG from the plate's spool (or PETG V0 Natural if its shade matches) | visible, must match the plate; the charger does not touch it |
+| plate, key, collar | as before (ivory + black core + natural glow rim, PETG, AMS); collar optionally clear PCTG | the glow rim must fuse with the plate → PETG |
+| new: grip ring in the sleeve, foot ring on the back plate | TPU 95A | holds the charger by spring force (crush ribs in brittle V-0 PETG break or relax); protects the socket face |
+
+The four corner screws go into M3 heat-set inserts (V-0 PETG is more brittle than plain PETG). The housing runs ≈ 5–10 K
+above room temperature (≈ 1.4 W inside), so PETG (Tg ≈ 80 °C) has margin; PLA (Tg ≈ 55–60 °C) creeps at the press fit
+and the screws. Not used: PLA, carbon/metal/graphite fills (conductive beside the plug pins, they damp the 24 GHz radar
+and Wi-Fi), wood/stone fills, ABS/ASA/PC on the open A1 (warping). Bambu PC FR (V-0, also white) would be the best
+material but needs an enclosed printer. Prusament's UL card covers prints on Prusa printers only: on the A1 the parts
+are V-0 material, not certified parts.
+
 ## Assembly
 
 1. Kit insert (without the plate) from behind into G1: its rims go into the frame tunnel, the flange onto the stop.
