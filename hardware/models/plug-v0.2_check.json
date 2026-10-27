@@ -4,7 +4,8 @@
   "usb0": 31.310000000000002,
   "face": 38.31,
   "socket": 52.31,
-  "back0": 50.31,
+  "back": 51.71,
+  "back0": 49.71,
   "wall": 62.31,
   "recess": 18.0
  },
@@ -31,17 +32,24 @@
   "G1 shell ↔ G2 box": 0.0,
   "G1 shell ↔ plate": 0.3,
   "G1 shell ↔ SHT31-D": 0.2,
-  "G2 box ↔ socket (ref)": 0.0,
-  "charger ↔ socket (ref)": 0.0
+  "G2 box ↔ socket (ref)": 0.6,
+  "charger ↔ socket (ref)": 0.0,
+  "charger ↔ G2 box": 0.01,
+  "grip ring ↔ G2 box": 0.0,
+  "grip ring ↔ LD2410C header": 0.57,
+  "foot ring ↔ G2 box": 0.0,
+  "foot ring ↔ socket (ref)": 0.0,
+  "foot ring ↔ charger": 1.5
  },
- "press_fit_mm3": 13.0,
+ "press_fit_mm3": 26.1,
  "dims": {
   "outline": "80.5 × 80.5",
-  "glass → back face": 60.31,
-  "frame rim → back face": 53.31,
+  "glass → socket face": 60.31,
+  "glass → back face": 59.71,
+  "frame rim → back face": 52.71,
   "glass → wall (Jung AS 500 socket)": 70.31,
-  "mass g": 175,
-  "centre of mass in front of the socket face": 21.0,
+  "mass g": 177,
+  "centre of mass in front of the socket face": 20.9,
   "moment on the socket N·m": 0.036,
   "moment limit N·m": 0.25
  },
@@ -49,12 +57,22 @@
   [
    "G1 shell",
    41.6,
-   21.2
+   21.1
   ],
   [
    "G2 box",
-   39.2,
-   37.1
+   38.8,
+   36.6
+  ],
+  [
+   "grip ring",
+   1.8,
+   44.2
+  ],
+  [
+   "foot ring",
+   0.7,
+   51.8
   ],
   [
    "key shell",

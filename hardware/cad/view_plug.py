@@ -1,6 +1,7 @@
-"""Open the RoomKey PLUG-IN HOUSING (concept v0.1, WIP) in the FreeCAD GUI: shell, box, charger, USB plug and wires,
+"""Open the RoomKey PLUG-IN HOUSING (concept v0.2, WIP) in the FreeCAD GUI: shell, box, TPU rings, charger, USB plug
+and wires,
 the unchanged kit (PCB build) and a reference SCHUKO socket in a piece of wall — named, coloured, grouped — plus a
-section through x = 0. Saves hardware/models/plug-v0.1_ansicht.FCStd; with PLUG_RENDER=1 it also renders the images
+section through x = 0. Saves hardware/models/<TAG>_ansicht.FCStd; with PLUG_RENDER=1 it also renders the images
 to RENDER_OUT (default hardware/docs/img) and quits.
 
 Run (opens FreeCAD):  FreeCAD hardware/cad/view_plug.py   (env ROOMKEY_HUB_STEP as for make_plug.py)
@@ -16,7 +17,7 @@ import FreeCAD as App  # noqa: E402
 import plug_lib as G  # noqa: E402
 
 K, L, P, W = G.K, G.L, G.P, G.W
-IVORY, DARK, GREY = (0.95, 0.93, 0.85), (0.18, 0.18, 0.18), (0.55, 0.55, 0.55)
+IVORY, DARK, GREY, TPU = (0.95, 0.93, 0.85), (0.18, 0.18, 0.18), (0.55, 0.55, 0.55), (0.1, 0.62, 0.58)
 OUT = os.environ.get("RENDER_OUT") or os.path.join(os.path.dirname(HERE), "docs", "img")
 LOG = os.environ.get("RENDER_LOG")
 WPX, HPX = 1800, 1350
@@ -37,6 +38,8 @@ def part(i):
 ITEMS = [
     ("G1_Gehaeuse_Rahmen", G.shell, (0.97, 0.97, 0.97), 0, "Gehäuse", True),
     ("G2_Dose_Netzteilfach", G.box_g2, (0.95, 0.55, 0.2), 0, "Gehäuse", True),
+    ("Griffring_TPU", G.grip_ring, TPU, 0, "Gehäuse", True),
+    ("Fussring_TPU", G.foot_ring, TPU, 0, "Gehäuse", True),
     ("Netzteil_revolt_PX8884", G.charger, (0.92, 0.92, 0.9), 0, "Netzteil", True),
     ("USB_A_Stecker", G.usb_plug, (0.35, 0.35, 0.38), 0, "Netzteil", True),
     ("Platte", lambda: pbody, IVORY, 0, "Druckteile", True),
@@ -71,7 +74,7 @@ def log(*a):
             f.write(" ".join(str(x) for x in a) + "\n")
 
 
-doc = App.newDocument("RoomKey_Steckdose_v0_1")
+doc = App.newDocument("RoomKey_Steckdose_" + G.TAG.split("-")[1].replace(".", "_"))
 groups = {}
 for g in ("Gehäuse", "Netzteil", "Druckteile", "Bauteile", "Verkabelung", "Wand", "Schnitt"):
     groups[g] = doc.addObject("App::DocumentObjectGroup", g.replace("ä", "ae"))
@@ -95,8 +98,9 @@ for name, build, col, tr, grp, sec in ITEMS:
                 so.ViewObject.ShapeColor = col
                 so.ViewObject.Transparency = 0
                 so.ViewObject.Visibility = False
-EXPLODE = (("G1_Gehaeuse_Rahmen", 75.0), ("G2_Dose_Netzteilfach", -50.0), ("Netzteil_revolt_PX8884", -105.0),
-           ("USB_A_Stecker", -105.0))          # exploded view: shift along Z (+ = into the room)
+EXPLODE = (("G1_Gehaeuse_Rahmen", 75.0), ("G2_Dose_Netzteilfach", -50.0), ("Fussring_TPU", -62.0),
+           ("Griffring_TPU", -80.0), ("Netzteil_revolt_PX8884", -105.0), ("USB_A_Stecker", -105.0))
+           # exploded view: shift along Z (+ = into the room)
 for name, dz in EXPLODE:
     src = doc.getObject(name)
     eo = doc.addObject("Part::Feature", "Explo_" + name)
@@ -182,8 +186,8 @@ if App.GuiUp:
         show(None, hide=wall + inner + ("Explo_",))
         cam((0.55, 0.4, -1))
         shot(f"{G.TAG}_hinten.png")
-        # 6 open: shell and box hidden — the insert with the USB plug, its two wires and the charger behind
-        show(None, hide=wall + ("G1_", "G2_", "Kabelbogen", "Schnitt_", "Explo_"))
+        # 6 open: shell, box and rings hidden — the insert with the USB plug, its two wires and the charger behind
+        show(None, hide=wall + ("G1_", "G2_", "Griffring", "Fussring", "Kabelbogen", "Schnitt_", "Explo_"))
         cam((0.8, 0.45, -0.6))
         shot(f"{G.TAG}_offen.png")
         # 7 exploded: shell forward, box and charger back (assembly from behind)
