@@ -96,10 +96,9 @@ are V-0 material, not certified parts.
   print two grip rings (ribs 0.15 / 0.3 into the body) and keep the one that holds the charger firmly but still lets it
   be pressed in by hand.
 - The radar's plug ends 0.26 mm beside the charger's front edge: check with the real charger.
-- The owner's socket is next to the door at 105 cm: switch height, as the flush RoomKey. Check that the door does not
-  open against this wall: door handles sit at 105 cm too (DIN 18101) and the device stands 70 mm out. If the socket
-  shares a 2-gang frame with the light switch (71 mm pitch), the housing ends 3.25 mm short of the switch's rocker (55):
-  it fits, but that half of the rocker gets hard to press.
+- Where the device goes is the owner's call, not a design constraint (2026-10-30).
+- The self-wired build: its key-wire loop reaches back to d 36.5 (PCB build 30.81) and its amplifier touches the USB
+  plug → the same housing needs the charger ≈ 5.7 mm further back (≈ 66 mm glass → socket face) for that build.
 - Temperature reading: the charger and the RoomKey warm the housing; the SHT31-D sits at the front bottom, the furthest
   point from the charger — check against a reference thermometer.
 
