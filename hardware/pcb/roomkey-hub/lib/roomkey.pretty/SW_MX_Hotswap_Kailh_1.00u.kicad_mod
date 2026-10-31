@@ -1,0 +1,96 @@
+(footprint "SW_MX_Hotswap_Kailh_1.00u"
+	(version 20241229)
+	(generator "roomkey_gen_schematics")
+	(layer "F.Cu")
+	(descr "Kailh CPG151101S11 MX hot-swap socket, 1u (19.05). Drawn from the socket side: place FLIPPED on the bottom layer, the switch plugs in from the front")
+	(attr smd)
+	(property "Reference" "REF**"
+		(at 0 -7.8 0)
+		(layer "F.SilkS")
+		(effects
+			(font
+				(size 0.8 0.8)
+				(thickness 0.12)
+			)
+		)
+	)
+	(property "Value" "SW_MX_Hotswap_Kailh_1.00u"
+		(at 0 3.1 0)
+		(layer "F.Fab")
+		(effects
+			(font
+				(size 0.8 0.8)
+				(thickness 0.12)
+			)
+		)
+	)
+	(fp_rect
+		(start -7 -7)
+		(end 7 7)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill no)
+		(layer "F.Fab")
+		(uuid "d7bac3b1-3245-56e1-a970-15f72b10b2b1")
+	)
+	(fp_rect
+		(start -7.6 -7)
+		(end 8.8 2.3)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(fill no)
+		(layer "F.CrtYd")
+		(uuid "e4de692d-7cfa-5c81-8b66-ff16aaf52160")
+	)
+	(pad "" np_thru_hole circle
+		(at 0 0)
+		(size 4 4)
+		(drill 4)
+		(layers "*.Cu" "*.Mask")
+		(uuid "68f41da4-713e-5a2c-9369-9c0aebb20fd2")
+	)
+	(pad "" np_thru_hole circle
+		(at -2.54 -5.08)
+		(size 3 3)
+		(drill 3)
+		(layers "*.Cu" "*.Mask")
+		(uuid "a021f8ed-33f8-51df-9773-aebabb575e93")
+	)
+	(pad "" np_thru_hole circle
+		(at 3.81 -2.54)
+		(size 3 3)
+		(drill 3)
+		(layers "*.Cu" "*.Mask")
+		(uuid "67eb7835-1252-5f15-886f-c3a062b33d0a")
+	)
+	(pad "" np_thru_hole circle
+		(at -5.08 0)
+		(size 1.75 1.75)
+		(drill 1.75)
+		(layers "*.Cu" "*.Mask")
+		(uuid "02369c26-ab12-5c80-9f8c-206d26c91de3")
+	)
+	(pad "" np_thru_hole circle
+		(at 5.08 0)
+		(size 1.75 1.75)
+		(drill 1.75)
+		(layers "*.Cu" "*.Mask")
+		(uuid "65e2bc95-59be-59e9-9caf-7fadd894b9ae")
+	)
+	(pad "1" smd rect
+		(at -5.842 -5.08)
+		(size 2.55 2.5)
+		(layers "F.Cu" "F.Paste" "F.Mask")
+		(uuid "1a4fe107-73de-5f05-8131-e99553937593")
+	)
+	(pad "2" smd rect
+		(at 7.085 -2.54)
+		(size 2.55 2.5)
+		(layers "F.Cu" "F.Paste" "F.Mask")
+		(uuid "ed9b9da8-89e7-5bd6-adcb-d3539f94db34")
+	)
+)

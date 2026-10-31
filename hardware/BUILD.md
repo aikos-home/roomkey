@@ -13,7 +13,7 @@ There are **two builds of the electronics from one set of CAD scripts** (every f
 
 | build | electronics | glass → socket face |
 |---|---|---|
-| `pcb` | the hub PCB behind the switch plate (rev D for this housing is in progress, not published yet); the radar in a cage in the hub plane | 55.0 mm |
+| `pcb` | the hub PCB ([`pcb/roomkey-hub/`](pcb/roomkey-hub/), rev D) behind the switch plate; the radar in a cage in the hub plane | 55.0 mm |
 | `discrete` | self-wired modules: a back carrier with radar and amplifier, the round mic, every wire by hand | 64.0 mm |
 
 ## 1. What you need
@@ -56,7 +56,7 @@ Glue with gel CA, sparingly and only on faces that touch.
 5. **Electronics:**
    - PCB build: radar into its cage (from the +x side), cage onto the chassis blade; hub onto its posts (3 × M2).
    - Self-wired build: radar and amplifier onto the back carrier, carrier onto the four pins; mic into its holder.
-6. **Wiring:** PCB build — the hub's soldering map comes with the hub PCB rev D;
+6. **Wiring:** PCB build — the hub's soldering map in [`pcb/roomkey-hub/output/`](pcb/roomkey-hub/output/);
    self-wired build — every wire with its cut length in `models/kit-discrete-v0.12_wiring.json`. Pins and lines:
    [`../docs/wiring-touch-board.md`](../docs/wiring-touch-board.md).
 7. **Bench test** (lab supply 5.0 V into J1 / the splice points) before the housing.
@@ -87,7 +87,6 @@ Each run prints its checks: 0 collisions, the key "CAPTIVE", the wiring with 0 h
 `python3 hardware/cad/insert_params.py` must show 0 errors, `tools/insert_wallcheck.py` reports the thinnest walls.
 `python tools/bambu_kit.py pcb|discrete` rebuilds the Bambu files of the kit (Windows, Bambu Studio installed).
 
-The PCB build reads the hub PCB as a KiCad STEP (`pcb/roomkey-hub/output/roomkey-hub.step`). That file comes with
-hub PCB rev D and is not in this repository yet. Until then, `ROOMKEY_BUILD=discrete` runs `make_kit` for the
-self-wired build without it; `make_plug` builds both and needs `ROOMKEY_HUB_STEP` pointing at a hub STEP. The print
-files in `models/` and `print/` are complete either way.
+The PCB build reads the hub PCB as a KiCad STEP (`pcb/roomkey-hub/output/roomkey-hub.step`, rev D). Set
+`ROOMKEY_HUB_REV_D=1` so the CAD reads it unchanged; without it, the CAD cuts the housing's outline into the board, a
+stand-in from before rev D existed.

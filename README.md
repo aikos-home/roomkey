@@ -53,7 +53,7 @@ open-hardware door intercom.
 | Intercom security | ✅ incoming audio accepted only during an active call; everything else is dropped unheard |
 | Door station side | ⬜ other milestone — spec in [docs/intercom-protocol.md](docs/intercom-protocol.md) |
 | Optional sensors: SHT31-D climate, LD2410C mmWave presence | 🟡 bought; climate on the shared I²C bus (no extra pins), radar on UART; both placed in the housing in CAD. Light sensor (VEML6030) only in the PCB build (decided 31.10.) |
-| Housing (plug-in, 64 × 64) and kit, two electronics builds (hub PCB / self-wired) | 🟡 designed in CAD, 0 collisions ([hardware/](hardware/)); not printed in this revision. The visible front is to be cast in resin; hub PCB rev D for this housing in progress |
+| Housing (plug-in, 64 × 64) and kit, two electronics builds (hub PCB / self-wired) | 🟡 designed in CAD, 0 collisions ([hardware/](hardware/)); not printed in this revision. The visible front is to be cast in resin; hub PCB rev D for this housing designed (DRC 0), not ordered |
 
 ![All screens, rendered by the desktop simulator from the same code that runs on the board](docs/screens/contact_sheet.png)
 
@@ -182,7 +182,8 @@ first hardware run showed 140 ms frames.
    plug-in device only (decided 31.10.): a 64 × 64 housing on a SCHUKO socket, 5 V safety extra-low voltage
    from an unmodified, certified USB charger inside it; no mains wiring. Details and open questions:
    [hardware/docs/plug-in-housing.md](hardware/docs/plug-in-housing.md).
-2. Hub PCB rev D for this housing (outline, radar window, power connector); published here when it is done.
+2. Hub PCB rev D for this housing is designed: [hardware/pcb/roomkey-hub/](hardware/pcb/roomkey-hub/) (DRC 0, nothing
+   ordered). Next: decide whether to order it.
 3. Speaker, amp and glow ring on the touch board.
 4. Later (decided 30.09.): voice identification, so the family members are told apart even when they
    don't say their name. Local speaker embeddings on the transcriber host, enrolled with ~1 min of speech

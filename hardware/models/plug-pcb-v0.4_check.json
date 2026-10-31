@@ -17,17 +17,17 @@
   "wire 5V ↔ wire GND": 0.8,
   "wire 5V ↔ cable loop": 1.1,
   "wire GND ↔ cable loop": 3.1,
-  "USB plug ↔ hub": 1.026,
+  "USB plug ↔ hub": 1.265,
   "USB plug ↔ J1 (rev D)": 1.4,
-  "charger ↔ hub": 3.115,
+  "charger ↔ hub": 4.265,
   "charger ↔ J1 (rev D)": 4.4,
   "charger ↔ LD2410C header": 7.321,
-  "G2 box ↔ hub": 0.772,
+  "G2 box ↔ hub": 0.44,
   "G2 box ↔ radar cage": 0.54,
   "grip ring ↔ hub": 4.815,
-  "G1 columns ↔ hub": 6.701,
+  "G1 columns ↔ hub": 0.511,
   "G1 columns ↔ radar cage": 5.684,
-  "wire 5V ↔ hub": 0.465,
+  "wire 5V ↔ hub": 0.0,
   "G1 tunnel ↔ chassis (kit)": 0.1,
   "G1 tunnel ↔ plate": 0.3,
   "G1 skin ↔ plate": 0.3,
@@ -61,7 +61,7 @@
   "glass → wall (Jung AS 500 socket)": 65.01,
   "interior behind the flange (half)": 27.99,
   "mass g": 151,
-  "centre of mass in front of the socket face": 18.2,
+  "centre of mass in front of the socket face": 18.3,
   "moment on the socket N·m": 0.027,
   "moment limit N·m": 0.25
  },
@@ -134,7 +134,7 @@
   [
    "hub",
    7.0,
-   23.2
+   22.6
   ],
   [
    "speaker 2030",

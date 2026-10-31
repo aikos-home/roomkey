@@ -78,7 +78,7 @@ technical writing and design review. **In practice the owner runs a one-person p
 | [`cad/kit_lib.py`](cad/kit_lib.py), [`make_kit.py`](cad/make_kit.py), [`wiring_pcb.py`](cad/wiring_pcb.py), [`wiring_lib.py`](cad/wiring_lib.py) | **the electronics in two builds** (hub PCB / self-wired) from one codebase, every wire routed in 3D |
 | [`cad/plug_lib.py`](cad/plug_lib.py), [`make_plug.py`](cad/make_plug.py) | **the plug-in housing v0.4** (64 × 64): resin skin, printed tunnel + columns, lid with charger sleeve, TPU rings |
 | [`cad/view_kit.py`](cad/view_kit.py), [`render_kit.py`](cad/render_kit.py), [`view_plug.py`](cad/view_plug.py) | open the kit / the housing in the FreeCAD GUI (coloured, grouped) and render the images in [`docs/img/`](docs/img/) |
-| `pcb/roomkey-hub/` | the hub PCB (KiCad): rev D for housing v0.4 is in progress and lands here when it is done |
+| [`pcb/roomkey-hub/`](pcb/roomkey-hub/) | the hub PCB set (KiCad): hub rev D for housing v0.4, sensor tail, pogo adapter; designed, nothing ordered |
 | [`../tools/insert_wallcheck.py`](../tools/insert_wallcheck.py) | minimum wall thickness of the printed parts (FreeCAD's bundled python) |
 | [`reviews/insert-v0-review-log.md`](reviews/insert-v0-review-log.md) | pre-mortems and adversarial reviews of the earlier wall-insert design (history) |
 | `models/*_print.stl` | ready to slice · `models/*.step` for editing |
@@ -88,5 +88,6 @@ technical writing and design review. **In practice the owner runs a one-person p
 **WIP.** One RoomKey (no variants), fixed plate, the two MX under the key are the only buttons; built only as the
 plug-in device. CAD closes in all checked states for both builds (0 collisions; key pressed, wobbled ±1.5°, pulled;
 MX2 at the ends of its floating socket; the housing's lid goes in with the sensor on it); `validate()` 0 errors. Not
-printed in this revision: the housing v0.4, the radar cage, the LED holder. Waiting for: hub PCB rev D (outline, radar
-window, J1), the resin moulds for the skin and the plate face, the grip-ring coupons on the real charger.
+printed in this revision: the housing v0.4, the radar cage, the LED holder. Hub PCB rev D is checked
+against the CAD (0 collisions, wiring 0 hits); nothing ordered. Waiting for: the resin moulds for the skin and the plate
+face, the grip-ring coupons on the real charger.

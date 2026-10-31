@@ -1,0 +1,8 @@
+(version 1)
+
+# Rev D (CAD thread 2026-10-31): J1's body ends 0.45 mm above the head of H3's M2 screw (head <= 4.0 mm); the stock
+# mounting-hole courtyard (r 2.5) is larger than the head, so the two courtyards overlap by 0.6 mm on purpose.
+(rule "J1 beside H3's screw head"
+  (condition "A.Reference == 'J1' && B.Reference == 'H3'")
+  (constraint courtyard_clearance (min 0mm))
+  (severity ignore))
