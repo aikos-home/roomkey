@@ -1,0 +1,23 @@
+{
+ "collisions": [],
+ "gaps": {
+  "LD2410C front parts ↔ radar cage": 1.61,
+  "LD2410C edge parts ↔ radar cage": 0.3,
+  "LD2410C pin stubs ↔ radar cage": 0.4,
+  "LD2410C ↔ radar cage": 0.05,
+  "LD2410C ↔ MX switch 2": 1.16,
+  "radar cage ↔ hub": 0.27,
+  "LD2410C ↔ hub": 0.3,
+  "LD2410C header ↔ hub": 4.27,
+  "radar cage ↔ MX switch 2": 1.16,
+  "radar cage ↔ switch plate": 1.3,
+  "radar cage ↔ chassis (kit)": 0.0,
+  "hub ↔ chassis (kit)": 0.0,
+  "hub ↔ switch plate": 0.0,
+  "hub ↔ speaker 2030": 1.125,
+  "chassis (kit) ↔ switch plate": 0.0,
+  "chassis (kit) ↔ plate": 0.0,
+  "SHT31-D ↔ chassis (kit)": 0.3
+ },
+ "webs": {}
+}

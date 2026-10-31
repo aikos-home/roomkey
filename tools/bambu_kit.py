@@ -11,7 +11,9 @@ Precise and slow: 0.10 mm layers, outer walls 25 mm/s, first layer 15 mm/s, 3 wa
 Run (Windows, Bambu Studio installed):   python tools/bambu_kit.py
 Paths can be overridden with BAMBU_CLI / BAMBU_PROFILES. The system presets are inheritance fragments: they are resolved
 here (incl. the A1 "include" templates with the real start G-code) — passing them raw crashes the CLI without a message.
-Writes hardware/print/bambu/roomkey-kit-v<VERSION>_<plate>_<nozzle>.gcode.3mf.
+Two builds of the same RoomKey (v0.11): `pcb` (hub PCB + radar cage + a printable stand-in of the PCB) and `discrete`
+(self-wired modules on the back carrier):   python tools/bambu_kit.py pcb|discrete   (default pcb)
+Writes hardware/print/bambu/roomkey-kit-<build>-v<VERSION>_<plate>_<nozzle>.gcode.3mf.
 """
 import json
 import os
@@ -29,9 +31,12 @@ MODELS = os.path.join(ROOT, "hardware", "models")
 OUT = os.path.join(ROOT, "hardware", "print", "bambu")
 WORK = os.path.join(OUT, "_presets")          # resolved presets (not committed)
 
+BUILD = sys.argv[1] if len(sys.argv) > 1 else "pcb"
+_K = f"kit-{BUILD}_"
+_A = ["plate_print.stl", _K + "chassis_1_front_print.stl", _K + "chassis_2_flange_print.stl", _K + "chassis_3_rear_print.stl",
+      _K + "switch_plate_print.stl"]
 PLATES = {
-    "A-petg": ["plate_S_print.stl", "kit_chassis_1_front_print.stl", "kit_chassis_2_flange_print.stl",
-               "kit_chassis_3_rear_print.stl", "switch_plate_print.stl", "kit_back_carrier_print.stl"],
+    "A-petg": _A + ([_K + "radar_cage_print.stl", _K + "hub_dummy_print.stl"] if BUILD == "pcb" else [_K + "back_carrier_print.stl"]),
     "B-key": ["key_shell_print.stl"],
     "C-collar-pla": ["collar_print.stl"],
 }
@@ -104,7 +109,7 @@ def slice_plate(nozzle, plate, files):
     fil = {"PETG": write(petg, "filament", {"filament_colour": [COLOURS["PETG"]], "default_filament_colour": [""]}),
            "PLA": write(pla, "filament", {"filament_colour": [COLOURS["PLA"]], "default_filament_colour": [""]})}
     mats = ["PLA"] if plate == "C-collar-pla" else (["PETG", "PLA"] if plate == "B-key" else ["PETG"])
-    name = f"roomkey-kit-v{P.VERSION}_{plate}_{nozzle}nozzle.gcode.3mf"
+    name = f"roomkey-kit-{BUILD}-v{P.VERSION}_{plate}_{nozzle}nozzle.gcode.3mf"
     cmd = [CLI, "--load-settings", f"{m};{p}", "--load-filaments", ";".join(fil[x] for x in mats),
            "--load-filament-ids", ",".join("1" for _ in files), "--curr-bed-type", "Textured PEI Plate",
            "--orient", "0", "--arrange", "1", "--allow-mix-temp", "--slice", "0",

@@ -1,6 +1,6 @@
 # Insert v0 — adversarial review log
 
-Design: [`../docs/insert-design.md`](../docs/insert-design.md). Gate (from the brief): every criterion
+Design: [`insert-design.md`](https://github.com/aikos-home/roomkey/blob/74ea1b4/hardware/docs/insert-design.md) (in the git history; the wall insert was dropped on 31.10.). Gate (from the brief): every criterion
 ≥ 8/10 from every reviewer, mean ≥ 8.5, zero open BLOCKER/MAJOR, in **two consecutive rounds by
 fresh reviewers**; at most 6 rounds. Items blocked on real-world data count as resolved only if the
 design handles them explicitly (assumption + fallback + question for the owner).

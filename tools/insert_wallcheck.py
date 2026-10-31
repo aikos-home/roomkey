@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Minimum wall thickness of the printed insert parts, measured on dense CAD section slices.
+"""Minimum wall thickness of the printed front-stack parts (key, plate, collar, switch plate, chassis, radar cage),
+measured on dense CAD section slices.
 
     python3 tools/insert_wallcheck.py            # needs numpy + matplotlib (e.g. FreeCAD's bundled python)
-Reads hardware/drawings/sections/insert-{L,S}-printed_sections.json (written by make_insert_*.py).
+Reads hardware/drawings/sections/front-printed_sections.json (written by hardware/cad/make_front.py).
 Every plane has a twin 0.3 mm away; a thin spot must show on both (grazing cuts of curved walls do not).
 For every closed section loop of a printed part it samples the boundary every 0.1 mm and, for each sample,
 finds the nearest boundary point that is not its own neighbourhood (> 1.2 mm away along the contour) and whose
@@ -137,8 +138,8 @@ def min_wall(loops, part, axis, value):
 
 def main():
     bad = 0
-    for v in ("L", "S"):
-        fn = os.path.join(SECT, f"insert-{v}-printed_sections.json")
+    for v in ("",):                                      # v0.11: one RoomKey
+        fn = os.path.join(SECT, "front-printed_sections.json")
         if not os.path.exists(fn):
             print("missing", fn)
             continue

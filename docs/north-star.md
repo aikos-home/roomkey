@@ -47,7 +47,7 @@ physically. Its *behaviour* can stay 100 % non-smart:
   can pulse the relay too.
 * **Alternative:** two-gang frame, old switch untouched, RoomKey next to it.
 
-> **Update 2026-10-01 (wall insert draft v0.5, [`../hardware/docs/insert-design.md`](../hardware/docs/insert-design.md)):**
+> **Update 2026-10-01 (wall insert draft v0.5, [`insert-design.md`](https://github.com/aikos-home/roomkey/blob/74ea1b4/hardware/docs/insert-design.md), removed 31.10. with the wall insert):**
 > the RoomKey insert is **SELV-only (12 V in)** — no power supply, no relay and no 230 V in the RoomKey box. The 12 V
 > supply and the impulse relay are certified devices placed by the electrician elsewhere (where the switch leg ends, a
 > two-chamber box, or the distribution board; design doc §9). The paragraph below is the original v2 idea and is

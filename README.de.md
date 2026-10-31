@@ -6,6 +6,10 @@ Alarmanlage und Licht, einen Tastendruck entfernt. Gebaut mit ESP32-C6, ESPHome 
 
 [English](README.md)
 
+> **Hinweis:** Diese deutsche Fassung ist auf dem Stand vom 29.09.2026 und in Teilen überholt: RoomKey ist seit
+> 31.10. nur noch ein Steckdosen-Gerät, ohne Lichtschalter-Rahmen und ohne Wippe. Aktuell ist die
+> [englische Fassung](README.md).
+
 > Stand: Prototyp. Die Firmware läuft auf einem nackten Entwicklungsboard auf dem Schreibtisch,
 > das Mikrofon ist verifiziert, die übrigen Teile sind bestellt. Noch ist nichts in einer Wand
 > verbaut. Stand dieser Seite: 29. September 2026.

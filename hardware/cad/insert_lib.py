@@ -1,9 +1,9 @@
-"""RoomKey wall insert (DRAFT, version = insert_params.VERSION) — FreeCAD part builders, reference bodies, checks, export.
+"""RoomKey front stack (WIP, version = insert_params.VERSION) — FreeCAD part builders, reference bodies, checks, export.
 
-Used by make_key_module.py, make_insert_L.py and make_insert_S.py. Geometry comes ONLY from
-insert_params.py (which imports roomkey_params.py). Runs headless in FreeCADCmd.
+Used by make_key_module.py, make_front.py, kit_lib.py and plug_lib.py. Geometry comes ONLY from insert_params.py
+(which imports roomkey_params.py). Runs headless in FreeCADCmd.
 
-Coordinates: (x, y, d) with d = depth into the wall → FreeCAD (X, Y, Z = −d); +Z points into the room.
+Coordinates: (x, y, d) with d = depth behind the plate front → FreeCAD (X, Y, Z = −d); +Z points into the room.
 Every number below that is not a parameter is a pure modelling detail (fillet, overlap epsilon, visual
 thickness of a reference body) and is named where it matters.
 """
@@ -117,26 +117,26 @@ def segments(lo, hi):
 
 # ============================================================================ allowed space
 def allowed_space():
-    """Fixed parts may exist: in the frame tunnel in front of the wall, as the flange under the frame, in the box."""
+    """v0.12 (plug-in only): fixed parts of the insert may exist in the carrier's tunnel in front of the flange, as the
+    flange, and behind it inside G2's side walls (P.plug_in_half()), clear of the carrier's corner columns."""
     lim = P.FRAME_OPEN / 2 - P.FRAME_TUNNEL_MARGIN
     fz = box(-lim, lim, -lim, lim, -2.0, P.WALL_D)
     fl = rrect(P.FLANGE_HALF, P.FLANGE_HALF, 3.0, P.WALL_D - P.FLANGE_T, P.WALL_D)
-    r = P.BOX_USABLE_D / 2 - P.FIT_MARGIN
-    inside = cyl(0, 0, r, P.WALL_D - EPS, P.box_floor())
-    inside = inside.cut(domes(P.FIT_MARGIN, P.WALL_D - EPS, 99))
-    return fuse([fz, fl, inside])
+    h = P.plug_in_half()
+    inside = box(-h, h, -h, h, P.WALL_D - EPS, 80.0)
+    return cut(fuse([fz, fl, inside]), column_zones(0.3, P.WALL_D - P.FLANGE_T - 1.0, 80.0))
 
 
-def domes(grow, d0, d1):
+def column_zones(grow, d0, d1):
+    """the plug housing's 4 corner columns (P.PLUG_COLUMN: a corner block with a round inner end) grown by `grow`: the
+    insert's flange, the hub and G2 keep out of them."""
+    c, r = P.PLUG_COLUMN
     out = []
-    for ang in P.BOX_DOME_ANGLES:
-        a = math.radians(ang)
-        ca, sa = round(math.cos(a)), round(math.sin(a))
-        r0, r1, w = P.BOX_DOME_R_IN - grow, P.BOX_DOME_R_OUT, P.BOX_DOME_W / 2 + grow
-        if ca:
-            out.append(box(min(ca * r0, ca * r1), max(ca * r0, ca * r1), -w, w, d0, d1))
-        else:
-            out.append(box(-w, w, min(sa * r0, sa * r1), max(sa * r0, sa * r1), d0, d1))
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            out += [cyl(sx * c, sy * c, r + grow, d0, d1),
+                    box(sx * (c - r - grow), sx * 40.0, sy * c, sy * 40.0, d0, d1),
+                    box(sx * c, sx * 40.0, sy * (c - r - grow), sy * 40.0, d0, d1)]
     return out
 
 
@@ -232,7 +232,7 @@ def key_header_slots():
                 s["key_back"] + 0.5) for sx in (-1, 1)]
 
 
-def switch_plate():
+def switch_plate(build="pcb"):
     s = P.KS
     hx, hy = P.WELL_IN_X - P.SWP_CLEAR, P.WELL_IN_Y - P.SWP_CLEAR
     plate = rrect(hx, hy, P.WELL_R - P.SWP_CLEAR, s["plate_front"], s["plate_back"])
@@ -244,13 +244,50 @@ def switch_plate():
                      P.CABLE_Y + P.CABLE_SLOT[1] / 2 + 0.1, s["plate_front"] - EPS, s["plate_back"] + EPS))
     for (x, y) in P.SWP_SCREWS:
         tools.append(csk_front(x, y, s["plate_front"], s["plate_back"], P.M2_CSK_D + 0.2, 2.2))
-    for (x, y) in P.LED_POS:          # v0.6: corner notches for the glow LEDs (WS2812B-MINI 3535 is 2.0 tall + joints/carrier)
-        h = P.LED_W / 2 + 0.4
-        tools.append(box(x - h, x + h, y - h, y + h, s["plate_front"] - 1, s["plate_back"] + 1))
-    # v0.10: the cable-loop anchor (posts + bar) stands on the switch plate's back (it hung from the chassis ledge)
-    ax0, ax1, ay0, ay1, ad0, ad1 = P.ANCHOR
-    anchor = [cyl(x, y, 1.2, s["plate_back"] - EPS, ad1) for (x, y) in P.ANCHOR_POSTS] + [box(ax0, ax1, ay0, ay1, ad0, ad1)]
-    return fuse([cut(plate, tools)] + anchor)
+    # v0.11 LED holder (owner 2026-10-31): an ear at each corner, flush with the plate, carrying the LED seat; a wire hole
+    # to the back; a channel on the back along each side (see LED_* in insert_params)
+    ears, back = [], []
+    e0, e1, f0, f1 = P.LED_EAR
+    lw = P.LED_W / 2 + P.LED_SEAT_FIT
+    sl_w, sl_r = P.LED_LEG_SLOT
+    seat = s["plate_front"] + P.LED_SEAT_DEPTH
+    for (x, y) in P.LED_POS:
+        sx, sy = (1 if x > 0 else -1), (1 if y > 0 else -1)
+        xs, ys = sorted((sx * e0, sx * e1)), sorted((sy * f0, sy * f1))
+        ears.append(box(xs[0], xs[1], ys[0], ys[1], s["plate_front"], s["plate_back"]).common(
+            cyl(0, 0, P.LED_EAR_R, s["plate_front"] - 1, s["plate_back"] + 1)))
+        tools.append(box(x - lw, x + lw, y - lw, y + lw, s["plate_front"] - 1, seat))                  # the seat
+        for side in (-1, 1):                                                                       # leg slots
+            xa, xb = sorted((x + side * (P.LED_W / 2), x + side * (P.LED_W / 2 + sl_r)))
+            tools.append(box(xa, xb, y - sl_w, y + sl_w, s["plate_front"] - 1, seat))
+        xa, xb = sorted((x - sx * (P.LED_W / 2 + sl_r), x + sx * (P.LED_W / 2 + sl_r)))            # cross channel on the
+        ya, yb = sorted((y - sy * sl_w, sy * (f0 - 0.1)))          # inner y end, joined to both slots, open past the ear
+                                                                    # edge (stopping short left a 0.02–0.14 film)
+        tools.append(box(xa, xb, ya, yb, s["plate_front"] - 1, seat))
+        rx0, rx1 = sorted((sx * 13.25, sx * 16.0))       # outer corner, where the r 28.4 trim leaves walls < 0.8:
+        tools.append(box(rx0, rx1, *sorted((y + sy * (sl_w - 0.05), sy * 26.0)), s["plate_front"] - 1, seat))   # → seat level
+        hx, hy, hd = P.LED_HOLE                                                                     # inner slot → hole
+        ha, hb = sorted((sx * hx, x - sx * (P.LED_W / 2)))
+        tools.append(box(ha - 0.5, hb + 0.5, *sorted((sy * hy, y)), s["plate_front"] - 1, seat))
+        tools.append(cyl(sx * hx, sy * hy, hd / 2, s["plate_front"] - 1, s["plate_back"] + 1))
+    c0, c1, cw, ch_, cy1 = P.LED_CHANNEL
+    g0, g1 = P.LED_CHANNEL_GAP
+    for sx in (-1, 1):
+        for (ya, yb) in ((-cy1, g0), (g1, cy1)):
+            for (xa, xb) in ((c0, c0 + cw), (c1 - cw, c1)):
+                back.append(box(*sorted((sx * xa, sx * xb)), ya, yb, s["plate_back"] - EPS, s["plate_back"] + ch_))
+    plate = fuse([plate] + ears + back)
+    tools.append(box(10.0, 12.0, -3.75, 0.25, s["plate_back"] + 0.01, s["plate_back"] + 3.0))   # hub rev C: J1's pin tails (rev D moves J1 to x 12.75, clear of the plate: drop this with rev D)
+    #   (up to 2 mm out of the hub's front at (11.0, −2.75 / −0.75)) — the channel wall stops there
+    if build == "discrete":     # v0.10: the cable-loop anchor (posts + bar) stands on the switch plate's back
+        ax0, ax1, ay0, ay1, ad0, ad1 = P.ANCHOR
+        anchor = [cyl(x, y, 1.2, s["plate_back"] - EPS, ad1) for (x, y) in P.ANCHOR_POSTS] + [box(ax0, ax1, ay0, ay1, ad0, ad1)]
+        return fuse([cut(plate, tools)] + anchor)
+    # v0.11 pcb: one M2 post for the hub PCB on the switch plate's back (where the cable anchor stood)
+    ax, ay = P.HUB_ANCHOR_POST
+    post = cyl(ax, ay, P.HUB_POST_R[0], s["plate_back"] - EPS, P.HUB_PCB_D0)
+    pilot = cyl(ax, ay, P.M2_PILOT[0] / 2, P.HUB_PCB_D0 - P.M2_PILOT[1], P.HUB_PCB_D0 + 1)
+    return cut(fuse([cut(plate, tools), post]), [pilot])
 
 
 def collar():
@@ -324,6 +361,35 @@ def plate(v):
     return fuse([b, r])
 
 
+def plate_split():
+    """v0.12 split plate (P.PLATE_BACK): (cast FACE, printed BACK). The face is the plate's skin d 0 … PLATE_T with the
+    perforation and the key opening, the glow rim included (the resin thread casts it clear), its back flat. The back is
+    everything of the one-piece plate behind PLATE_T — skirts, top lip, snap lips, rest pads — joined by a glue flange
+    (PLATE_BACK[0] thick from PLATE_T) that keeps clear of the perforation fields and of the glow rim's light path, and
+    stands in front of the frame rims (d 3.5). Printed flange down; the skirts' outer faces are the datum."""
+    t = P.PLATE_T
+    ft, clr, fw = P.PLATE_BACK
+    tools = [rrect(P.CUT_W / 2, P.CUT_H / 2, P.CUT_R, -1.0, t + 1.0)]
+    for sx in (-1, 1):
+        for x in P.PERF_XS:
+            for y in P.PERF_YS:
+                tools.append(cyl(sx * x, y, P.PERF_D / 2, -1.0, t + 1.0))
+    face = cut(rrect(P.HALF, P.HALF, P.PLATE_CORNER_R, 0.0, t), tools)
+    body, _ = plate_parts("S")
+    so = P.HALF - 0.4                                        # the skirts' outer face (27.1): the datum
+    c0, c1 = P.cols_span()
+    r0, r1 = P.rows_span()
+    mm = P.MESH_MARGIN
+    lx = max(P.COLLAR_OUT_X, P.CUT_W / 2 + P.GLOW_RIM_W) + clr
+    ly = max(P.COLLAR_OUT_Y, P.CUT_H / 2 + P.GLOW_RIM_W) + clr
+    flange = rrect(so, so, P.PLATE_CORNER_R - 0.4, t - EPS, t + ft).cut(rrect(so - fw, so - fw, 0.5, t - 1.0, t + ft + 1.0))
+    keep = [box(-lx, lx, -ly, ly, t - 1.0, t + ft + 1.0)]
+    keep += [box(sx * (c0 - mm - clr), sx * (c1 + mm + clr), r0 - mm - clr, r1 + mm + clr, t - 1.0, t + ft + 1.0)
+             for sx in (-1, 1)]
+    back = fuse([body.common(box(-40.0, 40.0, -40.0, 40.0, t, 40.0)), cut(flange, keep)])
+    return face, back
+
+
 # ============================================================================ chassis
 def spk_tab_slot():
     """v0.9.1: blind slot in the SPK_TAB_END cradle rib for the speaker's wire tab: from the speaker's end face out to the
@@ -339,7 +405,7 @@ def spk_tab_slot():
             P.SPK_D0 + R.SPK_W + 0.1 + P.SPK_HOOK_T + 1.0)
 
 
-def chassis_parts(ch):
+def chassis_parts(ch, build="pcb"):
     """v0.10: split a finished chassis (insert or kit) into its three prints (P.CH_SPLIT): returns (front, flange, rear),
     each ONE solid (EPS slivers at the cut planes are dropped), with the 2→3 pins on the flange part and their holes in the
     rear part."""
@@ -349,8 +415,14 @@ def chassis_parts(ch):
     gx, g, w = P.grille_x(), P.SPK_FACE_GASKET[2], P.DUCT_WALL
     m0, m1, n0, n1 = P.mouth()
     _, pd1 = P.port_d()
-    mid_z = fuse([box(-big, big, -big, big, fl0, c1),
-                  box(gx + g - 0.05, P.DUCT_X1 + w + 0.05, n0 - w - 0.05, n1 + w + 0.05, c1, pd1 + w + 1.0)])   # + the duct
+    mpx, mpy = P.MIC_PORT
+    bx0, bx1, by0, by1 = P.RADAR_BLADE
+    mid = [box(-big, big, -big, big, fl0, c1),
+           box(gx + g - 0.05, P.DUCT_X1 + w + 0.05, n0 - w - 0.05, n1 + w + 0.05, c1, pd1 + w + 1.0)]        # + the duct
+    if build == "pcb":
+        mid += [cyl(mpx, mpy, sum(P.KIT_MIC_TUBE) / 2 + 1.05, c1 - 1, P.HUB_PCB_D0),                        # + sound tube
+                box(bx0 - 0.05, bx1 + 0.05, by0 - 0.05, by1 + 0.05, c1 - 1, cage_d()[1] + 3)]              # + radar blade
+    mid_z = fuse(mid)
     p1 = ch.common(front_z)
     rest = ch.cut(front_z)
     p2, p3 = rest.common(mid_z), rest.cut(mid_z)
@@ -374,6 +446,83 @@ def chassis_parts(ch):
         assert tiny < 0.5, f"chassis {nm}: {tiny:.2f} mm³ of slivers"
         out.append(main[0])
     return tuple(out)
+
+
+_HUB = {}
+HUB_EXEMPT = {frozenset(("MX switch 1", "hub")), frozenset(("MX switch 2", "hub")),   # MX pins in the hot-swap sockets
+              frozenset(("cable loop", "hub"))}                                      # the key wires end on the hub
+
+
+def hub_pcb():
+    """v0.11: the hub PCB from its KiCad STEP (hardware/pcb/roomkey-hub/output), placed in the kit frame: front face at
+    HUB_PCB_D0, parts on the back."""
+    if "s" not in _HUB:
+        p = os.environ.get("ROOMKEY_HUB_STEP") or os.path.join(os.path.dirname(os.path.dirname(HERE)), *P.HUB_PCB_STEP)
+        s = Part.read(p)
+        s.translate(V(P.HUB_PCB_STEP_XY[0], P.HUB_PCB_STEP_XY[1], -(P.HUB_PCB_D0 + P.HUB_PCB_STEP_TOP)))
+        if not os.environ.get("ROOMKEY_HUB_REV_D"):
+            s = _hub_rev_d(s)
+        _HUB["s"] = s
+    return _HUB["s"].copy()
+
+
+def _hub_rev_d(s):
+    """v0.12 stand-in until the PCB thread's rev D (set ROOMKEY_HUB_REV_D=1 for a board that has them): the plug housing's
+    cut-outs cut into the rev C board — the radar window (P.HUB_RADAR_WINDOW), the notch the humidity sensor passes when G2
+    goes in, the corner columns, the interior square — and the parts standing in them dropped."""
+    x0, x1, y0, y1 = P.HUB_RADAR_WINDOW
+    nx0, nx1, ny1 = P.plug_rh()["notch"]
+    d0, d1 = P.HUB_PCB_D0 - 5.0, P.HUB_PCB_D0 + 15.0
+    tools = [box(x0, x1, y0, y1, d0, d1), box(nx0, nx1, -40.0, ny1, d0, d1)] + column_zones(0.7, d0, d1)   # r 3.9 (PCB)
+    h = P.plug_in_half()
+    sol = sorted(s.Solids, key=lambda q: -q.Volume)
+    board = sol[0].common(box(-h, h, -h, h, d0, d1)).cut(tools)
+    keep = [q for q in sol[1:] if not any(q.BoundBox.intersect(t.BoundBox) and q.common(t).Volume > 1e-3 for t in tools)]
+    return Part.makeCompound([board] + keep)
+
+
+def cage_d():
+    """v0.12: the radar cage's depths — its lips' front, its back plate's front (the blade's top) and back."""
+    w, c, bt, ld, lw = P.RADAR_CAGE
+    f = P.HUB_RADAR[4]
+    p0 = f + R.RADAR_T + 0.05
+    return f - ld, p0, p0 + bt
+
+
+def radar_cage():
+    """v0.12 (PCB build): the LD2410C's cage in the hub plane, inside the hub's radar window. Walls on the −x, −y and +y
+    sides, a back plate behind the board (a slot for its header pins, cut short) and front lips over the parts-free ends
+    of its antenna face; the board slides in from the open +x side, where the window's edge stops it once the hub is on.
+    An ear on the −x side sits on the chassis' blade (2 pins, lead-in holes). Printed back down, no supports."""
+    rx0, rx1, ry0, ry1, f = P.HUB_RADAR
+    w, c, bt, ld, lw = P.RADAR_CAGE
+    l0, p0, p1 = cage_d()
+    x0, y0, y1 = rx0 - c - w, ry0 - c - w, ry1 + c + w
+    body = box(x0, rx1, y0, y1, l0, p1).cut(box(rx0 - c, rx1 + 1.0, ry0 - c, ry1 + c, l0 - 1.0, p0))
+    xl = rx1 - P.KIT_RADAR_EDGE[0] - 0.3                   # the lips stop short of the parts band along the +x edge
+    lips = [box(rx0 - c - EPS, xl, ry0 - c - EPS, ry0 + lw, l0, f - 0.05),
+            box(rx0 - c - EPS, xl, ry1 - lw, ry1 + c + EPS, l0, f - 0.05)]
+    body = fuse([body, box(*P.RADAR_EAR, p0, p1)] + lips)
+    tools = [box(rx0 - c - EPS, rx0 + 3.1, ry0 + 2.7, ry1 - 2.7, p0 - 1.0, p1 + 1.0)]     # header slot (to the −x wall)
+    pd_, pl_, play = P.RADAR_PIN
+    for (px_, py_) in P.RADAR_PINS:
+        tools += [cyl(px_, py_, pd_ / 2 + play, p0 - 1.0, p0 + pl_ + 0.3),
+                  Part.makeCone(pd_ / 2 + play + P.CH_PIN_LEAD, pd_ / 2 + play, P.CH_PIN_LEAD, V(px_, py_, -p0 + 0.01),
+                                V(0, 0, -1))]
+    return cut(body, tools)
+
+
+def radar_refs():
+    """v0.12 (PCB build): the LD2410C in its cage, antenna face on the hub's front plane, header pins cut short behind it +
+    the envelopes on its antenna face."""
+    rx0, rx1, ry0, ry1, f = P.HUB_RADAR
+    ew, eh = P.KIT_RADAR_EDGE
+    b1 = f + R.RADAR_T
+    return {"LD2410C": box(rx0, rx1, ry0, ry1, f, b1),
+            "LD2410C header": box(rx0 + 0.3, rx0 + 2.8, ry0 + 3.0, ry1 - 3.0, b1, b1 + P.RADAR_PINS_CUT),
+            "LD2410C front parts": box(rx0 + 7.0, rx1 - ew - 0.1, ry0 + 8.0, ry0 + 14.0, f - 1.0, f),
+            "LD2410C edge parts": box(rx1 - ew, rx1 - 0.2, ry0 + 0.4, ry1 - 0.4, f - eh, f),
+            "LD2410C pin stubs": box(rx0 + 0.3, rx0 + 2.4, ry0 + 5.0, ry0 + 17.0, f - P.KIT_RADAR_STUBS, f)}
 
 
 def ceilings(shape, name, how="front_down", max_span=16.0, supports=False):
@@ -402,7 +551,7 @@ def ceilings(shape, name, how="front_down", max_span=16.0, supports=False):
     return worst[0]
 
 
-def chassis(v):
+def chassis(v, build="pcb"):
     s = P.KS
     d0, d1 = P.DECK_D0, P.DECK_D1
     fl0, fl1 = P.WALL_D - P.FLANGE_T, P.WALL_D
@@ -440,14 +589,10 @@ def chassis(v):
             add.append(box(xa, xb, ya, yb, fl0 - EPS, P.COLLAR_D1 + 1.0))
             ya, yb = sorted((sy * P.WELL_IN_Y, sy * (P.COLLAR_OUT_Y + P.COLLAR_FIT + 0.8)))
             add.append(box(xa, xb, ya, yb, P.COLLAR_D1 - EPS, P.COLLAR_D1 + 1.0))
-    # flange with screw slots, load-plate recesses and openings
+    # flange (v0.12: inside the plug housing's skin; its corners notched round the carrier's columns) and openings
     flange = rrect(P.FLANGE_HALF, P.FLANGE_HALF, 3.0, fl0, fl1)
     fl_tools = [rrect(P.COLLAR_OUT_X + P.COLLAR_FIT, P.COLLAR_OUT_Y + P.COLLAR_FIT, P.COLLAR_OUT_R + P.COLLAR_FIT, fl0 - 1, fl1 + 1)]
-    lx0, lx1, lhy, lpt = P.LOAD_PLATE
-    for sx in (-1, 1):
-        cx = sx * P.BOX_SCREW_PITCH / 2
-        fl_tools.append(box(cx - P.FLANGE_SLOT_W / 2, cx + P.FLANGE_SLOT_W / 2, -P.FLANGE_SLOT_L / 2, P.FLANGE_SLOT_L / 2, fl0 - 1, fl1 + 1))
-        fl_tools.append(box(cx + sx * (lx0 - 0.1), sx * (P.FLANGE_HALF + 1.0), -lhy - 0.1, lhy + 0.1, fl0 - 1, fl0 + lpt))
+    fl_tools += column_zones(0.3, fl0 - 1, fl1 + 1)                      # v0.12: the housing's corner columns pass
     fl_tools.append(box(P.COLLAR_OUT_X + P.COLLAR_FIT - 0.5, P.DUCT_X1 + P.DUCT_WALL - 0.3, P.SPK_Y[0] - 0.2,
                         P.SPK_Y[1] + 0.2, fl0 - 1, fl1 + 1))                              # speaker/duct passage
     mx, my = P.MIC_PORT
@@ -499,9 +644,25 @@ def chassis(v):
             ty0, ty1 = sorted((sy * (P.SPK_Y[1] + 1.2 - EPS), sy * outer))
             add.append(box(P.COLLAR_OUT_X + P.COLLAR_FIT, gx + 1.0, ty0, ty1, sd0 - P.SPK_TAB_SLOT[2],
                            P.SPK_D0 + R.SPK_W + 0.1 + P.SPK_HOOK_T))
-    # hub posts from the ledge, anchor posts + bar for the cable loop
-    for (x, y) in P.HUB_POSTS:
-        add.append(cyl(x, y, 1.5, ledge1 - EPS, P.HUB[4]))
+    mpx, mpy = P.MIC_PORT
+    mbore, mwall = P.KIT_MIC_TUBE
+    if build == "discrete":                    # v0.10: hub posts from the ledge to the back carrier (pins: kit_lib)
+        for (x, y) in P.HUB_POSTS:
+            add.append(cyl(x, y, 1.5, ledge1 - EPS, P.HUB[4]))
+    else:
+        # v0.11: posts for the hub PCB from the ledge to its front face (M2 pilot holes in the upper two, see the cuts)
+        for (x, y, scr) in P.HUB_PCB_POSTS:
+            add.append(cyl(x, y, P.HUB_POST_R[0 if scr else 1], ledge1 - EPS, P.HUB_PCB_D0))
+        # v0.11: sound tube from the plate's mic hole to the hub's mic port (foam rings at both ends), and the radar's
+        # support blade from the flange back to the tray's ear (with 2 pins on top) — both print with the flange part
+        add.append(cyl(mpx, mpy, mbore / 2 + mwall, P.PLATE_T + P.KIT_MIC_FOAM_FRONT[1], P.HUB_PCB_D0 - P.KIT_MIC_FOAM[1]))
+        bx0, bx1, by0, by1 = P.RADAR_BLADE
+        c0r = cage_d()[1]                                         # v0.12: up to the radar cage's ear (hub plane)
+        add.append(box(bx0, bx1, by0, by1, P.WALL_D - EPS, c0r))
+        pd_, pl_, _ = P.RADAR_PIN
+        for (px_, py_) in P.RADAR_PINS:
+            add += [cyl(px_, py_, pd_ / 2, c0r - 0.5, c0r + pl_ - 0.3),
+                    Part.makeCone(pd_ / 2, pd_ / 2 - 0.3, 0.3, V(px_, py_, -(c0r + pl_ - 0.3) + EPS), V(0, 0, -1))]
     # v0.10: the cable-loop anchor moved to the switch plate (switch_plate())
     # v0.10 split aids: webs from the deck edge to each frame rim (in the plate skirt's gaps) → the rims print with the
     # front part; pin blocks above / below the collar join the flange part (2) and the rear part (3)
@@ -539,6 +700,13 @@ def chassis(v):
     tools.append(box(P.SPK_X0 - 0.2, gx + g, P.SPK_Y[0] - 0.2, P.SPK_Y[1] + 0.2, P.SPK_D0,
                      P.SPK_D0 + R.SPK_W + 0.1))                                                  # speaker + face gasket
     tools.append(box(*spk_tab_slot()))                                                           # v0.9.1 tab slot
+    if build == "pcb":
+        for sy in (-1, 1):                     # v0.11: cradle ribs out of the hub's speaker cut-out (x ≥ 14.3) behind its face
+            tools.append(box(13.5, 14.55, *sorted((sy * 15.0, sy * 17.4)), P.HUB_PCB_D0 - 0.2, P.HUB_PCB_BACK + 4))
+        for (x, y, scr) in P.HUB_PCB_POSTS:                                                     # v0.11 hub M2 pilots
+            if scr:
+                tools.append(cyl(x, y, P.M2_PILOT[0] / 2, P.HUB_PCB_D0 - P.M2_PILOT[1], P.HUB_PCB_D0 + 1))
+        tools.append(cyl(mpx, mpy, mbore / 2, P.PLATE_T - 0.5, P.HUB_PCB_D0 + 0.1))             # v0.11 sound-tube bore
     for (x, y) in P.PAD_POS:                                                                     # preload pad pockets
         tools.append(box(x - P.PAD_SIZE[0] / 2 - 0.1, x + P.PAD_SIZE[0] / 2 + 0.1, y - P.PAD_SIZE[1] / 2 - 0.1,
                          y + P.PAD_SIZE[1] / 2 + 0.1, d0 - 1, d0 + P.PAD_POCKET))
@@ -549,7 +717,7 @@ def chassis(v):
         for sy in (-1, 1):
             xx0, xx1 = sorted((sx * ax0, sx * (P.COLLAR_OUT_X + 1.0)))
             yy0, yy1 = sorted((sy * ay0, sy * (P.COLLAR_OUT_Y + 1.0)))
-            tools.append(box(xx0, xx1, yy0, yy1, P.COLLAR_D1 - EPS, P.LED_D0 + P.LED_T + P.LED_CARRIER_T + 0.35))
+            tools.append(box(xx0, xx1, yy0, yy1, P.COLLAR_D1 - EPS, P.KS["plate_back"]))   # v0.11: the LED ears pass
     for (x, y) in P.SWP_SCREWS:
         tools.append(cyl(x, y, 0.85, ledge0 - 1, ledge0 + P.SWP_BOSS_H - 0.8))
     # bottom tongues: slot inboard of each tongue (through deck + rib, round root end) and a lead-in on the front-outer edge
@@ -574,7 +742,7 @@ def chassis(v):
 
 
 # ============================================================================ reference bodies
-def ref_bodies(v):
+def ref_bodies(v, build="pcb"):
     s = P.KS
     refs = {}
     fr = rrect(R.TB_W / 2, R.TB_H / 2, R.TB_CORNER_R, s["glass"], s["pcb_front"])
@@ -598,12 +766,13 @@ def ref_bodies(v):
                                      y + R.MX_STEM_ARM_W / 2, s["stem_top"], s["mx_top"] - 0.1).fuse(
             box(x - R.MX_STEM_ARM_W / 2, x + R.MX_STEM_ARM_W / 2, y - R.MX_STEM_ARM_L / 2, y + R.MX_STEM_ARM_L / 2,
                 s["stem_top"], s["mx_top"] - 0.1))
-    x0, x1, y0, y1, md0, md1 = P.mic_carrier_box()
-    refs["mic carrier"] = box(x0, x1, y0, y1, md0, md1)
-    for i, (x, y) in enumerate(P.LED_POS):
-        refs[f"LED {i+1}"] = fuse([box(x - P.LED_W / 2, x + P.LED_W / 2, y - P.LED_W / 2, y + P.LED_W / 2, P.LED_D0, P.LED_D0 + P.LED_T),
-                                   box(x - P.LED_W / 2, x + P.LED_W / 2, y - P.LED_W / 2, y + P.LED_W / 2,
-                                       P.LED_D0 + P.LED_T - EPS, P.LED_D0 + P.LED_T + P.LED_CARRIER_T)])
+    # v0.11: no mic carrier on the plate (the mic is on the hub PCB; a sound tube in the chassis)
+    t_led, b_led = P.led_seat_d()
+    for i, (x, y) in enumerate(P.LED_POS):              # v0.11: the LED in its seat in the switch plate + its 4 joints
+        h = P.LED_W / 2
+        joints = [box(x + sd * h - (0.5 if sd < 0 else 0), x + sd * h + (0.5 if sd > 0 else 0), y + py - 0.3, y + py + 0.3,
+                      b_led - 1.0, b_led - EPS) for sd in (-1, 1) for py in (-0.875, 0.875)]
+        refs[f"LED {i+1}"] = fuse([box(x - h, x + h, y - h, y + h, t_led, b_led)] + joints)
     tip, front, back, cback = P.sw_depths()
     for (x, y) in P.SW_POS:
         nm = ("T" if y > 0 else "B") + ("L" if x < 0 else "R")
@@ -630,47 +799,35 @@ def ref_bodies(v):
     refs["speaker 2030"] = fuse([box(P.SPK_X0, gx, P.SPK_Y[0], P.SPK_Y[1], P.SPK_D0, P.SPK_D0 + R.SPK_W), tab])   # v0.9.1 tab
     refs["speaker face gasket"] = box(gx, gx + g, n0 - w, n1 + w, P.SPK_D0, pd1 + w).cut(
         box(gx - 1, gx + g + 1, n0, n1, P.SPK_D0 - 1, pd1))
-    h = P.HUB
-    refs["hub"] = fuse([box(h[0], h[1], h[2], h[3], h[4], h[4] + P.HUB_PCB_T),
-                        box(h[0] + 1.0, h[1] - 1.0, h[2] + 1.0, h[3] - 1.0, h[4] + P.HUB_PCB_T - EPS, h[5])])
-    refs["cable loop"] = box(-P.CABLE_W / 2, P.CABLE_W / 2, P.LOOP_Y[0], P.LOOP_Y[1], P.LOOP_D0 + 0.2, P.LOOP_D1)
-    for i, (x0, x1, y0, y1) in enumerate(P.WAGO_POS):
-        refs[f"WAGO {i+1}"] = box(x0, x1, y0, y1, P.WAGO_D[0], P.WAGO_D[1])
+    if build == "discrete":                    # v0.10: the hub envelope and the loop rolling down (−y) behind it
+        h = P.HUB
+        refs["hub"] = fuse([box(h[0], h[1], h[2], h[3], h[4], h[4] + P.HUB_PCB_T),
+                            box(h[0] + 1.0, h[1] - 1.0, h[2] + 1.0, h[3] - 1.0, h[4] + P.HUB_PCB_T - EPS, h[5])])
+        refs["cable loop"] = box(-P.CABLE_W / 2, P.CABLE_W / 2, P.LOOP_Y[0], P.LOOP_Y[1], P.LOOP_D0 + 0.2, P.LOOP_D1)
+    else:
+        refs["hub"] = hub_pcb()                                              # v0.11: the real board (its STEP)
+        lx0, lx1, ly0, ly1, ld0, ld1 = P.loop_up()
+        refs["cable loop"] = box(lx0 + 1.0, lx1 - 1.0, ly0, ly1, ld0 + 0.2, ld1)
+        refs.update(radar_refs())
     fb = P.SPK_BACK_FOAM
     refs["speaker back foam"] = box(P.SPK_X0 - fb[1], P.SPK_X0, P.SPK_Y[0] + 2, P.SPK_Y[1] - 2, P.SPK_D0 + 2,
                                     P.SPK_D0 + R.SPK_W - 2)                          # drawn compressed
-    fl0 = P.WALL_D - P.FLANGE_T
-    lx0, lx1, lhy, lpt = P.LOAD_PLATE
-    for sx in (-1, 1):
-        cx = sx * P.BOX_SCREW_PITCH / 2
-        lab = "L" if sx < 0 else "R"
-        refs[f"load plate {lab}"] = box(cx + sx * lx0, cx + sx * lx1, -lhy, lhy, fl0, fl0 + lpt).cut(
-            cyl(cx, 0, 1.7, fl0 - 1, fl0 + 1))
-        head0 = fl0 - P.SCREW_HEAD_H
-        refs[f"box screw {lab}"] = fuse([
-            cyl(cx, 0, P.SCREW_HEAD_D / 2, head0, fl0),
-            cyl(cx, 0, P.SCREW_D / 2, fl0 - EPS, fl0 + P.SCREW_L)])
     return refs
 
 
-def env_bodies():
-    floor = P.box_floor()
-    wallbox = cyl(0, 0, P.BOX_OUTER_D / 2, P.WALL_D, floor + 2.0).cut(cyl(0, 0, P.BOX_USABLE_D / 2, P.WALL_D - 1, floor))
-    ds = []
-    for d, ang in zip(domes(0.0, P.WALL_D + 0.5, floor), P.BOX_DOME_ANGLES):
-        a = math.radians(ang)
-        d = d.cut(cyl(round(math.cos(a)) * P.BOX_SCREW_PITCH / 2, round(math.sin(a)) * P.BOX_SCREW_PITCH / 2, 1.7, P.WALL_D, floor + 1))
-        ds.append(d.common(cyl(0, 0, P.BOX_OUTER_D / 2, P.WALL_D, floor)))
-    boxbody = fuse([wallbox] + ds)
-    lim, fo = P.FRAME_OPEN / 2, P.FRAME_OUT / 2
-    frame = rrect(fo, fo, 4.0, 0.0, P.FRAME_TUNNEL_D).cut(rrect(lim, lim, 1.0, -1, P.WALL_D))
-    frame = frame.fuse(rrect(fo, fo, 4.0, P.FRAME_TUNNEL_D - EPS, P.WALL_D).cut(rrect(fo - 1.5, fo - 1.5, 3.0, 0, P.WALL_D + 1)))
-    return {f"box ({P.BOX_DEPTH:.0f} mm)": boxbody, "frame (TBD)": frame.removeSplitter()}
+def front_frame():
+    """v0.12: what frames the front stack in the plug housing — the skin's front border and the carrier's tunnel (built in
+    plug_lib as separate parts; one body here for the front-stack checks)."""
+    t, f0, fo = P.PLUG_SKIN[0], P.PLUG_FRONT_D, P.FRAME_OPEN / 2
+    border = rrect(P.PLUG_HALF, P.PLUG_HALF, P.PLUG_R, f0, f0 + t).cut(rrect(fo, fo, P.PLUG_OPEN_R, f0 - 1, f0 + t + 1))
+    h = P.plug_skin_in(f0 + t) - P.PLUG_GLUE
+    tun = rrect(h, h, 1.0, f0 + t - EPS, P.PLUG_STOP_D).cut(rrect(fo, fo, 1.0, f0, P.PLUG_STOP_D + 1))
+    return fuse([border, tun])
 
 
 # ============================================================================ motion
 KEY_MOVERS = ("key shell", "touch board", "antenna chip", "MX stem 1", "MX stem 2")
-PLATE_MOVERS = ("plate", "mic carrier")
+PLATE_MOVERS = ("plate",)        # v0.11: the mic carrier is gone
 _S = P.SUPPORTS      # (x, y, d) hull corners of the lip contacts (see insert_params.SUPPORTS), CCW from bottom-left
 PLATE_CASES = {      # press location → pivot line through lip contacts (3D: the catch faces are at different depths)
     "left wing": (_S[1], _S[2], (-21.0, 0.0)),
@@ -815,7 +972,7 @@ def export_sections(bodies, v, planes):
             if loops:
                 sec[nm] = loops
         out[key] = {"axis": axis, "value": value, "bodies": sec}
-    path = os.path.join(SECT, f"insert-{v}_sections.json")
+    path = os.path.join(SECT, "front" + (f"-{v}" if v else "") + "_sections.json")
     with open(path, "w", encoding="utf-8") as f:
         json.dump(out, f)
     return path
@@ -840,13 +997,16 @@ def build_key_module():
 
 
 def build_variant(v):
-    print(f"\n==================== RoomKey insert v{P.VERSION} — Variant {v} ====================")
+    """v0.12: the FRONT STACK (key, plate, collar, switch plate, chassis, PCB build) in the plug housing's front frame:
+    collisions at rest, key pressed / wobbled / pulled, MX2 floating; clearances; the plate's prints; section slices."""
+    print(f"\n==================== RoomKey front stack v{P.VERSION} (one RoomKey, plug-in housing) ====================")
     pbody, prim = plate_parts(v)
-    printed = {"key shell": key_shell(), "switch plate": switch_plate(), "collar": collar(), "plate": fuse([pbody, prim])}
+    printed = {"key shell": key_shell(), "switch plate": switch_plate(), "collar": collar(), "plate": fuse([pbody, prim]),
+               "radar cage": radar_cage()}
     ch, lost = chassis(v)
     printed["chassis"] = ch
     refs = ref_bodies(v)
-    env = env_bodies()
+    env = {"frame": front_frame()}
     report = {"variant": v, "version": P.VERSION, "parts": {}, "collisions": [], "gaps": {}, "trimmed_mm3": round(lost, 2),
               "states": {}}
     for nm, shp in printed.items():
@@ -857,20 +1017,19 @@ def build_variant(v):
         print(f"  {nm:13s} valid {ok} | solids {len(shp.Solids)} | {bb.XLength:.1f} × {bb.YLength:.1f} × {bb.ZLength:.1f} | "
               f"{shp.Volume/1000:.2f} cm³ ≈ {shp.Volume/1000*1.27:.1f} g PETG")
         assert len(shp.Solids) == 1, f"{nm}: {len(shp.Solids)} solids — a cut left a piece loose (v0.9.1 lesson)"
-    assert lost <= TRIM_FAIL_MM3, f"allowed-space trim removed {lost:.2f} mm³ of chassis — a feature leaves the frame tunnel/box"
+    assert lost <= TRIM_FAIL_MM3, f"allowed-space trim removed {lost:.2f} mm³ of chassis — a feature leaves the housing's room"
     print(f"  chassis trimmed to the allowed space: {lost:.2f} mm³ (fails above {TRIM_FAIL_MM3})")
 
     bodies = {}
     bodies.update(printed)
     bodies.update(refs)
     bodies.update(env)
-    boxname = [k for k in env if k.startswith("box")][0]
-    # exempt only designed contacts: screws in domes, MX bodies in their cut-outs, stems in their sockets, switch
-    # plungers in their own switch, the compressible preload pads against the plate
-    exempt = {frozenset(("box screw L", boxname)), frozenset(("box screw R", boxname)),
-              frozenset(("MX switch 1", "switch plate")), frozenset(("MX switch 2", "switch plate")),
+    # exempt only designed contacts: MX bodies in their cut-outs, stems in their sockets, switch plungers in their own
+    # switch, the compressible preload pads against the plate
+    exempt = {frozenset(("MX switch 1", "switch plate")), frozenset(("MX switch 2", "switch plate")),
               frozenset(("MX stem 1", "key shell")), frozenset(("MX stem 2", "key shell")),
               frozenset(("MX stem 1", "MX switch 1")), frozenset(("MX stem 2", "MX switch 2"))}
+    exempt |= HUB_EXEMPT
     exempt |= {frozenset((f"switch {n}", f"plunger {n}")) for n in ("TL", "TR", "BL", "BR")}
     exempt |= {frozenset(("plate", f"preload pad {i+1}")) for i in range(len(P.PAD_POS))}
     col = check_state(bodies, "rest", exempt)
@@ -934,11 +1093,11 @@ def build_variant(v):
     t_nom = P.NUB_GAP + P.SW_TRAVEL_TOTAL
     report["states"]["plate pressed"] = (f"five press points; nominal stop (travel {t_nom:.2f} at the farthest engaged switch, "
                                          f"all pairs) and RSS worst stop ({t_stop:.2f}; switch bodies exempt: in the real "
-                                         f"stack a deeper stop means a deeper switch)")
+                                         f"stack a deeper stop means a deeper switch)" if P.SW_POS else
+                                         "v0.11: none — the plate is fixed on its rest pads (no plate switches)")
     pb_all = {}
-    for case in PLATE_CASES:
+    for case in (PLATE_CASES if P.SW_POS else {}):
         ex = exempt | {frozenset(("plate", f"plunger {n}")) for n in ("TL", "TR", "BL", "BR")}
-        ex |= {frozenset(("mic carrier", f"preload pad {i+1}")) for i in range(len(P.PAD_POS))}
         pbn = dict(bodies)
         for nm in PLATE_MOVERS:
             pbn[nm] = plate_pressed(bodies[nm], case, t_nom)
@@ -981,17 +1140,13 @@ def build_variant(v):
         report["gaps"][f"plate ↔ chassis ({case}; 0 = lip on its catch face, by design)"] = g("plate", "chassis", pb)
         report["gaps"][f"plate without lips ↔ chassis ({case})"] = round(min_gap(pb["plate"].common(no_lips), pb["chassis"]), 3)
         report["gaps"][f"plate ↔ key shell ({case})"] = g("plate", "key shell", pb)
-        report["gaps"][f"mic carrier ↔ chassis ({case})"] = g("mic carrier", "chassis", pb)
-    report["gaps"]["mic carrier ↔ chassis (rest)"] = g("mic carrier", "chassis")
-    report["gaps"]["plate ↔ frame (rest)"] = g("plate", "frame (TBD)")
+    report["gaps"]["plate ↔ frame (rest)"] = g("plate", "frame")
     for case, pb in pb_all.items():
-        report["gaps"][f"plate ↔ frame ({case}, RSS stop)"] = g("plate", "frame (TBD)", pb)
-    report["gaps"]["chassis rims ↔ frame (rest, locating clearance)"] = g("chassis", "frame (TBD)")
-    report["gaps"]["chassis ↔ box (radial; flange sits on the rim)"] = round(min_gap(ch.common(cyl(0, 0, 40, P.WALL_D + 0.2, 90)),
-                                                                                   env[boxname]), 3)
+        report["gaps"][f"plate ↔ frame ({case}, RSS stop)"] = g("plate", "frame", pb)
+    report["gaps"]["chassis rims ↔ frame (rest, locating clearance; flange 0.1 behind the tunnel)"] = g("chassis", "frame")
     report["gaps"]["collar ↔ chassis (rest; glued seat, back face on the rear wall = 0 by design)"] = g("collar", "chassis")
     report["gaps"]["speaker ↔ chassis (rest; front edge on the plenum floor = 0 by design)"] = g("speaker 2030", "chassis")
-    for m in ("MX switch 2", "LED 3", "LED 4", "speaker 2030", "hub", "box screw L", "switch BL"):
+    for m in ("MX switch 2", "LED 3", "LED 4", "speaker 2030", "hub") + (("switch BL",) if P.SW_POS else ()):
         report["gaps"][f"antenna chip ↔ {m} (rest)"] = g("antenna chip", m)
         report["gaps"][f"antenna chip ↔ {m} (key pressed)"] = round(min_gap(kb["antenna chip"], bodies[m]), 3)
     for case, pb in pb_all.items():                        # nub travel into each plunger in each plate case
@@ -1005,8 +1160,8 @@ def build_variant(v):
     for k, val in report["gaps"].items():
         print(f"    gap {k:60s} {val}")
 
-    export(printed["plate"], f"plate_{v}", PRINTED_HOW["plate"])
-    write_stl(rot_to_print(pbody, "front_down").copy(), os.path.join(OUT, f"plate_{v}_body_print.stl"))
+    export(printed["plate"], "plate", PRINTED_HOW["plate"])
+    write_stl(rot_to_print(pbody, "front_down").copy(), os.path.join(OUT, "plate_body_print.stl"))
     pr = pbody.fuse(prim)
     rim_p = prim.copy()
     rim_p.rotate(V(0, 0, 0), V(1, 0, 0), 180)
@@ -1014,29 +1169,38 @@ def build_variant(v):
     bbp.rotate(V(0, 0, 0), V(1, 0, 0), 180)
     bb = bbp.BoundBox
     rim_p.translate(V(-bb.Center.x, -bb.Center.y, -bb.ZMin))
-    write_stl(rim_p, os.path.join(OUT, f"plate_{v}_glowrim_print.stl"))
-    ceilings(printed["plate"], f"plate_{v}", PRINTED_HOW["plate"])
-    printed["chassis"].exportStep(os.path.join(OUT, f"chassis_{v}.step"))          # the glued assembly (reference)
-    for i, (lab, part) in enumerate(zip(("front", "flange", "rear"), chassis_parts(printed["chassis"])), 1):
-        export(part, f"chassis_{v}_{i}_{lab}", "front_down")
-        ceilings(part, f"chassis_{v}_{i}_{lab}", "front_down")
-    comp = Part.makeCompound([printed[k] for k in printed] + [refs[k] for k in refs])
-    comp.exportStep(os.path.join(OUT, f"insert-{v}_assembly.step"))
-    Part.makeCompound(list(env.values())).exportStep(os.path.join(OUT, f"insert-{v}_wall-reference.step"))
-    write_stl(Part.makeCompound([printed[k] for k in printed]), os.path.join(OUT, f"insert-{v}_printed-assembly.stl"), 0.05, 0.4)
+    write_stl(rim_p, os.path.join(OUT, "plate_glowrim_print.stl"))
+    ceilings(printed["plate"], "plate", PRINTED_HOW["plate"])
+    # v0.12 split plate: the cast face + the printed back glued on (resin thread)
+    face, back = plate_split()
+    assert len(back.Solids) == 1, f"plate back: {len(back.Solids)} solids"
+    assert len(face.Solids) == 1, f"plate face: {len(face.Solids)} solids"
+    export(face, "plate_face", "front_down")
+    export(back, "plate_back", "front_down")
+    ceilings(back, "plate_back", "front_down")
+    for other in ("chassis", "collar", "key shell", "frame"):
+        for lab, bs in (("rest", bodies), ("key pressed", kb)):
+            ov = overlap(back, bs[other])
+            report["gaps"][f"plate back ↔ {other} ({lab})"] = round(min_gap(back, bs[other]), 3)
+            if ov > 0.001:
+                col.append((f"split plate, {lab}", "plate back", other, round(ov, 3)))
+    n_split = sum(1 for c_ in col if str(c_[0]).startswith("split plate"))
+    print(f"  split plate: collisions {n_split} | face {face.Volume / 1000:.2f} cm³ (cast), back {back.Volume / 1000:.2f} cm³ "
+          f"PETG, one solid each; "
+          f"back ↔ chassis {report['gaps']['plate back ↔ chassis (rest)']}, ↔ collar {report['gaps']['plate back ↔ collar (rest)']}")
+    # the chassis and the radar cage are exported by the kit (make_kit.py: kit-<build>_*)
     xs = (P.SNAP_X[0] + P.SNAP_X[1]) / 2
-    planes = {"AA_x0": ("x", 0.0), "DD_xsw": ("x", P.SW_POS[1][0]), "EE_xmic": ("x", P.MIC_PORT[0]),
-              "BB_y0": ("y", 0.0), "CC_ymic": ("y", P.MIC_PORT[1]), "GG_ysw": ("y", P.SW_POS[2][1]),
+    planes = {"AA_x0": ("x", 0.0), "DD_xsw": ("x", P.WING_SECTION[0]), "EE_xmic": ("x", P.MIC_PORT[0]),
+              "BB_y0": ("y", 0.0), "CC_ymic": ("y", P.MIC_PORT[1]), "GG_ysw": ("y", P.WING_SECTION[1]),
               "HH_xsnap": ("x", xs), "KK_ypad": ("y", P.PAD_POS[1][1]), "F_d575": ("d", 5.75),
               "F_d1": ("d", 1.0), "F_d6": ("d", 6.3), "F_d14": ("d", 13.5), "F_d30": ("d", 30.0)}
     bodies_sec = dict(bodies)
     bodies_sec["plate glow rim"] = prim
-    export_sections(bodies_sec, v, planes)
-    pp = {"plate (left wing pressed)": pb_all["left wing"]["plate"], "plate (top band pressed)": pb_all["top band"]["plate"],
-          "plate (bottom band pressed)": pb_all["bottom band"]["plate"],
-          "key shell (pressed)": kb["key shell"], "touch board (pressed)": kb["touch board"],
-          "key shell (wobble, pressed)": kpb["key shell"], "touch board (wobble, pressed)": kpb["touch board"]}
-    export_sections(pp, f"{v}-pressed", {"DD_xsw": ("x", P.SW_POS[1][0]), "AA_x0": ("x", 0.0), "GG_ysw": ("y", P.SW_POS[2][1]),
+    export_sections(bodies_sec, "", planes)
+    pp = {f"plate ({c} pressed)": pb_all[c]["plate"] for c in ("left wing", "top band", "bottom band") if c in pb_all}
+    pp.update({"key shell (pressed)": kb["key shell"], "touch board (pressed)": kb["touch board"],
+          "key shell (wobble, pressed)": kpb["key shell"], "touch board (wobble, pressed)": kpb["touch board"]})
+    export_sections(pp, "pressed", {"DD_xsw": ("x", P.WING_SECTION[0]), "AA_x0": ("x", 0.0), "GG_ysw": ("y", P.WING_SECTION[1]),
                                          "HH_xsnap": ("x", xs)})
     # dense slices of the printed parts for tools/insert_wallcheck.py (minimum wall thickness)
     wplanes = {}
@@ -1051,10 +1215,9 @@ def build_variant(v):
         wplanes[f"y-{yy}"] = ("y", -yy)
     for k, (ax_, val) in list(wplanes.items()):           # confirmation twin 0.3 mm away (filters grazing cuts)
         wplanes[k + "+"] = (ax_, val + 0.3)
-    export_sections({k: printed[k] for k in printed}, f"{v}-printed", wplanes)
-    path = os.path.join(OUT, f"insert-{v}_check.json")
+    export_sections({k: printed[k] for k in printed}, "printed", wplanes)
+    path = os.path.join(OUT, "front_check.json")
     with open(path, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=1, ensure_ascii=False)
-    print(f"  wrote models/plate_{v} (+ body/glowrim STLs), chassis_{v} (.step + _print.stl), insert-{v}_assembly.step, "
-          f"{os.path.basename(path)}")
+    print(f"  wrote models/plate (+ body/glowrim STLs), {os.path.basename(path)}, the section slices")
     return report

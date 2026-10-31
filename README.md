@@ -1,25 +1,30 @@
 # RoomKey
 
-**A key for every room: a small touch screen on a mechanical keyboard switch, set into an
-ordinary German light-switch frame. Doorbell, intercom, alarm and lights, one press away.
+**A key for every room: a small touch screen on two mechanical keyboard switches, in a 64 × 64 mm
+housing that plugs into a wall socket. Doorbell, intercom, alarm and lights, one press away.
 Built on ESP32-C6, ESPHome and Home Assistant.**
 
 [Deutsch](README.de.md)
 
-> Status: prototype. The firmware runs on a bare dev board on the desk, the microphone is
-> verified, the rest of the parts are ordered. Nothing is installed in a wall yet.
-> State of this page: 29 September 2026.
+> Status: pre-alpha prototype. The firmware runs on the touch board on the desk; the microphone is
+> verified on hardware. The housing v0.4 and kit v0.12 are designed in CAD, not printed yet; printed and
+> assembled so far are the front stack and chassis of kit v0.10. The hub PCB is designed, not manufactured.
+> State of this page: 31 October 2026.
 
 <p align="center">
   <img src="docs/north-star.jpg" width="360" alt="AI-generated concept render: a white light-switch frame with a portrait touch screen key in the middle, speaker and microphone perforations in the white side wings, a soft amber glow around the key">
   <br><em>Target design — an AI-generated concept render (Google Gemini), not a photo of a built device.</em>
 </p>
 
+<p align="center">
+  <img src="hardware/docs/img/plug-pcb-v0.4_an-der-wand.png" width="360" alt="FreeCAD view: the 64 × 64 mm RoomKey housing plugged into a wall socket, the touch key in the middle of its plate">
+  <br><em>The current design in FreeCAD: housing v0.4 in a SCHUKO socket. Build files in <a href="hardware/">hardware/</a>.</em>
+</p>
+
 ## What it is
 
-- **A light switch first.** The white rocker around the key still switches the room light,
-  with no software involved, so it works without Wi-Fi, without Home Assistant and even
-  with a crashed ESP32.
+- **Plugs into a wall socket.** It runs on 5 V from an unmodified, certified USB charger inside
+  the housing: no mains wiring, no electrician. The room's normal light switch stays where it is.
 - **A key with a screen.** A 1.47″ touch display on top of a mechanical keyboard switch.
   **Press** does the obvious thing, **hold** does the deliberate thing, and the screen always
   says which is which. Tap and swipe for the rest.
@@ -47,8 +52,8 @@ open-hardware door intercom.
 | Touch variant of the board (tap / swipe) | 🟡 **WIP** — required by the target design; arrived 02.10.: display, tap and swipe work on the board (`esphome/roomkey_touch.yaml`); chat swipe in a real call, mic, amp and glow ring on it still untested |
 | Intercom security | ✅ incoming audio accepted only during an active call; everything else is dropped unheard |
 | Door station side | ⬜ other milestone — spec in [docs/intercom-protocol.md](docs/intercom-protocol.md) |
-| Optional sensors: SHT31-D climate, LD2410C mmWave presence | 🟡 bought; climate on the shared I²C bus (no extra pins), radar on UART — radar placement still open. No light sensor (decided 06.10.) |
-| Enclosure / wall insert | 🟡 fit model + tolerance coupon ready ([hardware/](hardware/)); desk rig (v0) → wall-size fit (v1) next |
+| Optional sensors: SHT31-D climate, LD2410C mmWave presence | 🟡 bought; climate on the shared I²C bus (no extra pins), radar on UART; both placed in the housing in CAD. Light sensor (VEML6030) only in the PCB build (decided 31.10.) |
+| Housing (plug-in, 64 × 64) and kit, two electronics builds (hub PCB / self-wired) | 🟡 designed in CAD, 0 collisions ([hardware/](hardware/)); not printed in this revision. The visible front is to be cast in resin; hub PCB rev D for this housing in progress |
 
 ![All screens, rendered by the desktop simulator from the same code that runs on the board](docs/screens/contact_sheet.png)
 
@@ -61,10 +66,9 @@ open-hardware door intercom.
 | Call | hold the disc = talk | — | hang up | hang up | push-to-talk |
 | Menu | select | — | close | next | select |
 | Alarm | — | — | — | hint | **disarm** (1.5 s) |
-| **White rocker** | switches this room's light, no software | | | | |
 
-* A tap never switches anything on the home screen: the rocker surrounds the key, so fingers
-  brush the screen all the time.
+* A tap never switches anything on the home screen: fingers brush the screen whenever they
+  press the key.
 * A mechanical press always starts as a touch; key-down cancels that touch, so one press never
   fires twice.
 * The key works on a dark screen — slap it in the dark to switch the lights.
@@ -99,7 +103,9 @@ INMP441 is bottom-port: the hole in its PCB must face the room. Mic and amp shar
 clocks → half-duplex by design (= push-to-talk, no echo).
 
 Speaker: Waveshare 2030 cavity speaker (8 Ω, 2 W, 20 × 30 × 5.5 mm). Standing on its edge it fits
-behind a side wing of the 55 × 55 mm rocker — see the [fit check](docs/fit-check-speaker.png).
+behind a side wing of the 55 × 55 mm plate — see the [fit check](docs/fit-check-speaker.png).
+
+The housing, both electronics builds, print files and the build guide are in [hardware/](hardware/).
 
 ## Quick start
 
@@ -172,18 +178,17 @@ first hardware run showed 140 ms frames.
 
 ## Next steps
 
-1. Enclosure: parametric FreeCAD generator, desk test rig (v0), then a wall-size fit (v1).
-2. Speaker, amp and touch board on the bench as they arrive.
-3. Wi-Fi + Home Assistant on the real device.
-4. Intercom with Klingelbox: a minimal SIP client is the likely path (see the handoff doc).
-5. The wall: the insert itself is safety extra-low voltage only (12 V); mains parts (supply, impulse relay)
-   sit in certified devices elsewhere, placed by an electrician. Draft and open questions:
-   [hardware/docs/insert-design.md](hardware/docs/insert-design.md).
-6. Later (decided 30.09.): voice identification, so the family members are told apart even when they
+1. Print and fit the housing v0.4 and kit v0.12; cast the visible front in resin. RoomKey is built as a
+   plug-in device only (decided 31.10.): a 64 × 64 housing on a SCHUKO socket, 5 V safety extra-low voltage
+   from an unmodified, certified USB charger inside it; no mains wiring. Details and open questions:
+   [hardware/docs/plug-in-housing.md](hardware/docs/plug-in-housing.md).
+2. Hub PCB rev D for this housing (outline, radar window, power connector); published here when it is done.
+3. Speaker, amp and glow ring on the touch board.
+4. Later (decided 30.09.): voice identification, so the family members are told apart even when they
    don't say their name. Local speaker embeddings on the transcriber host, enrolled with ~1 min of speech
    per person through the key's mic. Display only, never for opening doors or disarming. Needs everyone's
    consent; visitors' voices are only compared, never stored.
-7. Later (nice to have): translate a resident's answer into the visitor's language on the door screen
+5. Later (nice to have): translate a resident's answer into the visitor's language on the door screen
    (today every transcript is shown in German; the original words stay in `text_original`).
 
 ## Privacy
@@ -198,9 +203,9 @@ first hardware run showed 140 ms frames.
 
 ## Safety
 
-- Anything on 230 V — the low-voltage supply and the relay for the room light, both in certified devices outside the insert — is a job
-  for an electrician. The desk prototype runs on USB only.
-- Many older German light-switch boxes have no neutral wire; check before planning a mains supply.
+- RoomKey takes 5 V only (SELV). In the housing, 230 V stays inside an unmodified, certified USB charger;
+  never open or modify it, and wire nothing of the RoomKey to mains.
+- On the bench, power it from a lab supply (5.0 V, current-limited) or USB.
 
 ## Licences
 

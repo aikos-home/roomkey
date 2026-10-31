@@ -4,13 +4,16 @@ Parametric FreeCAD scripts, the same method as [Klingelbox](https://github.com/a
 one file holds every dimension, generators read it, `validate()` checks the fit before anything is
 printed. Licence: [CERN-OHL-P-2.0](../LICENSES/CERN-OHL-P-2.0.txt).
 
-**→ Build it: [BUILD.md](BUILD.md)** (desk prototype, step by step) · **print it: [print/README.md](print/README.md)** (part list, ready-to-print Bambu Lab A1 files)
+**→ Build it: [BUILD.md](BUILD.md)** · **print it: [print/README.md](print/README.md)** · **the housing:
+[docs/plug-in-housing.md](docs/plug-in-housing.md)**
 
-![Kit (parts v0.10.3) in the practice box, front 3/4 (FreeCAD)](docs/img/kit-v0.10.3_front.png)
+![RoomKey in a SCHUKO socket (FreeCAD)](docs/img/plug-pcb-v0.4_an-der-wand.png)
 
-*Kit (concept v0.7, parts v0.10.3; prototype, WIP, not reviewed): the whole RoomKey in one flush box — touch key, speaker, mic, presence radar,
-amplifier, humidity sensor — behind a 1-gang frame. Practice box shown transparent. Real FreeCAD screenshots, made by
-[`cad/render_kit.py`](cad/render_kit.py) from the same scripts that write the print files.*
+*RoomKey v0.12 (WIP, not printed in this revision, nothing certified): one device that plugs into a SCHUKO socket —
+touch key on two MX switches, glow ring, speaker, mic, presence radar, humidity sensor — in a 64 × 64 housing, 55 mm
+from the key glass to the socket face. 230 V stays inside an unmodified, certified USB charger in the housing; RoomKey
+takes 5 V. Real FreeCAD screenshots, made by [`cad/view_plug.py`](cad/view_plug.py) from the same scripts that write
+the print files.*
 
 ## How this hardware is made — one person and Claude
 
@@ -32,8 +35,9 @@ technical writing and design review. **In practice the owner runs a one-person p
    is drawn by hand: every solid, drawing and screenshot is rebuilt from code, so a 0.4 mm change ripples through
    all parts at once.
 4. **Let the checks say no before the printer does.**
-   - `validate()` runs more than 160 rules per variant (0 errors before anything is exported).
-   - Every pair of parts is checked for collisions at rest, key pressed and wobbled, plate pressed at five points.
+   - `validate()` runs about 100 rules (0 errors before anything is exported).
+   - Every pair of parts is checked for collisions at rest, key pressed, wobbled and pulled, in the housing on the
+     socket.
    - Every printed part must be one solid, and (except the key shell) print without supports: no large surface may
      face the bed in the air.
    - Minimum wall thickness of the printed parts, and clearances reported in millimetres.
@@ -49,104 +53,40 @@ technical writing and design review. **In practice the owner runs a one-person p
    ([review log](reviews/insert-v0-review-log.md)).
 
 **Rules that hold in every turn.**
-- **Safety:** the parts here are extra-low voltage (SELV) only. Everything on 230 V is a certified device, installed by a
-  qualified electrician — Claude does not design mains parts, even when asked.
+- **Safety:** the parts here are extra-low voltage (SELV) only. Everything on 230 V is a certified, unmodified device
+  (the plug-in USB charger) — Claude does not design mains parts, even when asked.
 - **The owner decides.** Claude proposes; when a proposal is wrong, it is dropped. Example: Claude moved the sensors into
-  a second box to make room; the owner said *"everything in one box"*. The result, kit v0.7, is better: the radar looks
-  through the left wing of the plate, the mic hears through a sound tube, and the humidity sensor sits in the frame
-  (the owner's idea).
+  a second box to make room; the owner said *"everything in one box"*. The result, kit v0.7, was better: the radar
+  looks through the left wing of the plate, the mic hears through a sound tube. Later the owner made RoomKey a plug-in
+  device only, then asked for the housing to shrink to the smallest size that works (64 × 64).
 - **WIP is labelled WIP.** Nothing here is built to a standard or certified. Untested features say so.
 - **Interfaces are agreed, not guessed.** The pin plan of the kit was checked against the RoomKey firmware by the
   firmware side before it went into this repository.
 
 | | |
 |---|---|
-| ![What you see on the wall](docs/img/kit-v0.10.3_face.png) | ![Rear, without the box: carrier with radar and amplifier, mic, speaker, key switches](docs/img/kit-v0.10.3_rear-parts.png) |
-| *What you see on the wall: frame, plate with speaker and mic perforation, touch key with glow ring; humidity-sensor vents in the frame.* | *From behind: back carrier with the LD2410C radar (blue) and MAX98357A amplifier (purple), INMP441 mic (green), speaker, the two key switches.* |
-| ![Wiring](docs/img/kit-v0.10.3_wiring.png) | ![Rigid key v0.9 from behind: fixed socket top, floating socket bottom](docs/img/key-v0.10.3_rear.png) |
-| *All 41 wires of the kit, routed in 3D (0.05 mm² silicone wire; cut lengths in [`models/kit-v0.10.3_wiring.json`](models/kit-v0.10.3_wiring.json)).* | *The key from behind (v0.9+): rigid, a fixed stem socket at the top and a floating one at the bottom; both switches are one key.* |
+| ![Front](docs/img/plug-pcb-v0.4_vorne.png) | ![Section](docs/img/plug-pcb-v0.4_schnitt.png) |
+| *The front: plate 55 × 55 with speaker and mic perforation, touch key with glow ring, a 4.2 mm border.* | *Section x = 0: key, front stack, hub PCB, the key wires' loop, USB plug, charger in its sleeve, socket.* |
+| ![Inside, PCB build](docs/img/kit-pcb-v0.12_rear-parts.png) | ![Wiring, PCB build](docs/img/kit-pcb-v0.12_wiring-rear.png) |
+| *PCB build from behind: hub PCB, the radar in its cage in the hub plane, speaker, the two key switches.* | *The wires the hub PCB leaves (key, LEDs, radar, speaker, sensor, 5 V), routed in 3D and checked against the parts.* |
 
 | File | What |
 |---|---|
-| [`cad/roomkey_params.py`](cad/roomkey_params.py) | every dimension, tagged [DS] datasheet · [MEAS] measured · [FREE] design choice · [TBD] placeholder; `python3 cad/roomkey_params.py` runs the fit check |
-| [`cad/make_coupon_v0.py`](cad/make_coupon_v0.py) | tolerance coupon — print this first |
-| [`cad/insert_params.py`](cad/insert_params.py) | **wall insert v0.10.4 (draft)**: box, frame, both variants, installation topologies; `python3 cad/insert_params.py` validates L and S |
-| [`cad/insert_lib.py`](cad/insert_lib.py), [`make_key_module.py`](cad/make_key_module.py), [`make_insert_L.py`](cad/make_insert_L.py), [`make_insert_S.py`](cad/make_insert_S.py) | FreeCAD generators + collision/clearance checks (rest, key pressed and wobbled with its stems, plate pressed at five points) and print checks |
-| [`docs/insert-design.md`](docs/insert-design.md) | **design of the wall insert (v0.10.4 DRAFT)**: concept, stack-up, installation topologies (electrician), BOM, printing, open questions, risks |
-| [`cad/desk_lib.py`](cad/desk_lib.py), [`make_practice_box.py`](cad/make_practice_box.py) | **practice box v0.1**: one flush-box replica + a 1-gang frame with the humidity sensor. Prototype, never in a wall |
-| [`cad/kit_lib.py`](cad/kit_lib.py), [`make_kit.py`](cad/make_kit.py), [`wiring_lib.py`](cad/wiring_lib.py) | **kit (WIP; concept v0.7, parts v0.10.3)**: the whole RoomKey in one box — back carrier (radar + amplifier), mic sound tube, 41 wires with cut lengths |
-| [`cad/view_kit.py`](cad/view_kit.py), [`render_kit.py`](cad/render_kit.py) | open the kit in the FreeCAD GUI (coloured, grouped) and render the images in [`docs/img/`](docs/img/) |
-| [`drawings/`](drawings/) | to-scale front views and sections cut from the CAD solids (`tools/insert_drawings.py`) |
-| [`reviews/insert-v0-review-log.md`](reviews/insert-v0-review-log.md) | pre-mortems, independent adversarial reviews, scores, resolutions |
+| [`cad/roomkey_params.py`](cad/roomkey_params.py) | measured parts (touch board, MX, speaker, radar, sensors), tagged [DS] · [MEAS] · [FREE] · [TBD] |
+| [`cad/insert_params.py`](cad/insert_params.py) | **every dimension of the RoomKey**: front stack, kit (§7), plug-in housing (§8); `python3 cad/insert_params.py` validates |
+| [`cad/insert_lib.py`](cad/insert_lib.py), [`make_key_module.py`](cad/make_key_module.py), [`make_front.py`](cad/make_front.py) | front-stack parts + checks (key pressed, wobbled, pulled; MX2 floating) |
+| [`cad/kit_lib.py`](cad/kit_lib.py), [`make_kit.py`](cad/make_kit.py), [`wiring_pcb.py`](cad/wiring_pcb.py), [`wiring_lib.py`](cad/wiring_lib.py) | **the electronics in two builds** (hub PCB / self-wired) from one codebase, every wire routed in 3D |
+| [`cad/plug_lib.py`](cad/plug_lib.py), [`make_plug.py`](cad/make_plug.py) | **the plug-in housing v0.4** (64 × 64): resin skin, printed tunnel + columns, lid with charger sleeve, TPU rings |
+| [`cad/view_kit.py`](cad/view_kit.py), [`render_kit.py`](cad/render_kit.py), [`view_plug.py`](cad/view_plug.py) | open the kit / the housing in the FreeCAD GUI (coloured, grouped) and render the images in [`docs/img/`](docs/img/) |
+| `pcb/roomkey-hub/` | the hub PCB (KiCad): rev D for housing v0.4 is in progress and lands here when it is done |
+| [`../tools/insert_wallcheck.py`](../tools/insert_wallcheck.py) | minimum wall thickness of the printed parts (FreeCAD's bundled python) |
+| [`reviews/insert-v0-review-log.md`](reviews/insert-v0-review-log.md) | pre-mortems and adversarial reviews of the earlier wall-insert design (history) |
 | `models/*_print.stl` | ready to slice · `models/*.step` for editing |
 
-Generate (headless, from the repo root):
+## Status (2026-10-31)
 
-```bash
-PYTHONIOENCODING=utf-8 /Applications/FreeCAD.app/Contents/Resources/bin/FreeCADCmd -c "exec(open('hardware/cad/make_coupon_v0.py', encoding='utf-8').read())"
-```
-
-## Coupon v0 — find the fits first
-
-Print flat, PLA, 0.2 mm layers, no supports (≈ 10 min, 9 g). Dots = variant, 1 dot = left.
-
-| Row | Test | Variants (1 / 2 / 3 dots) | Pick |
-|---|---|---|---|
-| A (switch cut-outs) | press a key switch into the 1.5 mm plate | 13.9 / 14.0 / 14.1 mm | clicks in firmly, no wobble |
-| B (mic seats) | drop the INMP441 in | Ø 13.25 / 13.35 / 13.45 mm | goes in without force, doesn't fall out |
-| C (stem sockets) | press onto a switch stem | 4.05×1.25 / 4.10×1.30 / 4.15×1.35 mm | snug, no cracking |
-
-The winners go into `roomkey_params.py` as [MEAS]. Repeat in ABS/PETG before the final parts —
-they shrink differently.
-
-## Print the kit
-
-**[`print/README.md`](print/README.md)**: the part list, ready-to-print Bambu Lab A1 files (0.4 and 0.2 nozzle; white PETG, clear PLA for the collar and for the key's support contact layers) and the assembly and gluing steps. WIP.
-
-## Wall insert v0.10.4 (DRAFT / WIP, 2026-10-08)
-
-**AI-assisted draft — nothing built, nothing certified, not approved for mains. All 230 V work only by a
-qualified electrician of a registered installation company (NAV §13).** Two variants of the in-wall part with the same printed parts, key module and look —
-see [docs/insert-design.md](docs/insert-design.md):
-
-* **The insert is SELV-only (12 V in).** No 230 V, no power supply, no relay in the RoomKey chamber; the
-  230 V side is certified devices placed by the electrician (where the switch leg ends, behind the partition of a
-  two-chamber box, or in the distribution board — decision procedure in the design doc §9). At the common 2-core
-  switch leg this usually means a new cable.
-* **Variant L — light-switch replacement.** The ivory plate floats on four SMD tactile switches (B3FS) and is a
-  push-button: 12 V SELV pulse → certified impulse relay → the light works without Wi-Fi, HA or ESP (and with any
-  fault behind the hub's eFuse; FMEA in the design doc §8.2). The glow lights the gap around the key and a
-  translucent rim of the plate.
-* **Variant S — socket replacement.** Same parts; the plate goes to the ESP only; the socket at that
-  position is lost; only sensible at a usable height.
-
-v0.6 adds the owner's first fit test, the rocker key and wider wire slots. v0.8 makes the rocker key captive after the first kit assembly, where it simply fell out. v0.9 drops the rocker (the owner: it scrapes and does not stay in): a rigid key on both MX again, with a fixed and a floating stem socket, keeping the catch and the stop bosses; end-press binding is still desk test R1 (design doc §0, §3). v0.10 makes every part print without supports (supports broke the key and the chassis): the chassis is three prints glued with CA on pins (the one-piece key stays, printed with supports in its pocket); the switch plate is glued in (design doc §0). None of these was reviewed.
-Status: **WIP — the adversarial review gate was NOT passed** (4 rounds, scores ≈ 7/10; the remaining MAJOR items need
-real parts, a desk rig and measurements — see the review log). CAD closes in all checked states (0 collisions at rest, key pressed, key + stems wobbled ±1.5°, MX2 at the ends of its floating socket,
-plate pressed at five points to the nominal and worst-case stop), `validate()` 0 errors, wall check passes. Blocked on
-measurements (rocker-to-wall distance ≥ 8.9 mm, frame retention, box interior, conductors behind 5 WAGOs — plan with a
-47 mm box), desk-rig tests (key end presses, touch vs key, glow look, mic path, start-up, relay drive at reset) and six
-questions to Eltako — list in the design doc §10 and §13. Print
-[`make_coupon_v1.py`](cad/make_coupon_v1.py) (switch seat and snap tongues, stem posts, perforation, colour) and the
-key shell + switch plate for the end-press test before any other real part.
-
-| More files | |
-|---|---|
-| [`cad/make_coupon_v1.py`](cad/make_coupon_v1.py) | coupon v1 for the insert mechanics (rows D, E, F, H) |
-| [`../tools/insert_drawings.py`](../tools/insert_drawings.py), [`../tools/insert_wallcheck.py`](../tools/insert_wallcheck.py) | drawings and minimum-wall check (any python with numpy + matplotlib, e.g. FreeCAD's bundled one) |
-
-![Variant L front](drawings/insert-L_front.png)
-
-## Plan
-
-**Now (2026-10-04):** first chassis printed and fitted; rocker key and practice box + kit v0.7 ready to print;
-parts for the kit arriving. Next: wire the kit on the bench, test the radar through the plate, then the next insert revision.
-
-
-1. **Coupon v0** — fits for this printer (now)
-2. **Desk rig v0** — 55 × 55 rocker face, touch board as the key on two identical MX switches wired in
-   parallel (end-press test first, design doc §10), a switch under the rocker as the room-light stand-in (logs only, no mains), speaker on
-   its edge with a sound duct, mic, amp, glow LEDs, USB power
-3. **Wall fit v1** — same parts inside the real limits (Ø58 box, depth) + a printed dummy flush box
-4. **Mounting v2** — screw holes at 60 mm; supply and relay stay outside the RoomKey chamber (SELV-only
-   insert) — then the electrician (the v0.5 insert draft models this: [docs/insert-design.md](docs/insert-design.md))
+**WIP.** One RoomKey (no variants), fixed plate, the two MX under the key are the only buttons; built only as the
+plug-in device. CAD closes in all checked states for both builds (0 collisions; key pressed, wobbled ±1.5°, pulled;
+MX2 at the ends of its floating socket; the housing's lid goes in with the sensor on it); `validate()` 0 errors. Not
+printed in this revision: the housing v0.4, the radar cage, the LED holder. Waiting for: hub PCB rev D (outline, radar
+window, J1), the resin moulds for the skin and the plate face, the grip-ring coupons on the real charger.

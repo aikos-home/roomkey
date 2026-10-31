@@ -1,4 +1,4 @@
-"""Render real FreeCAD views of the kit v0.7 (prototype, WIP) to hardware/docs/img/ — run inside the FreeCAD GUI:
+"""Render real FreeCAD views of the kit (prototype, WIP) to hardware/docs/img/ — run inside the FreeCAD GUI:
     /Applications/FreeCAD.app/Contents/MacOS/FreeCAD hardware/cad/render_kit.py
 (with RENDER_QUIT=1 it quits when done). Opens hardware/models/kit-v<insert VERSION>_ansicht.FCStd (made by view_kit.py).
 """
@@ -14,8 +14,10 @@ HERE = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() els
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 import insert_params as P  # noqa: E402
-SRC = os.path.join(ROOT, "models", os.environ.get("KIT_VIEW_NAME", f"kit-v{P.VERSION}_ansicht.FCStd"))
-OUT = os.path.join(ROOT, "docs", "img")
+BUILD = os.environ.get("ROOMKEY_BUILD", "pcb")
+SRC = os.path.join(ROOT, "models", os.environ.get("KIT_VIEW_NAME", f"kit-{BUILD}-v{P.VERSION}_ansicht.FCStd"))
+TAG = f"kit-{BUILD}-v{P.VERSION}"
+OUT = os.environ.get("RENDER_OUT") or os.path.join(ROOT, "docs", "img")
 os.makedirs(OUT, exist_ok=True)
 W, H = 1800, 1350
 
@@ -97,31 +99,36 @@ def run():
 
 
 def shots():
-    wall = ("Uebungsdose", "Draht_", "Kabelbogen")
-    # 1 straight on: what you see on the wall (frame opaque for this one)
-    show(None, hide=wall)
-    fr = objs["Rahmen_JungAS500"].ViewObject
-    t0, fr.Transparency = fr.Transparency, 0
+    # 1 straight on: plate, key, glow ring
+    show(None)
     cam((0, 0, 1))
-    shot(f"kit-v{P.VERSION}_face.png")
-    fr.Transparency = t0
-    # 2 front 3/4 in the practice box (box transparent)
+    shot(f"{TAG}_face.png")
+    # 2 front 3/4
     show(None, hide=("Draht_", "Kabelbogen"))
     cam((-0.65, 0.45, 1))
-    shot(f"kit-v{P.VERSION}_front.png")
-    # 3 rear 3/4 without the box: back carrier with radar + amplifier, mic, speaker, switches
-    show(None, hide=wall)
+    shot(f"{TAG}_front.png")
+    # 3 rear 3/4: switch plate, MX, speaker, the hub PCB and the radar in its cage (PCB) / the back carrier (self-wired)
+    show(None, hide=("Draht_",))
     cam((0.75, 0.5, -1))
-    shot(f"kit-v{P.VERSION}_rear-parts.png")
-    # 4 the same with all 41 wires
-    show(None, hide=("Uebungsdose", "Kabelbogen"))
+    shot(f"{TAG}_rear-parts.png")
+    # 4 straight from behind
+    cam((0, 0, -1))
+    shot(f"{TAG}_rear.png")
+    # 4b wiring: everything, from behind and from the front without plate, collar, key
+    show(None, hide=("Kabelbogen",))
     cam((0.75, 0.5, -1))
-    shot(f"kit-v{P.VERSION}_wiring.png")
-    # 5 the frame from behind and below: humidity sensor flat under its bottom border
-    show(("Rahmen_JungAS500", "Feuchtesensor"))
-    cam((0.35, -0.55, -1))
-    shot("frame_humidity-sensor.png")
-    # 6 the rigid key from behind: fixed / floating stem sockets, stop bosses, header slots, the two switches
+    shot(f"{TAG}_wiring-rear.png")
+    show(None, hide=("Platte", "Leuchtring", "Tastenschale", "Touch_Board", "Antenne"))
+    cam((-0.35, 0.3, 1))
+    shot(f"{TAG}_wiring-front.png")
+    # 4c the LED holder in the switch plate (v0.11): plate, MX, LEDs and the glow wires, front and back
+    leds = ("Schalterplatte", "MX_", "LED_") + tuple(f"Draht_{n:02d}" for n in range(17, 29))
+    show(leds)
+    cam((-0.45, 0.35, 1))
+    shot(f"{TAG}_led-holder-front.png")
+    cam((0.45, 0.35, -1))
+    shot(f"{TAG}_led-holder-back.png")
+    # 5 the rigid key from behind: fixed / floating stem sockets, stop bosses, header slots, the two switches
     show(("Tastenschale", "MX_", "Touch_Board"))
     cam((0.6, 0.55, -1))
     shot(f"key-v{P.VERSION}_rear.png")
