@@ -5,7 +5,9 @@ The hub PCB does the "wiring" of the self-wired kit on its copper: mic, amplifie
 switches (Kailh hot-swap sockets) need no wires. What is left are the connections to parts that sit elsewhere:
   key (touch board H1) → hub J4 (16 solder holes), through the slots and the rolling U-loop behind the hub;
   speaker → hub J2 (its own PicoBlade plug); radar → hub J5 (JST-SH 5-pin cable); glow LEDs → hub J8 (3 solder holes)
-  and the LED chain; SHT31-D in the frame → hub J9 (JST-SH 4-pin pigtail); 5 V supply → hub J1 (0.5 mm² pigtail).
+  and the LED chain; the humidity sensor in the housing's bottom wall → hub J9 (JST-SH 4-pin pigtail); 5 V from the
+  slim USB-A plug in the charger → hub J1 (0.5 mm², JST PH). v0.12: the radar sits in the hub plane (wires on its
+  cut-short header pins), the sensor and the USB plug where the 64 × 64 plug housing puts them (insert_params §8).
 Hub pad positions: KiCad board hardware/pcb/roomkey-hub (2026-10-09 00:28 state, read with pcbnew), kit coordinates.
 Coordinates as in insert_lib (front view: x right, y up; d into the wall). All routes are drawn at rest.
 """
@@ -17,7 +19,7 @@ HERE = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() els
 sys.path.insert(0, HERE)
 import kit_lib as K  # noqa: E402
 
-L, P, R, D, V = K.L, K.P, K.R, K.D, K.V
+L, P, R, V = K.L, K.P, K.R, K.V
 WIRE_D = 0.6           # [DS] 0.05 mm² silicone stranded, outer Ø ≈ 0.6 (owner ordered 0.05 mm², 2026-10-03)
 PIGTAIL_D = 1.6        # [DS] 0.5 mm² H05V-K / silicone, outer Ø ≈ 1.6 (5 V supply into J1)
 RESERVE = 20.0         # [FREE] mm added to every cut length (stripping, solder, slack)
@@ -41,7 +43,7 @@ SIG = {"VBUS": ("5 V → Touch-Board (VBUS)", "rot", (0.85, 0.1, 0.1)), "GND": (
        "IO19": ("I²C SCL (IO19)", "hellblau", (0.4, 0.75, 1.0)), "IO16": ("I²S Daten → Verstärker (IO16)", "braun", (0.5, 0.3, 0.1)),
        "IO7": ("I²S BCLK (IO7)", "blau", (0.1, 0.3, 0.9)), "IO8": ("I²S WS (IO8)", "violett", (0.55, 0.2, 0.75)),
        "IO17": ("I²S Daten ← Mikrofon (IO17)", "rosa", (0.95, 0.5, 0.7))}
-J1 = {"GND": (-18.0, 13.0), "5V": (-18.0, 17.6)}                                     # solder holes, 0.5 mm² pigtail
+J1 = {"GND": (10.0, -2.75), "5V": (12.0, -2.75)}                                      # v0.12: P.PLUG_J1 (rev D)
 J2 = {"SPK+": (11.5, 11.88), "SPK-": (11.5, 13.12)}                                  # PicoBlade 1.25 vertical, wire exits
 J5 = {"TX": (-13.5, 8.5), "RX": (-13.5, 9.5), "OUT": (-13.5, 10.5), "GND": (-13.5, 11.5), "VCC": (-13.5, 12.5)}   # JST-SH 1.0
 J8 = {"GND": (15.3, -21.77), "5V": (15.3, -20.5), "DATA": (15.3, -19.23)}           # solder holes, wires from the FRONT
@@ -140,15 +142,15 @@ def led_hop_route(a, b, pin):
 
 
 def radar_pin(nm):
-    rx0, _, ry0, ry1, _ = P.KIT_RADAR
-    c1 = P.KIT_CARRIER_D[1] + P.KIT_RADAR_RAISE
+    """v0.12: the radar in the hub plane, its header pins cut short: soldered 0.5 below the cut tip."""
+    rx0, _, ry0, ry1, f = P.HUB_RADAR
     yc = (ry0 + ry1) / 2
     k = R.RADAR_PINS.index(nm)
-    return (rx0 + 1.3, yc + (k - 2) * 2.54, c1 + R.RADAR_T_PINS - 1.0)        # soldered 1 mm below the pin tip
+    return (rx0 + 1.3, yc + (k - 2) * 2.54, f + R.RADAR_T + P.RADAR_PINS_CUT - 0.5)
 
 
 def rh_pin(nm):
-    return D.rh_pins()[nm]
+    return K.rh_pins()[nm]
 
 
 # ------------------------------------------------------------------ routes
@@ -165,11 +167,12 @@ def key_route(no):
 
 
 def radar_route(nm):
-    """J5 plug (JST-SH, wires leave it backwards) → behind the radar → solder joints on the module's header pins."""
+    """J5 plug (JST-SH, wires leave it backwards) → just behind it (in front of G2's charger sleeve, d 30) over to the
+    radar's header → forward onto the cut-short pins."""
     jx, jy = J5[nm]
     tx, ty, td = radar_pin(nm)
     k = R.RADAR_PINS.index(nm)
-    dd = 40.0 + 0.7 * k
+    dd = 28.1 + 0.25 * k
     return [(jx, jy, PLUG_TOP), (jx, jy, dd), (tx + 1.5, ty, dd), (tx + 1.5, ty, td), (tx, ty, td)]
 
 
@@ -182,24 +185,29 @@ def speaker_route(pin):
 
 
 def rh_route(nm):
-    """SHT31-D pins (in the frame's bottom border) → under the frame to the flange hole (0, −27) → back to d 18–20 →
-    along the box wall outside the collar wall to the bottom-left → back past the hub's rim (r 27.7 → box r 29.5) → J9."""
+    """v0.12: the humidity sensor (in G2's bottom wall, pins on its top face at its back edge) → up off the pins, back
+    through the hub's bottom notch, over the hub's parts (in front of G2's charger sleeve, d 30) → down into J9."""
     tx, ty, td = rh_pin(nm)
-    hx, hy, _ = P.FRAME_RH_HOLE
-    lane = {"VIN": -0.6, "GND": -0.2, "SCL": 0.2, "SDA": 0.6}[nm]
-    dd = {"VIN": 18.1, "GND": 18.7, "SCL": 19.3, "SDA": 19.9}[nm] - 0.1
-    j = {"VIN": "3V3", "GND": "GND", "SCL": "SCL", "SDA": "SDA"}[nm]
-    jx, jy = J9[j]
-    t = 1.5 * lane                                     # tangential spread where the bundle passes the hub's rim
-    cx, cy = -20.25 - 0.7 * t, -20.35 + 0.7 * t        # r ≈ 28.7
-    return [(tx, ty, td), (hx + lane, ty, 7.35), (hx + lane, hy, 7.35), (hx + lane, hy, dd),
-            (-8.0, -26.3, dd), (-14.6, -24.1, dd), (cx, cy, dd), (cx, cy, 29.0), (jx, jy - 0.4, 29.0), (jx, jy, PLUG_TOP)]
+    k = R.RH_PINS.index(nm)
+    ny = P.plug_rh()["y1"] + 0.6
+    dz = 28.1 + 0.4 * k
+    jx, jy = J9[{"VIN": "3V3", "GND": "GND", "SCL": "SCL", "SDA": "SDA"}[nm]]
+    return [(tx, ty, td), (tx, ny, td + 0.5), (tx, ny, dz), (jx, jy, dz), (jx, jy, PLUG_TOP)]
 
 
 def supply_route(pin):
-    """5 V pigtail (0.5 mm²) from the lab supply through the practice box's open back → J1."""
-    jx, jy = J1[pin]
-    return [(jx, jy, HUB_BACK), (jx, jy, 34.0), (jx, jy, P.WALL_D + P.DESK_DEPTH + 10.0)]
+    """v0.12: 2 × 0.5 mm² from the slim USB-A plug's solder cups (plug_cups) down below the plug body, across to J1
+    (side-entry, the lead comes in from below) and up into it. 5 V (left cup) runs one wire lower, to J1's right pin: the
+    two never cross."""
+    dp = P.plug_depths("pcb")
+    cx, cy = P.plug_cups()[pin]
+    _, py = P.plug_port()
+    jx, jy, jw, jh, jt = P.PLUG_J1
+    xj = jx + (1.0 if pin == "5V" else -1.0)
+    lvl = py - P.PLUG_USB[3] / 2 - P.PLUG_WIRE / 2 - 0.3 - (P.PLUG_WIRE + 0.3 if pin == "5V" else 0.0)
+    dz = dp["usb0"] + P.PLUG_WIRE / 2 + 0.1
+    je = HUB_BACK + jt / 2
+    return [(cx, cy, dp["usb0"] + 1.0), (cx, lvl, dz), (xj, lvl, dz), (xj, lvl, je), (xj, jy - jh / 2 + 1.0, je)]
 
 
 # (no, label from, label to, signal, colour, rgb, route builder, diameter, exempt bodies)
@@ -235,11 +243,11 @@ def wires():
     for nm, sig, col, rgb in (("VIN", "3,3 V Feuchtesensor", "orange", (1.0, 0.55, 0.1)), ("GND", "GND Feuchtesensor", "schwarz", (0.05, 0.05, 0.05)),
                               ("SCL", "I²C SCL", "hellblau", (0.4, 0.75, 1.0)), ("SDA", "I²C SDA", "türkis", (0.1, 0.75, 0.7))):
         w.append((n, f"SHT31-D {nm}", f"Hub J9 {nm if nm != 'VIN' else '3V3'}", sig, col, rgb, lambda nm=nm: rh_route(nm), WIRE_D,
-                  ("SHT31-D", "hub", "frame 1-gang")))
+                  ("SHT31-D", "hub")))
         n += 1
-    for pin, sig, col, rgb in (("5V", "Labornetzteil +5,0 V", "rot", (0.85, 0.1, 0.1)), ("GND", "Labornetzteil GND", "schwarz", (0.05, 0.05, 0.05))):
-        w.append((n, "Labornetzteil", f"Hub J1 {pin}", sig, col, rgb, lambda pin=pin: supply_route(pin), PIGTAIL_D,
-                  ("hub", "practice box")))
+    for pin, sig, col, rgb in (("5V", "5 V vom USB-Netzteil", "rot", (0.85, 0.1, 0.1)), ("GND", "GND vom USB-Netzteil", "schwarz", (0.05, 0.05, 0.05))):
+        w.append((n, "USB-Stecker", f"Hub J1 {pin}", sig, col, rgb, lambda pin=pin: supply_route(pin), PIGTAIL_D,
+                  ("hub", "USB plug")))
         n += 1
     return w
 

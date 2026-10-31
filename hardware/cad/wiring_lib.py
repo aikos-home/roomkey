@@ -64,12 +64,11 @@ def targets():
         t[f"mic {nm}"] = (mx + rows[nm], my + side[nm], md)
     # speaker: wire tab at the centre of its top short end
     t["speaker"] = ((P.SPK_X0 + P.grille_x()) / 2, 14.0, P.SPK_D0 + R.SPK_W)   # its wires, led to the back edge [approx]
-    # lab supply comes in through the open back; splice point on the carrier next to the amp's Vin
+    # 5 V comes from the USB plug in the charger (supply_route); splice points on the carrier next to the amp's Vin
     t["splice 5V"] = (ax + 9.0, ay - R.AMP_H / 2 - 1.5, c1 + 2.0)
     t["splice GND"] = (ax + 11.0, ay - R.AMP_H / 2 - 1.5, c1 + 2.0)
-    t["lab supply"] = (16.0, -18.0, P.WALL_D + P.DESK_DEPTH + 10.0)
-    # SHT31-D in the frame's bottom border (pins on its back)
-    for nm, pt in K.D.rh_pins().items():
+    # v0.12: the humidity sensor in the housing's bottom wall (G2), pins on its top face
+    for nm, pt in K.rh_pins().items():
         t[f"RH {nm}"] = pt
     # glow LEDs in the switch plate's LED holder (v0.11): the joints on their legs, as in the PCB build
     import wiring_pcb as WP
@@ -110,8 +109,8 @@ WIRES = [
     (21, "pin:3V3", "mic VDD", "3,3 V Mikrofon", "orange", (1.0, 0.55, 0.1)),
     (22, "mic GND", "mic L/R", "L/R auf GND (linker Kanal)", "schwarz", (0.05, 0.05, 0.05)),
     (23, "splice GND", "mic GND", "GND Mikrofon", "schwarz", (0.05, 0.05, 0.05)),
-    (24, "lab supply", "splice 5V", "Labornetzteil +5,0 V", "rot", (0.85, 0.1, 0.1)),
-    (25, "lab supply", "splice GND", "Labornetzteil GND", "schwarz", (0.05, 0.05, 0.05)),
+    (24, "USB plug 5V", "splice 5V", "5 V vom USB-Netzteil", "rot", (0.85, 0.1, 0.1)),
+    (25, "USB plug GND", "splice GND", "GND vom USB-Netzteil", "schwarz", (0.05, 0.05, 0.05)),
     (26, "pin:IO4", "LED BR DIN", "LED-Daten → LED unten rechts", "gelb-grün", (0.6, 0.85, 0.1)),
     (27, "LED BR DOUT", "LED TR DIN", "LED-Daten → oben rechts", "gelb-grün", (0.6, 0.85, 0.1)),
     (28, "LED TR DOUT", "LED TL DIN", "LED-Daten → oben links", "gelb-grün", (0.6, 0.85, 0.1)),
@@ -150,18 +149,32 @@ def _lanes():
     return {w[0]: -5.4 + i * (10.8 / max(len(key_wires) - 1, 1)) for i, w in enumerate(key_wires)}
 
 
+def supply_route(pin):
+    """v0.12: 2 × 0.5 mm² from the slim USB plug's solder cups (plug_cups) up over its body — within its depth: the key
+    wires' loop rolls down in front of it — across to the splice points beside the amplifier, then forward onto them. GND
+    (right cup) runs on the lower level to the outer splice, 5 V (left cup) above it to the inner one: they never cross."""
+    dp = P.plug_depths("discrete")
+    cx, cy = P.plug_cups()[pin]
+    _, py = P.plug_port()
+    dz = dp["usb0"] + P.PLUG_WIRE / 2 + 0.2
+    lvl = py + P.PLUG_USB[3] / 2 + P.PLUG_WIRE / 2 + 0.3 + (P.PLUG_WIRE + 0.3 if pin == "5V" else 0.0)
+    tx, ty, td = targets()[f"splice {pin}"]
+    return [(cx, cy, dp["usb0"] + 1.0), (cx, lvl, dz), (tx, lvl, dz), (tx, ty, dz), (tx, ty, td)]
+
+
 def route(no, a, b):
+    if a.startswith("USB plug"):
+        return supply_route(a.split()[-1])
     t = targets()
     if a.startswith("pin:"):
         x, y = header_pin(a[4:])
         xs = _lanes()[no]
         pts = _key_leg(x, y, xs)
         tx, ty, td = t[b]
-        if b.startswith("RH"):                      # U-loop, down to the flange hole, out under the frame to the board
-            hx, hy, _ = P.FRAME_RH_HOLE
-            lane = {"VIN": -0.6, "GND": -0.2, "SCL": 0.2, "SDA": 0.6}[b.split()[1]]
+        if b.startswith("RH"):                      # U-loop, down to the bottom wall, forward to the sensor's back edge
+            ny = P.plug_rh()["y1"] + 0.6
             pts += [(xs, P.LOOP_Y[0] + 1.0, 27.0), (xs, P.LOOP_Y[0] + 2.0, 33.0), (xs, P.CABLE_Y - 1.0, 35.5),
-                    (hx + lane, hy, 35.5), (hx + lane, hy, 7.35), (hx + lane, ty, 7.35), (tx, ty, td)]
+                    (tx, ny, 35.5), (tx, ny, td + 0.5), (tx, ty, td)]
         elif b.startswith("LED"):                   # through the U-loop, round to the first LED's corner, in from outside
             import wiring_pcb as WP
             _, nm, pin = b.split()
@@ -247,9 +260,8 @@ def table_md():
 def build_wiring():
     """wire solids + collision report against the kit's fixed parts + the wiring table (Markdown)."""
     import json
-    one = ((0.0, 0.0),)
-    fixed = {"practice box": K.D.wall_block(one), "chassis (kit)": K.kit_chassis("discrete"), "back carrier": K.back_carrier(),
-             "frame 1-gang": K.D.frame_2x(one, with_rh=True), "plate": L.fuse(list(L.plate_parts("S"))),
+    fixed = {"chassis (kit)": K.kit_chassis("discrete"), "back carrier": K.back_carrier(), "SHT31-D": K.rh_ref(),
+             "plate": L.fuse(list(L.plate_parts("S"))),
              "switch plate": L.switch_plate("discrete"), "collar": L.collar()}
     refs = L.ref_bodies("S", "discrete")
     for k in ("MX switch 1", "MX switch 2", "speaker 2030"):

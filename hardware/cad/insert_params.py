@@ -156,7 +156,8 @@ CLAMP_N = 250.0       # [FREE] clamp at 0.2 N·m, 3.2 mm self-tapping into the b
 LOAD_PLATE = (-4.5, 5.3, 4.4, 0.5)   # [FREE] stainless load plate under each screw head: x from..to (relative to the screw,
                                      #        outward +), half height, thickness; in a 0.5 recess of the flange front face
 FLANGE_T = 1.2        # [FREE] printed support flange (option: the program's steel support ring, doc §7)
-FLANGE_HALF = 35.5    # [FREE] 71 × 71 like a standard support ring
+FLANGE_HALF = 29.6    # [FREE] v0.12: inside the 64 × 64 skin (its inner face 29.92 at the flange − 0.3); the
+                      #        carrier's tunnel end stops it, G2's side walls press it forward
 FLANGE_SLOT_W, FLANGE_SLOT_L = 3.6, 9.0   # [FREE] screw slots 3.6 × 9 (±2.5 mm rotation adjustment)
 PETG_CREEP_MPA = 5.0  # [FREE] bearing stress limit for PETG/ASA under a permanent clamp at up to 50 °C (conservative)
 RIM_T = 1.0           # [FREE] frame locating rims: thickness
@@ -440,10 +441,19 @@ HUB_POST_R = (2.0, 1.5)               # [FREE] screw post / plain support radius
 HUB_ANCHOR_POST = (10.5, -7.9)        # third M2 screw: a post on the switch plate (was the cable-anchor post)
 M2_PILOT = (1.7, 3.5)                 # [FREE] pilot hole for an M2 self-tapping screw in PETG: Ø, depth
 HUB_WINDOW = (-40.0, -8.0, -16.1, 2.1)   # the hub's cut-out for the radar's view (gen_layout_hub.py)
-RADAR_EAR = (-25.8, -23.0, -10.6, -5.4)  # [FREE] ear on the radar tray's −x side (x0, x1, y0, y1): the only place inside the
-                                         # hub window that reaches the tray — clear of the screw domes (|y| ≤ 4) and r ≤ 28.3
-RADAR_BLADE = (-25.6, -23.2, -10.4, -5.6)   # [FREE] support blade of the chassis flange part: flange back → the ear
-RADAR_PINS = ((-24.2, -9.08), (-24.2, -6.88))  # [FREE] 2 pins on the blade top into the ear (lead-in holes, 0.8 webs)
+# v0.12 (plug-in only, package B, owner 2026-10-31): the radar moves INTO the hub plane. Its board sits in the hub's radar
+# window (a bigger cut-out → PCB rev D) with its antenna face on the hub's front plane, held in a CAGE: walls on three
+# sides, a back plate behind the board (a slot for the header pins, cut short) and front lips at its short ends; the
+# board slides in from the open +x side. The cage's ear sits on the chassis' blade (2 pins), as the old tray's did.
+HUB_RADAR = (-24.0, -24.0 + R.RADAR_W, -17.1, -17.1 + R.RADAR_H, HUB_PCB_D0)   # [FREE] x0, x1, y0, y1, antenna face d:
+                                     #        x1 −8.16 stays clear of MX2 (|x| ≤ 7.8); y as the self-wired build's radar
+RADAR_CAGE = (0.9, 0.10, 1.2, 0.6, 1.0)   # [FREE] wall, play per side, back plate, front lip depth (d), lip width (inward)
+RADAR_PINS_CUT = 2.0                 # [FREE] the header pins cut to this length behind the board; J5's wires soldered on
+HUB_RADAR_WINDOW = (-40.0, -7.86, -18.4, 6.2)   # [→ PCB rev D] the hub's radar cut-out (open to its −x edge): the cage
+                                     #        + 0.3; the CAD cuts it into the rev C board until rev D exists
+RADAR_EAR = (-27.9, -25.0, -10.6, -5.4)  # [FREE] ear on the cage's −x side at its back plate (x0, x1, y0, y1)
+RADAR_BLADE = (-27.7, -25.2, -10.4, -5.6)   # [FREE] support blade of the chassis flange part: flange back → the ear
+RADAR_PINS = ((-26.45, -9.08), (-26.45, -6.88))  # [FREE] 2 pins on the blade top into the ear (lead-in holes, 0.8 webs)
 RADAR_PIN = (1.0, 2.0, 0.15)         # [FREE] Ø, length, radial play — thinner than CH_PIN so the ear keeps 0.8 webs
 HUB_J5 = (-15.3, -11.7, 7.0, 14.0, 26.22)   # [STEP] the radar's plug socket on the hub back (x0, x1, y0, y1, back d):
                                      #        the tray's top end gets a notch round it
@@ -631,19 +641,32 @@ KIT_RADAR_TRAY = (1.0, 0.10)      # [FIT] play/side: 0.2 just too loose (10-06);
 
 
 # =====================================================================================================
-# 8. PLUG-IN HOUSING ("Steckdosen-RoomKey", owner 2026-10-27, v0.3, WIP, not certified): the SAME RoomKey (kit, both
-#    builds) in a housing of the 1-gang frame size that plugs straight into a SCHUKO socket. Front = practice frame
-#    (Jung AS 500 look), plate and key, unchanged ("die Frontblende soll dieselbe sein"). 230 V stays inside an
-#    UNMODIFIED, certified plug-in USB charger: the housing only holds it, its USB-A port feeds 5 V SELV to hub J1 (PCB
-#    build) or to the carrier's splice points (self-wired build).
-#    Owner: "möglichst flach an der Wand", "1-fach, Netzteil dahinter", charger "such mir eins aus".
-#    G1 SHELL = frame + side walls (one print, back down); its frame tunnel, lengthened, is the flange's front stop.
-#    G2 BOX = back plate + charger sleeve + square cup (one print, back down); the cup's front edge presses the insert's
-#    flange against G1 (no box screws); 4 × M3 countersunk through the back plate into heat-set inserts in G1 (hidden on
-#    the socket). v0.2: a TPU grip ring holds the charger in the sleeve, a TPU foot ring rests on the socket face.
-#    v0.3: the charger as measured; the grip ring flexes instead of compressing; G1 + G2 for both kit builds.
-#    Depth: the charger's front face sits behind the deepest insert part on the axis (the key wires' U-loop) + the plug.
+# 8. PLUG-IN HOUSING v0.4 ("Steckdosen-RoomKey", WIP, not certified). RoomKey is built ONLY as this plug-in device (owner
+#    2026-10-31, "Nur Steckdose"). 230 V stays inside an UNMODIFIED, certified plug-in USB charger; its USB-A port feeds
+#    5 V SELV to hub J1 (PCB build) or to the carrier's splice points (self-wired build).
+#    v0.4 (owner 2026-10-31): 64 × 64 ("so klein wie möglich": a power strip's neighbours stay free; the plate stays
+#    55 × 55) and depth package B: the device 5 mm above the socket centre, a slim bare USB-A plug, the radar's header pins
+#    cut short and (PCB build) the radar in the hub plane.
+#    G1 = resin SKIN (front border + 4 side walls; for casting: nothing hangs from the border's underside, ≥ 1° draft inside
+#         towards the open back, the back edge is the free casting face, no inserts) + printed CARRIER glued into it (the
+#         frame tunnel, whose back end stops the insert's flange; 4 corner columns with M3 heat-set inserts).
+#    G2 = back lid (invisible: inside the skin, flush with its back edge) + charger sleeve + 4 side walls that press the
+#         flange forward; the humidity sensor lies in a window of its bottom wall, behind vents in the skin.
 # =====================================================================================================
+PLUG_HALF = 32.0    # [FREE] outline 64 × 64 (owner 2026-10-31: as small as possible, ≤ 75 × 75)
+PLUG_R = 4.0        # [FREE] outer corner radius (plan)
+PLUG_FRONT_D = -1.0  # [FREE] the skin's front face: 1.0 proud of the plate face, as the Jung frame's inner rim was
+PLUG_SKIN = (2.0, 2.2, 1.0)   # [FREE → resin thread] front border thickness, side wall at the front, inner draft (°)
+PLUG_EDGE = 0.8     # [FREE] 45° chamfer round the front's outer edge
+PLUG_OPEN_R = 2.3   # [FREE] the front opening's corner radius (the plate's 2.0 + its 0.3 gap → an even gap all round)
+PLUG_GLUE = 0.15    # [FREE] carrier ↔ skin, per side (glue gap)
+PLUG_OFFSET = 5.0   # [FREE] package B: the device sits this far ABOVE the socket centre → the charger axis is at y = −5.0
+PLUG_COLUMN = (26.8, 3.2)   # [FREE] the carrier's corner columns: centre |x| = |y|, radius (an M3 insert in each)
+PLUG_CUP_WALL = 1.2  # [FREE] G2's side walls
+PLUG_CUP_FIT = 0.3   # [FREE] G2's side walls ↔ the skin's inner face where they reach it narrowest (the flange's back)
+PLUG_IN_CLEAR = 0.45  # [FREE] hub / insert ↔ G2's side walls (→ plug_in_half(), the interior behind the flange)
+PLUG_LOOP_CLEAR = 0.2   # [FREE] PCB build: the key wires' U-loop envelope ↔ the charger's face (the slim plug sits below
+                        #        the loop's deep end, which turns UP)
 PLUG_CHARGER = dict(d=39.25, d_in=36.17, cap=13.0, l=32.3, out=16.0, pin=(4.8, 19.0, 19.0), port=(14.0, 5.95, 14.0),
                     port_c=(0.18, -0.35))
                     # [MEAS] revolt PX-8884 (Pearl, EAN 4022107346085; 5 V 2.1 A USB-A, contour plug, class II, REV4 2024),
@@ -651,51 +674,98 @@ PLUG_CHARGER = dict(d=39.25, d_in=36.17, cap=13.0, l=32.3, out=16.0, pin=(4.8, 1
                     # body 32.3 (C), 16.0 out of the owner's socket (H) → 16.3 in the recess; the step between the two
                     # sits `cap` behind the face [PHOTO ±0.5; the thin part has earth-clip grooves at 12/6 o'clock, small
                     # rails at 3/9]; USB-A opening 14 × 5.95 (D, E) on the front face, horizontal, its centre from F 17 /
-                    # G 12.8 (= centred within what calipers read on a round rim); pins Ø4.8 × 19, 19 apart [DS CEE 7/17]
-PLUG_USB = (12.0, 4.5, 15.0, 7.5, 7.0)   # [TBD] solder-type USB-A plug: shell w, h (12 deep in the port); body w, h, length
-                    # outside the charger face (2 of the 4 solder cups used: VBUS, GND)
-PLUG_CLEAR = 0.5    # [FREE] USB plug ↔ the key wires' U-loop envelope (the loop moves, the plug does not)
-PLUG_WALL = 1.6     # [FREE] shell side walls, cup, sleeve (4 lines of a 0.4 nozzle)
+                    # G 12.8 (= centred within what calipers read on a round rim); pins Ø4.8 × 19, 19 apart [DS CEE 7/17].
+                    # port_c is relative to the charger's axis.
+PLUG_USB = (12.0, 4.5, 14.0, 6.6, 3.0)   # [TBD the plug bought] bare solder-type USB-A plug (no overmould): shell w, h (12 deep
+                    # in the port); in front of the charger face: body w, h, length (solder cups + the wires' bend)
+PLUG_CLEAR = 0.5    # [FREE] self-wired build: USB plug ↔ the key wires' U-loop envelope (there the loop rolls DOWN onto it)
+PLUG_WALL = 1.6     # [FREE] charger sleeve (4 lines of a 0.4 nozzle)
 PLUG_BACK_T = 2.0   # [FREE] G2 back plate (on the socket face); the M3 countersunk heads sit flush in it
-PLUG_FIT = 0.3      # [FREE] G2 ↔ G1 inner walls per side (G2 slides in from the back)
-PLUG_STOP_D = 7.7   # [FREE] G1's lengthened frame tunnel ends here: 0.1 in front of the flange (d 7.8) → flange play 0.1
-PLUG_STOP_GAP_X = 14.0   # [FREE] no tunnel extension at the bottom for |x| < this: the SHT31-D and its wires (FRAME_RH)
-PLUG_CUP = (29.5, 2.7, 33.5)   # [FREE] square cup: inner half width (just outside the frame tunnel, 29.4 → the flange is
-                    # clamped ring on ring), inner corner R, front rim half width (backs the flange to 2 mm off its edge)
+PLUG_FIT = 0.3      # [FREE] G2's back plate ↔ the skin's inner face, per side
+PLUG_STOP_D = 7.7   # [FREE] the carrier's tunnel ends here: 0.1 in front of the flange (d 7.8) → flange play 0.1
 PLUG_SLEEVE = (0.5, 2.0, 1.0)   # [FREE] charger sleeve: play per side in the back plate's hole (the step that holds the grip
                     # ring), front lip width and thickness (the charger's face rests on it)
 PLUG_GRIP = dict(t=1.6, n=12, w=1.5, gap=0.3, stand=1.0, play=0.1, setback=0.4, inter=0.5, coupons=(0.3, 0.5, 0.7))
-                    # [FREE] TPU 95A grip ring in the sleeve (owner 2026-10-27 "bestellt"). v0.3 = a FLEX ring: n inner ribs
-                    # press on the charger's thick front part, n outer standoffs between them carry the tube in the sleeve's
-                    # seat, so the tube wall bends between the standoffs (v0.2's ribs on a tube backed all round could only
+                    # [FREE] TPU 95A grip ring in the sleeve (owner 2026-10-27 "bestellt"). A FLEX ring: n inner ribs press
+                    # on the charger's thick front part, n outer standoffs between them carry the tube in the sleeve's
+                    # seat, so the tube wall bends between the standoffs (ribs on a tube backed all round could only
                     # compress: TPU 95A at 0.2 mm is far too stiff to push in by hand). Wall, rib count, rib width, wall ↔
-                    # charger, standoff height, standoff ↔ seat, set back from the charger face (the radar's plug), rib
-                    # interference [TBD → coupons: 1/2/3 notches = 0.3/0.5/0.7]
-PLUG_FOOT = (0.6, 21.0, 25.0, 1.0, 0.4)   # [FREE] v0.2: the housing's back face stands this far off the socket face (the
-                    # housing never holds the charger out of the socket); TPU 95A foot ring (inner r, outer r: on any central
-                    # plate, clear of the recess; thickness; groove depth → it just touches the socket face: no wobble)
-PLUG_SCREW = (35.6, 3.4, 6.4, 3.2, 8.0, 11.0)   # [FREE] 4 × M3 × 10 (or × 12) countersunk (ISO 10642) at |x| = |y|:
-                    # clearance hole, countersink Ø, relief Ø behind the insert (the screw tip), G1 corner boss Ø, boss length
-PLUG_INSERT = (4.0, 6.5)   # [TBD the inserts bought] M3 heat-set insert in each G1 boss, pressed in from the back: hole Ø,
+                    # charger, standoff height, standoff ↔ seat, set back from the charger face, rib interference
+                    # [TBD → coupons: 1/2/3 notches = 0.3/0.5/0.7]
+PLUG_FOOT = (0.6, 21.0, 25.0, 1.0, 0.4)   # [FREE] the housing's back face stands this far off the socket face (the housing
+                    # never holds the charger out of the socket); TPU 95A foot ring round the charger axis (inner r, outer
+                    # r: on any central plate, clear of the recess; thickness; groove depth → it just touches the socket)
+PLUG_SCREW = (3.4, 6.4, 3.2)   # [FREE] 4 × M3 × 10 (or × 12) countersunk (ISO 10642) at the corner columns: clearance hole,
+                    # countersink Ø, relief Ø in front of the insert (the screw tip)
+PLUG_INSERT = (4.0, 6.5)   # [TBD the inserts bought] M3 heat-set insert in each column, pressed in from the back: hole Ø,
                     # depth (Ruthex / CNC Kitchen M3 × 5.7: hole Ø4.0; +0.8 for the displaced melt)
+PLUG_RH = (3.3, 9.6, 1.0)   # [FREE] humidity sensor in G2's bottom wall, chip side DOWN behind the skin's vents: chip centre
+                    # x, the board's front edge d (its long side along x, its pins at the back edge), window inset from
+                    # the board's x ends (the board rests there on G2's wall; its parts hang into the window, the skin
+                    # 0.4 below them; a dot of hot glue holds it). PCB build: the sensor tail (SHT40 + VEML6030, layout
+                    # open) takes the same place and outline (≤ 13.4 × 10.5 × 2.6)
+PLUG_VENT = (1.5, 2.6)   # [FREE → resin thread] vents through the skin's bottom wall round the chip: Ø, pitch (2 × 2)
+PLUG_LIGHT = (-1.0, 2.0)  # [FREE → resin thread] light window through the skin's bottom wall (a smooth cylindrical hole ⟂ the
+                    # wall, filled clear by the resin thread) at the chip's d: x, Ø. The sensor tail's VEML6030 sits over it
 PLUG_SOCKET = (10.0, 39.5, 55.0)   # [TBD] reference Jung AS 500 SCHUKO socket: face ↔ wall (the frame's inner rim height),
                     # recess Ø [DS CEE 7/3 ≈ 39–40], central plate; recess depth = body − out (16.3 in the owner's socket)
 PLUG_WIRE = 1.6     # [FREE] 2 × 0.5 mm² silicone, USB plug → hub J1 / the carrier's splice points (5V, GND)
+PLUG_J1 = (11.0, -2.75, 6.0, 7.6, 6.0)   # [→ PCB rev D] J1 as a SIDE-entry JST PH (e.g. S2B-PH-K-S), the plug going in
+                    # from below (−y): centre x, y, footprint w (the 2 pins), h (the plug's way), height behind the board. With the charger face at d 31
+                    # a top-entry PH + plug (≈ 13 deep) does not fit inside the charger's circle
 PLUG_MOMENT_MAX = 0.25   # [DS IEC 60950-1 §4.3.6 / IEC 62368-1 §4.7: direct plug-in equipment ≤ 0.25 N·m on the socket]
 PLUG_MASS_G = {"touch board": 9.0, "hub": 7.0, "MAX98357A": 2.0, "INMP441": 1.0, "speaker 2030": 4.0, "LD2410C": 2.0,
-               "MX switch 1": 3.5, "MX switch 2": 3.5, "USB plug": 3.0, "charger": 39.0}
-                    # [TBD] g, those of the build present; the charger [DS pearl]; printed parts by volume
+               "MX switch 1": 3.5, "MX switch 2": 3.5, "USB plug": 2.0, "charger": 39.0}
+                    # [TBD] g, those of the build present; the charger [DS pearl]; printed and cast parts by volume
+
+
+def plug_skin_in(d):
+    """the skin's inner half width at depth d (its inner faces open towards the back by the draft)."""
+    t, w, a = PLUG_SKIN
+    return PLUG_HALF - w + math.tan(math.radians(a)) * (d - (PLUG_FRONT_D + t))
+
+
+def plug_in_half():
+    """the interior's half width behind the flange (hub, radar cage, insert): inside G2's side walls with clearance."""
+    return plug_skin_in(WALL_D) - PLUG_CUP_FIT - PLUG_CUP_WALL - PLUG_IN_CLEAR
+
+
+def plug_port():
+    """the charger's USB-A port centre in device coordinates (the charger's axis sits PLUG_OFFSET below the device's)."""
+    return PLUG_CHARGER["port_c"][0], PLUG_CHARGER["port_c"][1] - PLUG_OFFSET
+
+
+def plug_cups():
+    """the slim USB plug's two solder cups in use (x, y): VBUS left, GND right, looking from the room [TBD: the plug
+    bought] — so neither build's two supply wires cross."""
+    px, py = plug_port()
+    return {"5V": (px - 3.5, py), "GND": (px + 3.5, py)}
+
+
+def plug_rh():
+    """the humidity sensor in G2's bottom wall: board x0, x1, PCB y0 (on G2's wall), y1, d0, d1, chip (x, d), and the hub's
+    notch it passes when G2 goes in (x0, x1, y up to)."""
+    cx, d0, inset = PLUG_RH
+    x0 = cx - R.RH_CHIP_C[0]
+    y0 = -(plug_skin_in(WALL_D) - PLUG_CUP_FIT - PLUG_CUP_WALL)
+    y1 = y0 + R.RH_PCB_T
+    return dict(x0=x0, x1=x0 + R.RH_W, y0=y0, y1=y1, d0=d0, d1=d0 + R.RH_H, chip=(cx, d0 + R.RH_CHIP_C[1]), inset=inset,
+                notch=(x0 - 0.4, x0 + R.RH_W + 0.4, y1 + 1.1))
 
 
 def plug_depths(build="pcb"):
-    """the plug-in housing's depths (d) along the axis, from the deepest insert part to the socket face."""
-    loop = loop_up()[5] if build == "pcb" else LOOP_D1   # the key wires' U-loop: deepest thing on the axis (PCB 30.81;
-    #   self-wired 36.5: there it rolls down behind the back carrier)
-    usb0 = loop + PLUG_CLEAR                             # USB plug body front
-    face = usb0 + PLUG_USB[4]                            # charger front face (rests on the sleeve lip)
+    """the plug-in housing's depths (d) along the axis, from the deepest insert part to the socket face. PCB build: the
+    charger face sits just behind the key wires' U-loop (it turns UP, the slim plug sits below it, package B). Self-wired
+    build: the loop rolls DOWN behind the back carrier onto the plug's place, so the plug sits behind it."""
+    if build == "pcb":
+        loop = loop_up()[5]
+        face = loop + PLUG_LOOP_CLEAR
+    else:
+        loop = LOOP_D1
+        face = loop + PLUG_CLEAR + PLUG_USB[4]
     sock = face + PLUG_CHARGER["out"]                    # socket face (the charger sits fully in the socket)
     back = sock - PLUG_FOOT[0]                           # the housing's back face, the TPU foot ring bridges the gap
-    return dict(loop=loop, usb0=usb0, face=face, socket=sock, back=back, back0=back - PLUG_BACK_T,
+    return dict(loop=loop, usb0=face - PLUG_USB[4], face=face, socket=sock, back=back, back0=back - PLUG_BACK_T,
                 wall=sock + PLUG_SOCKET[0], recess=PLUG_CHARGER["l"] - PLUG_CHARGER["out"])
 
 

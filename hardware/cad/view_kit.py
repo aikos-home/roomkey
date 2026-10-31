@@ -1,5 +1,5 @@
-"""Open the RoomKey kit (prototype, WIP) in the FreeCAD GUI to LOOK at it: practice box (transparent), 1-gang frame,
-the printed parts, the electronics and every wire — named, coloured, grouped. ROOMKEY_BUILD = pcb (default) or discrete.
+"""Open the RoomKey kit (prototype, WIP) in the FreeCAD GUI to LOOK at it: the printed parts, the electronics and every
+wire — named, coloured, grouped (the plug-in housing round it: view_plug.py). ROOMKEY_BUILD = pcb (default) or discrete.
 
 Run (opens FreeCAD):  ROOMKEY_BUILD=pcb /Applications/FreeCAD.app/Contents/MacOS/FreeCAD hardware/cad/view_kit.py
 Saves hardware/models/kit-<build>-v<VERSION>_ansicht.FCStd (open that file directly next time; render_kit.py makes the
@@ -19,10 +19,9 @@ if BUILD == "pcb":
 else:
     import wiring_lib as W  # noqa: E402
 
-L, D, P = K.L, K.D, K.P
+L, P = K.L, K.P
 IVORY, DARK, GREY = (0.95, 0.93, 0.85), (0.18, 0.18, 0.18), (0.55, 0.55, 0.55)
 # name, shape builder, colour, transparency %, group
-one = ((0.0, 0.0),)
 pbody, prim = L.plate_parts("S")
 refs = L.ref_bodies("S", BUILD)
 kr = K.kit_refs(BUILD)
@@ -38,8 +37,6 @@ def part(kind, i):
 
 
 ITEMS = [
-    ("Uebungsdose", lambda: D.wall_block(one), (0.95, 0.55, 0.2), 70, "Übungsdose"),
-    ("Rahmen_JungAS500", lambda: D.frame_2x(one, with_rh=True), (0.97, 0.97, 0.97), 35, "Übungsdose"),
     ("Platte", lambda: pbody, IVORY, 0, "Druckteile"),
     ("Platte_Leuchtrand", lambda: prim, (0.85, 0.92, 1.0), 40, "Druckteile"),
     ("Tastenschale_starr", L.key_shell, IVORY, 0, "Druckteile"),
@@ -58,18 +55,16 @@ ITEMS = [
     ("Radar_Chip_vorne", lambda: radar["LD2410C front parts"], (0.85, 0.65, 0.1), 0, "Bauteile"),
     ("Radar_Randbauteile_vorne", lambda: radar["LD2410C edge parts"], (0.9, 0.2, 0.2), 0, "Bauteile"),
     ("Radar_Stiftstummel_vorne", lambda: radar["LD2410C pin stubs"], (0.9, 0.5, 0.1), 0, "Bauteile"),
-    ("Feuchtesensor_SHT31D_im_Rahmen", lambda: kr["SHT31-D"], (0.55, 0.2, 0.6), 0, "Bauteile"),
+    ("Feuchtesensor_SHT31D_unten", lambda: kr["SHT31-D"], (0.55, 0.2, 0.6), 0, "Bauteile"),
     ("Kabelbogen_Taste", lambda: refs["cable loop"], (0.9, 0.4, 0.1), 50, "Bauteile"),
     ("LED_1", lambda: refs["LED 1"], (1.0, 1.0, 1.0), 0, "Bauteile"),
     ("LED_2", lambda: refs["LED 2"], (1.0, 1.0, 1.0), 0, "Bauteile"),
     ("LED_3", lambda: refs["LED 3"], (1.0, 1.0, 1.0), 0, "Bauteile"),
     ("LED_4", lambda: refs["LED 4"], (1.0, 1.0, 1.0), 0, "Bauteile"),
-    ("Schraube_links", lambda: refs["box screw L"], (0.8, 0.8, 0.8), 0, "Bauteile"),
-    ("Schraube_rechts", lambda: refs["box screw R"], (0.8, 0.8, 0.8), 0, "Bauteile"),
 ]
 
 if BUILD == "pcb":
-    ITEMS += [("Radar_Wanne", L.radar_tray, (0.75, 0.75, 0.8), 0, "Druckteile"),
+    ITEMS += [("Radar_Kaefig", L.radar_cage, (0.75, 0.75, 0.8), 0, "Druckteile"),
               ("Hub_Platine", lambda: refs["hub"], (0.1, 0.45, 0.2), 0, "Bauteile")]
     for no, a, b, sig, col, rgb, rt, dia, _ in W.wires():      # v0.11: the wires that the hub PCB leaves
         ITEMS.append((f"Draht_{no:02d}", (lambda rt=rt, dia=dia: W.wire_solid(rt(), dia)), rgb, 0, "Verkabelung"))
@@ -82,7 +77,7 @@ else:
 
 doc = App.newDocument(f"RoomKey_Bausatz_{BUILD}_v" + P.VERSION.replace(".", "_"))
 groups = {}
-for g in ("Übungsdose", "Druckteile", "Bauteile", "Verkabelung"):
+for g in ("Druckteile", "Bauteile", "Verkabelung"):
     groups[g] = doc.addObject("App::DocumentObjectGroup", g.replace("ü", "ue"))
     groups[g].Label = g
 for name, build, col, tr, grp in ITEMS:

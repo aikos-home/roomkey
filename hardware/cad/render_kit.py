@@ -1,4 +1,4 @@
-"""Render real FreeCAD views of the kit v0.7 (prototype, WIP) to hardware/docs/img/ — run inside the FreeCAD GUI:
+"""Render real FreeCAD views of the kit (prototype, WIP) to hardware/docs/img/ — run inside the FreeCAD GUI:
     /Applications/FreeCAD.app/Contents/MacOS/FreeCAD hardware/cad/render_kit.py
 (with RENDER_QUIT=1 it quits when done). Opens hardware/models/kit-v<insert VERSION>_ansicht.FCStd (made by view_kit.py).
 """
@@ -99,30 +99,26 @@ def run():
 
 
 def shots():
-    wall = ("Uebungsdose", "Draht_", "Kabelbogen")
-    # 1 straight on: what you see on the wall (frame opaque for this one)
-    show(None, hide=wall)
-    fr = objs["Rahmen_JungAS500"].ViewObject
-    t0, fr.Transparency = fr.Transparency, 0
+    # 1 straight on: plate, key, glow ring
+    show(None)
     cam((0, 0, 1))
     shot(f"{TAG}_face.png")
-    fr.Transparency = t0
-    # 2 front 3/4 in the practice box (box transparent)
+    # 2 front 3/4
     show(None, hide=("Draht_", "Kabelbogen"))
     cam((-0.65, 0.45, 1))
     shot(f"{TAG}_front.png")
-    # 3 rear 3/4 without the box: back carrier with radar + amplifier, mic, speaker, switches
-    show(None, hide=wall)
+    # 3 rear 3/4: switch plate, MX, speaker, the hub PCB and the radar in its cage (PCB) / the back carrier (self-wired)
+    show(None, hide=("Draht_",))
     cam((0.75, 0.5, -1))
     shot(f"{TAG}_rear-parts.png")
-    # 4 straight from behind: the hub PCB, the radar in its tray, the speaker (v0.11)
+    # 4 straight from behind
     cam((0, 0, -1))
     shot(f"{TAG}_rear.png")
-    # 4b wiring (v0.11, PCB version): everything but the box, from behind and from the front without plate, collar, key
-    show(None, hide=("Uebungsdose", "Kabelbogen"))
+    # 4b wiring: everything, from behind and from the front without plate, collar, key
+    show(None, hide=("Kabelbogen",))
     cam((0.75, 0.5, -1))
     shot(f"{TAG}_wiring-rear.png")
-    show(None, hide=("Uebungsdose", "Rahmen_", "Platte", "Leuchtring", "Tastenschale", "Touch_Board", "Antenne"))
+    show(None, hide=("Platte", "Leuchtring", "Tastenschale", "Touch_Board", "Antenne"))
     cam((-0.35, 0.3, 1))
     shot(f"{TAG}_wiring-front.png")
     # 4c the LED holder in the switch plate (v0.11): plate, MX, LEDs and the glow wires, front and back
@@ -132,11 +128,7 @@ def shots():
     shot(f"{TAG}_led-holder-front.png")
     cam((0.45, 0.35, -1))
     shot(f"{TAG}_led-holder-back.png")
-    # 5 the frame from behind and below: humidity sensor flat under its bottom border
-    show(("Rahmen_JungAS500", "Feuchtesensor"))
-    cam((0.35, -0.55, -1))
-    shot("frame_humidity-sensor.png")
-    # 6 the rigid key from behind: fixed / floating stem sockets, stop bosses, header slots, the two switches
+    # 5 the rigid key from behind: fixed / floating stem sockets, stop bosses, header slots, the two switches
     show(("Tastenschale", "MX_", "Touch_Board"))
     cam((0.6, 0.55, -1))
     shot(f"key-v{P.VERSION}_rear.png")

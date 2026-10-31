@@ -1,34 +1,23 @@
 {
  "collisions": [],
  "gaps": {
-  "LD2410C front parts ↔ radar tray": 2.518,
-  "LD2410C edge parts ↔ radar tray": 0.2,
-  "LD2410C pin stubs ↔ radar tray": 0.4,
-  "LD2410C ↔ practice box": 1.239,
-  "LD2410C header ↔ practice box": 3.201,
-  "radar tray ↔ hub": 0.7,
-  "LD2410C ↔ hub": 2.754,
-  "LD2410C header ↔ hub": 6.608,
-  "radar tray ↔ cable loop": 0.5,
-  "radar tray ↔ speaker 2030": 20.993,
-  "radar tray ↔ chassis (kit)": 0.0,
+  "LD2410C front parts ↔ radar cage": 1.61,
+  "LD2410C edge parts ↔ radar cage": 0.3,
+  "LD2410C pin stubs ↔ radar cage": 0.4,
+  "LD2410C ↔ radar cage": 0.05,
+  "LD2410C ↔ MX switch 2": 1.16,
+  "radar cage ↔ hub": 0.27,
+  "LD2410C ↔ hub": 0.3,
+  "LD2410C header ↔ hub": 4.27,
+  "radar cage ↔ MX switch 2": 1.16,
+  "radar cage ↔ switch plate": 1.3,
+  "radar cage ↔ chassis (kit)": 0.0,
   "hub ↔ chassis (kit)": 0.0,
   "hub ↔ switch plate": 0.0,
   "hub ↔ speaker 2030": 1.125,
-  "hub ↔ practice box": 0.8,
   "chassis (kit) ↔ switch plate": 0.0,
   "chassis (kit) ↔ plate": 0.0,
-  "SHT31-D ↔ frame 1-gang": 0.2,
-  "SHT31-D ↔ chassis (kit)": 1.0,
-  "SHT31-D ↔ plate": 1.942,
-  "SHT31-D ↔ practice box": 2.23
+  "SHT31-D ↔ chassis (kit)": 0.3
  },
- "webs": {
-  "hole (-24.2, -9.1) ↔ edge": 0.87,
-  "hole (-24.2, -9.1) ↔ next opening": 0.9,
-  "hole (-24.2, -6.9) ↔ edge": 0.83,
-  "hole (-24.2, -6.9) ↔ next opening": 0.9,
-  "window ↔ edge": 1.0,
-  "window ↔ next opening": 0.95
- }
+ "webs": {}
 }

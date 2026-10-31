@@ -11,7 +11,7 @@ Precise and slow: 0.10 mm layers, outer walls 25 mm/s, first layer 15 mm/s, 3 wa
 Run (Windows, Bambu Studio installed):   python tools/bambu_kit.py
 Paths can be overridden with BAMBU_CLI / BAMBU_PROFILES. The system presets are inheritance fragments: they are resolved
 here (incl. the A1 "include" templates with the real start G-code) — passing them raw crashes the CLI without a message.
-Two builds of the same RoomKey (v0.11): `pcb` (hub PCB + radar tray + a printable stand-in of the PCB) and `discrete`
+Two builds of the same RoomKey (v0.11): `pcb` (hub PCB + radar cage + a printable stand-in of the PCB) and `discrete`
 (self-wired modules on the back carrier):   python tools/bambu_kit.py pcb|discrete   (default pcb)
 Writes hardware/print/bambu/roomkey-kit-<build>-v<VERSION>_<plate>_<nozzle>.gcode.3mf.
 """
@@ -36,7 +36,7 @@ _K = f"kit-{BUILD}_"
 _A = ["plate_print.stl", _K + "chassis_1_front_print.stl", _K + "chassis_2_flange_print.stl", _K + "chassis_3_rear_print.stl",
       _K + "switch_plate_print.stl"]
 PLATES = {
-    "A-petg": _A + ([_K + "radar_tray_print.stl", _K + "hub_dummy_print.stl"] if BUILD == "pcb" else [_K + "back_carrier_print.stl"]),
+    "A-petg": _A + ([_K + "radar_cage_print.stl", _K + "hub_dummy_print.stl"] if BUILD == "pcb" else [_K + "back_carrier_print.stl"]),
     "B-key": ["key_shell_print.stl"],
     "C-collar-pla": ["collar_print.stl"],
 }

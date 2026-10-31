@@ -117,14 +117,27 @@ def segments(lo, hi):
 
 # ============================================================================ allowed space
 def allowed_space():
-    """Fixed parts may exist: in the frame tunnel in front of the wall, as the flange under the frame, in the box."""
+    """v0.12 (plug-in only): fixed parts of the insert may exist in the carrier's tunnel in front of the flange, as the
+    flange, and behind it inside G2's side walls (P.plug_in_half()), clear of the carrier's corner columns."""
     lim = P.FRAME_OPEN / 2 - P.FRAME_TUNNEL_MARGIN
     fz = box(-lim, lim, -lim, lim, -2.0, P.WALL_D)
     fl = rrect(P.FLANGE_HALF, P.FLANGE_HALF, 3.0, P.WALL_D - P.FLANGE_T, P.WALL_D)
-    r = P.BOX_USABLE_D / 2 - P.FIT_MARGIN
-    inside = cyl(0, 0, r, P.WALL_D - EPS, P.box_floor())
-    inside = inside.cut(domes(P.FIT_MARGIN, P.WALL_D - EPS, 99))
-    return fuse([fz, fl, inside])
+    h = P.plug_in_half()
+    inside = box(-h, h, -h, h, P.WALL_D - EPS, 80.0)
+    return cut(fuse([fz, fl, inside]), column_zones(0.3, P.WALL_D - P.FLANGE_T - 1.0, 80.0))
+
+
+def column_zones(grow, d0, d1):
+    """the plug housing's 4 corner columns (P.PLUG_COLUMN: a corner block with a round inner end) grown by `grow`: the
+    insert's flange, the hub and G2 keep out of them."""
+    c, r = P.PLUG_COLUMN
+    out = []
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            out += [cyl(sx * c, sy * c, r + grow, d0, d1),
+                    box(sx * (c - r - grow), sx * 40.0, sy * c, sy * 40.0, d0, d1),
+                    box(sx * c, sx * 40.0, sy * (c - r - grow), sy * 40.0, d0, d1)]
+    return out
 
 
 def domes(grow, d0, d1):
@@ -392,7 +405,7 @@ def chassis_parts(ch, build="pcb"):
            box(gx + g - 0.05, P.DUCT_X1 + w + 0.05, n0 - w - 0.05, n1 + w + 0.05, c1, pd1 + w + 1.0)]        # + the duct
     if build == "pcb":
         mid += [cyl(mpx, mpy, sum(P.KIT_MIC_TUBE) / 2 + 1.05, c1 - 1, P.HUB_PCB_D0),                        # + sound tube
-                box(bx0 - 0.05, bx1 + 0.05, by0 - 0.05, by1 + 0.05, c1 - 1, P.KIT_CARRIER_D[0] + 3)]       # + radar blade
+                box(bx0 - 0.05, bx1 + 0.05, by0 - 0.05, by1 + 0.05, c1 - 1, cage_d()[1] + 3)]              # + radar blade
     mid_z = fuse(mid)
     p1 = ch.common(front_z)
     rest = ch.cut(front_z)
@@ -431,8 +444,56 @@ def hub_pcb():
         p = os.environ.get("ROOMKEY_HUB_STEP") or os.path.join(os.path.dirname(os.path.dirname(HERE)), *P.HUB_PCB_STEP)
         s = Part.read(p)
         s.translate(V(P.HUB_PCB_STEP_XY[0], P.HUB_PCB_STEP_XY[1], -(P.HUB_PCB_D0 + P.HUB_PCB_STEP_TOP)))
+        if not os.environ.get("ROOMKEY_HUB_REV_D"):
+            s = _hub_rev_d(s)
         _HUB["s"] = s
     return _HUB["s"].copy()
+
+
+def _hub_rev_d(s):
+    """v0.12 stand-in until the PCB thread's rev D (set ROOMKEY_HUB_REV_D=1 for a board that has them): the plug housing's
+    cut-outs cut into the rev C board — the radar window (P.HUB_RADAR_WINDOW), the notch the humidity sensor passes when G2
+    goes in, the corner columns, the interior square — and the parts standing in them dropped."""
+    x0, x1, y0, y1 = P.HUB_RADAR_WINDOW
+    nx0, nx1, ny1 = P.plug_rh()["notch"]
+    d0, d1 = P.HUB_PCB_D0 - 5.0, P.HUB_PCB_D0 + 15.0
+    tools = [box(x0, x1, y0, y1, d0, d1), box(nx0, nx1, -40.0, ny1, d0, d1)] + column_zones(0.5, d0, d1)
+    h = P.plug_in_half()
+    sol = sorted(s.Solids, key=lambda q: -q.Volume)
+    board = sol[0].common(box(-h, h, -h, h, d0, d1)).cut(tools)
+    keep = [q for q in sol[1:] if not any(q.BoundBox.intersect(t.BoundBox) and q.common(t).Volume > 1e-3 for t in tools)]
+    return Part.makeCompound([board] + keep)
+
+
+def cage_d():
+    """v0.12: the radar cage's depths — its lips' front, its back plate's front (the blade's top) and back."""
+    w, c, bt, ld, lw = P.RADAR_CAGE
+    f = P.HUB_RADAR[4]
+    p0 = f + R.RADAR_T + 0.05
+    return f - ld, p0, p0 + bt
+
+
+def radar_cage():
+    """v0.12 (PCB build): the LD2410C's cage in the hub plane, inside the hub's radar window. Walls on the −x, −y and +y
+    sides, a back plate behind the board (a slot for its header pins, cut short) and front lips over the parts-free ends
+    of its antenna face; the board slides in from the open +x side, where the window's edge stops it once the hub is on.
+    An ear on the −x side sits on the chassis' blade (2 pins, lead-in holes). Printed back down, no supports."""
+    rx0, rx1, ry0, ry1, f = P.HUB_RADAR
+    w, c, bt, ld, lw = P.RADAR_CAGE
+    l0, p0, p1 = cage_d()
+    x0, y0, y1 = rx0 - c - w, ry0 - c - w, ry1 + c + w
+    body = box(x0, rx1, y0, y1, l0, p1).cut(box(rx0 - c, rx1 + 1.0, ry0 - c, ry1 + c, l0 - 1.0, p0))
+    xl = rx1 - P.KIT_RADAR_EDGE[0] - 0.3                   # the lips stop short of the parts band along the +x edge
+    lips = [box(rx0 - c - EPS, xl, ry0 - c - EPS, ry0 + lw, l0, f - 0.05),
+            box(rx0 - c - EPS, xl, ry1 - lw, ry1 + c + EPS, l0, f - 0.05)]
+    body = fuse([body, box(*P.RADAR_EAR, p0, p1)] + lips)
+    tools = [box(rx0 - c - EPS, rx0 + 3.1, ry0 + 2.7, ry1 - 2.7, p0 - 1.0, p1 + 1.0)]     # header slot (to the −x wall)
+    pd_, pl_, play = P.RADAR_PIN
+    for (px_, py_) in P.RADAR_PINS:
+        tools += [cyl(px_, py_, pd_ / 2 + play, p0 - 1.0, p0 + pl_ + 0.3),
+                  Part.makeCone(pd_ / 2 + play + P.CH_PIN_LEAD, pd_ / 2 + play, P.CH_PIN_LEAD, V(px_, py_, -p0 + 0.01),
+                                V(0, 0, -1))]
+    return cut(body, tools)
 
 
 def radar_tray():
@@ -469,16 +530,16 @@ def radar_tray():
 
 
 def radar_refs():
-    """the LD2410C on its ledges (antenna face forward, header to the wall) + the envelopes on its antenna face."""
-    rx0, rx1, ry0, ry1, _ = P.KIT_RADAR
-    c1 = P.KIT_CARRIER_D[1] + P.KIT_RADAR_RAISE
+    """v0.12 (PCB build): the LD2410C in its cage, antenna face on the hub's front plane, header pins cut short behind it +
+    the envelopes on its antenna face."""
+    rx0, rx1, ry0, ry1, f = P.HUB_RADAR
     ew, eh = P.KIT_RADAR_EDGE
-    return {"LD2410C": box(rx0, rx1, ry0, ry1, c1, c1 + R.RADAR_T),
-            "LD2410C header": box(rx0 + 0.3, rx0 + 2.8, ry0 + 3.0, ry1 - 3.0, c1 + R.RADAR_T,
-                                  c1 + R.RADAR_T_PINS - R.RADAR_T),
-            "LD2410C front parts": box(rx0 + 7.0, rx1 - ew - 0.1, ry0 + 8.0, ry0 + 14.0, c1 - 1.0, c1),
-            "LD2410C edge parts": box(rx1 - ew, rx1 - 0.2, ry0 + 0.4, ry1 - 0.4, c1 - eh, c1),
-            "LD2410C pin stubs": box(rx0 + 0.3, rx0 + 2.4, ry0 + 5.0, ry0 + 17.0, c1 - P.KIT_RADAR_STUBS, c1)}
+    b1 = f + R.RADAR_T
+    return {"LD2410C": box(rx0, rx1, ry0, ry1, f, b1),
+            "LD2410C header": box(rx0 + 0.3, rx0 + 2.8, ry0 + 3.0, ry1 - 3.0, b1, b1 + P.RADAR_PINS_CUT),
+            "LD2410C front parts": box(rx0 + 7.0, rx1 - ew - 0.1, ry0 + 8.0, ry0 + 14.0, f - 1.0, f),
+            "LD2410C edge parts": box(rx1 - ew, rx1 - 0.2, ry0 + 0.4, ry1 - 0.4, f - eh, f),
+            "LD2410C pin stubs": box(rx0 + 0.3, rx0 + 2.4, ry0 + 5.0, ry0 + 17.0, f - P.KIT_RADAR_STUBS, f)}
 
 
 def ceilings(shape, name, how="front_down", max_span=16.0, supports=False):
@@ -545,14 +606,10 @@ def chassis(v, build="pcb"):
             add.append(box(xa, xb, ya, yb, fl0 - EPS, P.COLLAR_D1 + 1.0))
             ya, yb = sorted((sy * P.WELL_IN_Y, sy * (P.COLLAR_OUT_Y + P.COLLAR_FIT + 0.8)))
             add.append(box(xa, xb, ya, yb, P.COLLAR_D1 - EPS, P.COLLAR_D1 + 1.0))
-    # flange with screw slots, load-plate recesses and openings
+    # flange (v0.12: inside the plug housing's skin; its corners notched round the carrier's columns) and openings
     flange = rrect(P.FLANGE_HALF, P.FLANGE_HALF, 3.0, fl0, fl1)
     fl_tools = [rrect(P.COLLAR_OUT_X + P.COLLAR_FIT, P.COLLAR_OUT_Y + P.COLLAR_FIT, P.COLLAR_OUT_R + P.COLLAR_FIT, fl0 - 1, fl1 + 1)]
-    lx0, lx1, lhy, lpt = P.LOAD_PLATE
-    for sx in (-1, 1):
-        cx = sx * P.BOX_SCREW_PITCH / 2
-        fl_tools.append(box(cx - P.FLANGE_SLOT_W / 2, cx + P.FLANGE_SLOT_W / 2, -P.FLANGE_SLOT_L / 2, P.FLANGE_SLOT_L / 2, fl0 - 1, fl1 + 1))
-        fl_tools.append(box(cx + sx * (lx0 - 0.1), sx * (P.FLANGE_HALF + 1.0), -lhy - 0.1, lhy + 0.1, fl0 - 1, fl0 + lpt))
+    fl_tools += column_zones(0.3, fl0 - 1, fl1 + 1)                      # v0.12: the housing's corner columns pass
     fl_tools.append(box(P.COLLAR_OUT_X + P.COLLAR_FIT - 0.5, P.DUCT_X1 + P.DUCT_WALL - 0.3, P.SPK_Y[0] - 0.2,
                         P.SPK_Y[1] + 0.2, fl0 - 1, fl1 + 1))                              # speaker/duct passage
     mx, my = P.MIC_PORT
@@ -617,7 +674,7 @@ def chassis(v, build="pcb"):
         # support blade from the flange back to the tray's ear (with 2 pins on top) — both print with the flange part
         add.append(cyl(mpx, mpy, mbore / 2 + mwall, P.PLATE_T + P.KIT_MIC_FOAM_FRONT[1], P.HUB_PCB_D0 - P.KIT_MIC_FOAM[1]))
         bx0, bx1, by0, by1 = P.RADAR_BLADE
-        c0r = P.KIT_CARRIER_D[0]
+        c0r = cage_d()[1]                                         # v0.12: up to the radar cage's ear (hub plane)
         add.append(box(bx0, bx1, by0, by1, P.WALL_D - EPS, c0r))
         pd_, pl_, _ = P.RADAR_PIN
         for (px_, py_) in P.RADAR_PINS:
@@ -774,17 +831,6 @@ def ref_bodies(v, build="pcb"):
     fb = P.SPK_BACK_FOAM
     refs["speaker back foam"] = box(P.SPK_X0 - fb[1], P.SPK_X0, P.SPK_Y[0] + 2, P.SPK_Y[1] - 2, P.SPK_D0 + 2,
                                     P.SPK_D0 + R.SPK_W - 2)                          # drawn compressed
-    fl0 = P.WALL_D - P.FLANGE_T
-    lx0, lx1, lhy, lpt = P.LOAD_PLATE
-    for sx in (-1, 1):
-        cx = sx * P.BOX_SCREW_PITCH / 2
-        lab = "L" if sx < 0 else "R"
-        refs[f"load plate {lab}"] = box(cx + sx * lx0, cx + sx * lx1, -lhy, lhy, fl0, fl0 + lpt).cut(
-            cyl(cx, 0, 1.7, fl0 - 1, fl0 + 1))
-        head0 = fl0 - P.SCREW_HEAD_H
-        refs[f"box screw {lab}"] = fuse([
-            cyl(cx, 0, P.SCREW_HEAD_D / 2, head0, fl0),
-            cyl(cx, 0, P.SCREW_D / 2, fl0 - EPS, fl0 + P.SCREW_L)])
     return refs
 
 
