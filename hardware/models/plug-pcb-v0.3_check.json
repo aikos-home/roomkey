@@ -18,9 +18,9 @@
   "wire 5V ↔ cable loop": 0.8,
   "wire GND ↔ cable loop": 0.8,
   "USB plug ↔ radar tray": 1.15,
-  "USB plug ↔ hub": 7.623,
+  "USB plug ↔ hub": 3.454,
   "USB plug ↔ LD2410C header": 12.38,
-  "charger ↔ hub": 11.715,
+  "charger ↔ hub": 10.415,
   "charger ↔ LD2410C header": 0.186,
   "wire 5V ↔ radar tray": 5.303,
   "wire GND ↔ LD2410C header": 10.4,
@@ -49,7 +49,7 @@
   "glass → back face": 61.71,
   "frame rim → back face": 54.71,
   "glass → wall (Jung AS 500 socket)": 72.31,
-  "mass g": 182,
+  "mass g": 183,
   "centre of mass in front of the socket face": 22.2,
   "moment on the socket N·m": 0.04,
   "moment limit N·m": 0.25
@@ -82,8 +82,8 @@
   ],
   [
    "switch plate",
-   1.5,
-   16.1
+   1.8,
+   16.3
   ],
   [
    "collar",
@@ -113,7 +113,7 @@
   [
    "hub",
    7.0,
-   23.4
+   23.2
   ],
   [
    "speaker 2030",

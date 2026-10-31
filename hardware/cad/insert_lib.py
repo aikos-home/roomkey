@@ -244,9 +244,41 @@ def switch_plate(build="pcb"):
                      P.CABLE_Y + P.CABLE_SLOT[1] / 2 + 0.1, s["plate_front"] - EPS, s["plate_back"] + EPS))
     for (x, y) in P.SWP_SCREWS:
         tools.append(csk_front(x, y, s["plate_front"], s["plate_back"], P.M2_CSK_D + 0.2, 2.2))
-    for (x, y) in P.LED_POS:          # v0.6: corner notches for the glow LEDs (WS2812B-MINI 3535 is 2.0 tall + joints/carrier)
-        h = P.LED_W / 2 + 0.4
-        tools.append(box(x - h, x + h, y - h, y + h, s["plate_front"] - 1, s["plate_back"] + 1))
+    # v0.11 LED holder (owner 2026-10-31): an ear at each corner, flush with the plate, carrying the LED seat; a wire hole
+    # to the back; a channel on the back along each side (see LED_* in insert_params)
+    ears, back = [], []
+    e0, e1, f0, f1 = P.LED_EAR
+    lw = P.LED_W / 2 + P.LED_SEAT_FIT
+    sl_w, sl_r = P.LED_LEG_SLOT
+    seat = s["plate_front"] + P.LED_SEAT_DEPTH
+    for (x, y) in P.LED_POS:
+        sx, sy = (1 if x > 0 else -1), (1 if y > 0 else -1)
+        xs, ys = sorted((sx * e0, sx * e1)), sorted((sy * f0, sy * f1))
+        ears.append(box(xs[0], xs[1], ys[0], ys[1], s["plate_front"], s["plate_back"]).common(
+            cyl(0, 0, P.LED_EAR_R, s["plate_front"] - 1, s["plate_back"] + 1)))
+        tools.append(box(x - lw, x + lw, y - lw, y + lw, s["plate_front"] - 1, seat))                  # the seat
+        for side in (-1, 1):                                                                       # leg slots
+            xa, xb = sorted((x + side * (P.LED_W / 2), x + side * (P.LED_W / 2 + sl_r)))
+            tools.append(box(xa, xb, y - sl_w, y + sl_w, s["plate_front"] - 1, seat))
+        xa, xb = sorted((x - sx * (P.LED_W / 2 + sl_r), x + sx * (P.LED_W / 2 + sl_r)))            # cross channel on the
+        ya, yb = sorted((y - sy * sl_w, sy * (f0 - 0.1)))          # inner y end, joined to both slots, open past the ear
+                                                                    # edge (stopping short left a 0.02–0.14 film)
+        tools.append(box(xa, xb, ya, yb, s["plate_front"] - 1, seat))
+        rx0, rx1 = sorted((sx * 13.25, sx * 16.0))       # outer corner, where the r 28.4 trim leaves walls < 0.8:
+        tools.append(box(rx0, rx1, *sorted((y + sy * (sl_w - 0.05), sy * 26.0)), s["plate_front"] - 1, seat))   # → seat level
+        hx, hy, hd = P.LED_HOLE                                                                     # inner slot → hole
+        ha, hb = sorted((sx * hx, x - sx * (P.LED_W / 2)))
+        tools.append(box(ha - 0.5, hb + 0.5, *sorted((sy * hy, y)), s["plate_front"] - 1, seat))
+        tools.append(cyl(sx * hx, sy * hy, hd / 2, s["plate_front"] - 1, s["plate_back"] + 1))
+    c0, c1, cw, ch_, cy1 = P.LED_CHANNEL
+    g0, g1 = P.LED_CHANNEL_GAP
+    for sx in (-1, 1):
+        for (ya, yb) in ((-cy1, g0), (g1, cy1)):
+            for (xa, xb) in ((c0, c0 + cw), (c1 - cw, c1)):
+                back.append(box(*sorted((sx * xa, sx * xb)), ya, yb, s["plate_back"] - EPS, s["plate_back"] + ch_))
+    plate = fuse([plate] + ears + back)
+    tools.append(box(10.0, 12.0, -3.75, 0.25, s["plate_back"] + 0.01, s["plate_back"] + 3.0))   # hub rev C: J1's pin tails
+    #   (up to 2 mm out of the hub's front at (11.0, −2.75 / −0.75)) — the channel wall stops there
     if build == "discrete":     # v0.10: the cable-loop anchor (posts + bar) stands on the switch plate's back
         ax0, ax1, ay0, ay1, ad0, ad1 = P.ANCHOR
         anchor = [cyl(x, y, 1.2, s["plate_back"] - EPS, ad1) for (x, y) in P.ANCHOR_POSTS] + [box(ax0, ax1, ay0, ay1, ad0, ad1)]
@@ -645,7 +677,7 @@ def chassis(v, build="pcb"):
         for sy in (-1, 1):
             xx0, xx1 = sorted((sx * ax0, sx * (P.COLLAR_OUT_X + 1.0)))
             yy0, yy1 = sorted((sy * ay0, sy * (P.COLLAR_OUT_Y + 1.0)))
-            tools.append(box(xx0, xx1, yy0, yy1, P.COLLAR_D1 - EPS, P.LED_D0 + P.LED_T + P.LED_CARRIER_T + 0.35))
+            tools.append(box(xx0, xx1, yy0, yy1, P.COLLAR_D1 - EPS, P.KS["plate_back"]))   # v0.11: the LED ears pass
     for (x, y) in P.SWP_SCREWS:
         tools.append(cyl(x, y, 0.85, ledge0 - 1, ledge0 + P.SWP_BOSS_H - 0.8))
     # bottom tongues: slot inboard of each tongue (through deck + rib, round root end) and a lead-in on the front-outer edge
@@ -695,10 +727,12 @@ def ref_bodies(v, build="pcb"):
             box(x - R.MX_STEM_ARM_W / 2, x + R.MX_STEM_ARM_W / 2, y - R.MX_STEM_ARM_L / 2, y + R.MX_STEM_ARM_L / 2,
                 s["stem_top"], s["mx_top"] - 0.1))
     # v0.11: no mic carrier on the plate (the mic is on the hub PCB; a sound tube in the chassis)
-    for i, (x, y) in enumerate(P.LED_POS):
-        refs[f"LED {i+1}"] = fuse([box(x - P.LED_W / 2, x + P.LED_W / 2, y - P.LED_W / 2, y + P.LED_W / 2, P.LED_D0, P.LED_D0 + P.LED_T),
-                                   box(x - P.LED_W / 2, x + P.LED_W / 2, y - P.LED_W / 2, y + P.LED_W / 2,
-                                       P.LED_D0 + P.LED_T - EPS, P.LED_D0 + P.LED_T + P.LED_CARRIER_T)])
+    t_led, b_led = P.led_seat_d()
+    for i, (x, y) in enumerate(P.LED_POS):              # v0.11: the LED in its seat in the switch plate + its 4 joints
+        h = P.LED_W / 2
+        joints = [box(x + sd * h - (0.5 if sd < 0 else 0), x + sd * h + (0.5 if sd > 0 else 0), y + py - 0.3, y + py + 0.3,
+                      b_led - 1.0, b_led - EPS) for sd in (-1, 1) for py in (-0.875, 0.875)]
+        refs[f"LED {i+1}"] = fuse([box(x - h, x + h, y - h, y + h, t_led, b_led)] + joints)
     tip, front, back, cback = P.sw_depths()
     for (x, y) in P.SW_POS:
         nm = ("T" if y > 0 else "B") + ("L" if x < 0 else "R")

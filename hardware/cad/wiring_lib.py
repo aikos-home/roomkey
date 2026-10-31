@@ -71,11 +71,11 @@ def targets():
     # SHT31-D in the frame's bottom border (pins on its back)
     for nm, pt in K.D.rh_pins().items():
         t[f"RH {nm}"] = pt
-    # glow LEDs (WS2812B-MINI 3535) in the rear-wall windows at the collar corners; pads on their back
-    d_led = P.LED_D0 + P.LED_T
-    for nm, (x, y) in LED_NAMES.items():
-        for pin, (ox, oy) in {"DIN": (-0.9, 0.0), "DOUT": (0.9, 0.0), "5V": (0.0, 0.9), "GND": (0.0, -0.9)}.items():
-            t[f"LED {nm} {pin}"] = (x + ox, y + oy, d_led)
+    # glow LEDs in the switch plate's LED holder (v0.11): the joints on their legs, as in the PCB build
+    import wiring_pcb as WP
+    for nm in LED_NAMES:
+        for pin in ("DIN", "DOUT", "5V", "GND"):
+            t[f"LED {nm} {pin}"] = WP.led_joint(nm, pin)
     return t
 
 
@@ -162,11 +162,12 @@ def route(no, a, b):
             lane = {"VIN": -0.6, "GND": -0.2, "SCL": 0.2, "SDA": 0.6}[b.split()[1]]
             pts += [(xs, P.LOOP_Y[0] + 1.0, 27.0), (xs, P.LOOP_Y[0] + 2.0, 33.0), (xs, P.CABLE_Y - 1.0, 35.5),
                     (hx + lane, hy, 35.5), (hx + lane, hy, 7.35), (hx + lane, ty, 7.35), (tx, ty, td)]
-        elif b.startswith("LED"):                   # through the U-loop, round to the first LED's corner, forward to it
+        elif b.startswith("LED"):                   # through the U-loop, round to the first LED's corner, in from outside
+            import wiring_pcb as WP
             _, nm, pin = b.split()
-            ex, ey = _led_exit(nm, pin)
+            tail = WP.led_to_exit(nm, pin, "side")[::-1]
             pts += [(xs, P.LOOP_Y[0] + 1.0, 27.0), (xs, P.LOOP_Y[0] + 2.0, 33.0), (xs, P.CABLE_Y - 1.0, 35.5),
-                    (ex, P.CABLE_Y - 1.0, LED_RING_D), (ex, ey, LED_RING_D), (ex, ey, td + 0.6), (tx, ty, td)]
+                    (15.9, P.CABLE_Y - 1.0, LED_RING_D), (15.9, tail[0][1], LED_RING_D)] + tail
         elif b.startswith("MX"):                    # in front of the carrier, behind the MX bodies (d 20.3)
             wx = tx + (2.0 if tx >= 0 else -2.0)     # detour clear of the MX centre post (Ø4 below the housing)
             pts += [(xs, P.CABLE_Y, 22.0), (wx, (P.CABLE_Y + ty) / 2, 22.0), (tx, ty, 22.0), (tx, ty, td)]
@@ -177,6 +178,17 @@ def route(no, a, b):
                     (tx, ty, max(35.5, td + 1.5)), (tx, ty, td)]
     else:
         p0, p1 = t[a], t[b]
+        if a.startswith("LED") and b.startswith("LED"):     # v0.11 LED holder: the same hops as the PCB build
+            import wiring_pcb as WP
+            _, na, pa_ = a.split()
+            _, nb_, _ = b.split()
+            return WP.led_hop_route(na, nb_, "DATA" if pa_ == "DOUT" else pa_)
+        if b.startswith("LED"):                               # splice → first LED: round its ear, in from outside
+            import wiring_pcb as WP
+            _, nb, pb = b.split()
+            tail = WP.led_to_exit(nb, pb, "side")[::-1]
+            dd = max(p0[2], 30.0)
+            return [p0, (p0[0], p0[1], dd), (15.9, p0[1], dd), (15.9, tail[0][1], dd)] + tail
         if b.startswith("LED"):                               # LED chain / bus: back from the corner, round, forward
             _, nb, pb = b.split()
             e1 = _led_exit(nb, pb)

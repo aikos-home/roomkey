@@ -385,6 +385,28 @@ LED_W, LED_T, LED_CARRIER_T = 3.5, 2.0, 0.8    # [DS] owner ordered 50 × WS2812
                                                 #      2.0 (vendor; the SK6812 MINI was 1.45) / [FREE] carrier (v1; the kit
                                                 #      prototype solders wires straight to the pads, ≈ 0.4)
 LED_D0 = COLLAR_D1 + 0.1
+# v0.11 LED holder IN THE SWITCH PLATE (owner 2026-10-31: "In der Schalterplatte", "Erst löten, dann einkleben"; the
+# corner boards were dropped 12.10.). The plate gets an ear at each corner (flush with it, so it still prints front face
+# down without supports); the LED sits face forward in a 0.5 seat, its J-leads on the two x sides with the wire joints
+# (0.5) in slots; wires go back through a hole and run in a channel on the plate's back along each side.
+LED_SEAT_DEPTH = 0.5       # [FREE] seat depth in the plate front: LED bottom d 15.8, top d 13.8 (1.3 behind the collar)
+LED_SEAT_FIT = 0.10        # [FIT] per side on the body (0.2 nozzle, as KEY_POCKET_FIT)
+LED_LEG_SLOT = (1.45, 1.2)   # [FREE] leg-side slot: half-width along y (both legs ±0.875 + joint), reach beyond the body
+LED_EAR = (9.1, 15.4, 19.8, 25.2)   # [FREE] |x0|, |x1|, |y0|, |y1| of each corner ear: MX top housing (|x| 7.8) and the
+                                   #        pressed key's stop bosses (y ≤ 19.7) inside, the corner window outside
+LED_EAR_R = 28.4           # [FREE] ears trimmed to this radius (box Ø58 − margin)
+LED_HOLE = (9.7, 20.3, 2.0)   # [FREE] |x|, |y|, Ø of the wire hole to the back: inside the ledge's inner edge (r 6.15
+                              #        about the well corner's centre), clear of the hub posts at (±13.2, 20)
+LED_CHANNEL = (8.4, 11.4, 0.6, 1.6, 17.6)   # [FREE] back channel along each side: |x0|, |x1|, wall, height, |y| end
+                                            #        (stops before the posts at (±13.2, 20); MX bottom housing |x| ≤ 7.0)
+LED_CHANNEL_GAP = (-10.6, -5.2)   # [FREE] no channel beside the switch-plate post (±10.5, −7.9): the wires pass it on its
+                                  #        inner side (MX ≤ 7.0, post ≥ 8.5 pcb / 9.3 discrete)
+
+
+def led_seat_d():
+    """(top, bottom) depth of the LED in its seat."""
+    floor = KS["plate_front"] + LED_SEAT_DEPTH
+    return floor - LED_T, floor
 
 SPK_X0 = COLLAR_OUT_X + 0.55    # [FREE] speaker on its edge right of the collar, grille faces +x into the duct
 SPK_Y = (-15.0, 15.0)           # [FREE]
@@ -796,8 +818,8 @@ def layout(v):
     E.append(B("plate", -HALF, HALF, -HALF, HALF, 0.0, SNAP_D1, role="part", move="plate"))
     # v0.11: no mic carrier on the plate — the mic sits on the hub PCB, a sound tube leads from the plate hole to it
     for i, (x, y) in enumerate(LED_POS):
-        E.append(B(f"LED {i+1}", x - LED_W / 2, x + LED_W / 2, y - LED_W / 2, y + LED_W / 2, LED_D0,
-                   LED_D0 + LED_T + LED_CARRIER_T, note="SK6812 MINI on the collar's collector pad"))
+        E.append(B(f"LED {i+1}", x - LED_W / 2, x + LED_W / 2, y - LED_W / 2, y + LED_W / 2, led_seat_d()[0],
+                   led_seat_d()[1], note="WS2812B-MINI 3535 in its seat in the switch plate (v0.11)"))
     tip, front, back, cback = sw_depths()
     for (x, y) in SW_POS:
         nm = "switch " + ("T" if y > 0 else "B") + ("L" if x < 0 else "R")

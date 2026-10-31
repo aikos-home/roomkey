@@ -56,16 +56,87 @@ def header_pin(name):
     return -R.TB_HEADER_PITCH_X / 2, y0 - 2.54 * EVEN.index(name)
 
 
-LED_NAMES = {"BR": P.LED_POS[3], "BL": P.LED_POS[2], "TL": P.LED_POS[0], "TR": P.LED_POS[1]}   # chain order (v0.11:
-# BR → BL → TL → TR, clockwise from the front; the speaker side has no room for a hop: its hooks bridge x 20.3–24.9)
-LED_PAD = {"DIN": (-0.9, 0.0), "DOUT": (0.9, 0.0), "5V": (0.0, 0.9), "GND": (0.0, -0.9)}    # pads on the LED's back
-LED_BACK = P.LED_D0 + P.LED_T                                                           # 14.6
+CORNER = {"TL": 0, "TR": 1, "BL": 2, "BR": 3}      # corner → index in P.LED_POS
+LED_CHAIN = ("BR", "TR", "TL", "BL")            # the firmware order, both builds
+LED_IN_SIDE = {"BR": "outer", "TR": "inner", "TL": "outer", "BL": "inner"}
+# v0.11 LED holder: each LED's legs are on its two x sides — VDD + DOUT on one, DIN + VSS on the other. The DIN/VSS side
+# faces where the chain comes in (J8 / the previous LED), so DIN and DOUT need no detour; one power wire per LED crosses
+# to the other side in the cross channel at the seat's inner y end.
+SLOT_D = P.KS["plate_front"] + 0.15             # wire level in the seat recess (d 15.3–15.8; wire Ø0.6 stands 0.15 proud)
+OVER_D = P.KS["plate_front"] - 0.4              # wire level over the ear's front face
+LED_LANE_D = {"DATA": 17.15, "5V": 17.75, "GND": 18.35}   # in the back channel (plate back 16.8, walls to 18.4)
 
 
-def led_pad(name, pin):
-    x, y = LED_NAMES[name]
-    ox, oy = LED_PAD[pin]
-    return (x + ox, y + oy, LED_BACK)
+def _led_xy(c):
+    x, y = P.LED_POS[CORNER[c]]
+    return x, y, (1 if x > 0 else -1), (1 if y > 0 else -1)
+
+
+def led_joint(c, pin):
+    """the wire joint on an LED leg (pin DIN / DOUT / 5V / GND), in its leg slot."""
+    x, y, sx, _ = _led_xy(c)
+    bside = LED_IN_SIDE[c]
+    side = bside if pin in ("DIN", "GND") else ("inner" if bside == "outer" else "outer")
+    dx = (P.LED_W / 2 + 0.25) * (sx if side == "outer" else -sx)
+    return (x + dx, y + (0.875 if pin in ("DIN", "5V") else -0.875), P.KS["plate_front"])
+
+
+def led_pad(c, pin):
+    return led_joint(c, pin)
+
+
+def led_to_exit(c, pin, exit_):
+    """joint → its exit: "inner" (the wire hole, then the back channel), "top" (over the ear to the top lane outside the
+    collar wall) or "side" (out of the outer slot, for the feed from J8)."""
+    x, y, sx, sy = _led_xy(c)
+    j = led_joint(c, pin)
+    pts = [j, (j[0], j[1], SLOT_D)]
+    side = "outer" if (j[0] - x) * sx > 0 else "inner"
+    want = "inner" if exit_ == "inner" else "outer"
+    if side != want:                                       # round the seat's inner y end
+        yc = y - sy * (P.LED_W / 2 + P.LED_SEAT_FIT + 0.4)
+        xo = x + (P.LED_W / 2 + 0.25) * (sx if want == "outer" else -sx)
+        pts += [(j[0], yc, SLOT_D), (xo, yc, SLOT_D), (xo, j[1], SLOT_D)]
+    if exit_ == "inner":
+        hx, hy, _ = P.LED_HOLE
+        pts += [(sx * hx, sy * hy, SLOT_D)]
+    elif exit_ == "top":
+        xo, yo = pts[-1][0], pts[-1][1]
+        pts += [(xo, yo, OVER_D), (xo + sx * 0.1, y + sy * (P.LED_W / 2 + 0.4), OVER_D), (sx * 12.6, sy * 25.6, OVER_D)]
+    else:
+        pts += [(sx * 15.9, pts[-1][1], SLOT_D)]
+    return pts
+
+
+def _side_lane(sx, y_from, y_to, dd):
+    """the back channel along one side, past the switch-plate post (±10.5, −7.9) on its inner side."""
+    hx = P.LED_HOLE[0]
+    lane = [(hx, -17.0), (hx, -10.3), (7.75, -10.0), (7.75, -5.8), (hx, -5.5), (hx, 17.0)]   # jog inside the channel gap
+    if y_from > y_to:
+        lane = lane[::-1]
+    return [(sx * x, y, dd) for (x, y) in lane]
+
+
+def led_feed_route(pin):
+    """J8 (3 holes beside the bottom-right LED; wire in from the hub's front, soldered on its back) → round the ear's
+    outer edge → the outer leg slot → the joint."""
+    jx, jy = J8[pin]
+    t = led_to_exit("BR", {"DATA": "DIN", "5V": "5V", "GND": "GND"}[pin], "side")[::-1]
+    return [(jx, jy, HUB_BACK + 0.5), (jx, jy, 19.5), (15.9, jy, 18.5), (15.9, t[0][1], SLOT_D)] + t
+
+
+def led_hop_route(a, b, pin):
+    """LED a → LED b (DOUT → DIN, 5V → 5V, GND → GND). Right and left: through the wire holes and along the back
+    channel. Top (TR → TL): over the ears and outside the collar wall."""
+    pa_, pb_ = ("DOUT", "DIN") if pin == "DATA" else (pin, pin)
+    dd = LED_LANE_D[pin]
+    if a[0] == "T" and b[0] == "T":
+        ta, tb = led_to_exit(a, pa_, "top"), led_to_exit(b, pb_, "top")
+        return ta + [(ta[-1][0], ta[-1][1], dd), (tb[-1][0], tb[-1][1], dd)] + tb[::-1]
+    ta, tb = led_to_exit(a, pa_, "inner"), led_to_exit(b, pb_, "inner")
+    sx = 1 if ta[-1][0] > 0 else -1
+    return (ta + [(ta[-1][0], ta[-1][1], dd)] + _side_lane(sx, ta[-1][1], tb[-1][1], dd) +
+            [(tb[-1][0], tb[-1][1], dd)] + tb[::-1])
 
 
 def radar_pin(nm):
@@ -91,42 +162,6 @@ def key_route(no):
             (hx, hy - 0.6, 27.6), (hx, hy, 25.5), (hx, hy, HUB_BACK)]
     return [(x, y, PIN_TIP_D), (x, y, PIN_TIP_D + 1.5), (sx * 8.4, P.CABLE_Y, 11.0), (lane, P.CABLE_Y, 14.0),
             (lane, P.CABLE_Y, 18.5), (lane, P.CABLE_Y, 22.5)] + loop
-
-
-def led_feed_route(pin):
-    """J8 (front side of the hub) → out past the collar wall → the BR LED's pad."""
-    hole = {"DATA": "DIN", "5V": "5V", "GND": "GND"}[pin]
-    jx, jy = J8[pin]
-    off = {"DATA": -0.7, "5V": 0.0, "GND": 0.7}[pin]
-    px, py, pd = led_pad("BR", hole)
-    return [(jx, jy, HUB_BACK + 0.5), (jx, jy, 19.6), (15.9 + off * 0.3, -23.4 + off, 19.0),
-            (15.9 + off * 0.3, -23.4 + off, 15.2), (px, py, pd + 0.6), (px, py, pd)]
-
-
-LED_LANE_D = {"DATA": 18.0, "5V": 18.7, "GND": 19.4}   # [FREE] the hop wires lie outside the collar wall in front of
-                                                       # the hub (hub front d 20.3; the collar-wall ring ends at d 17.8)
-LED_EXIT = (14.6, 24.0)       # [FREE] |x|, |y| just outside the collar wall at a corner (window side), r 28.1
-LED_LANES = {"bottom": [(13.0, -25.2), (-13.0, -25.2)],                # below the collar wall, r ≤ 28.3
-             "left": [(-22.4, -12.0), (-22.4, 3.0), (-25.0, 5.5), (-25.0, 12.5)],   # inside the box's side dome and the
-                                                                        # radar blade, then outside the mic tube
-             "top": [(-13.0, 25.2), (13.0, 25.2)]}                      # above the collar wall
-
-
-def led_exit(name):
-    x, y = LED_NAMES[name]
-    return (math.copysign(LED_EXIT[0], x), math.copysign(LED_EXIT[1], y))
-
-
-def led_hop_route(a, b, pin):
-    """LED a → LED b (DOUT → DIN, 5V → 5V, GND → GND): out of the corner window, round the collar wall, into the next."""
-    pa = led_pad(a, "DOUT" if pin == "DATA" else pin)
-    pb = led_pad(b, "DIN" if pin == "DATA" else pin)
-    dd = LED_LANE_D[pin]
-    ea, eb = led_exit(a), led_exit(b)
-    lane = {("BR", "BL"): "bottom", ("BL", "TL"): "left", ("TL", "TR"): "top"}[(a, b)]
-    mid = [(x, y, dd) for (x, y) in LED_LANES[lane]]
-    return ([pa, (pa[0], pa[1], pa[2] + 0.6), (ea[0], ea[1], 15.2), (ea[0], ea[1], dd)] + mid +
-            [(eb[0], eb[1], dd), (eb[0], eb[1], 15.2), (pb[0], pb[1], pb[2] + 0.6), pb])
 
 
 def radar_route(nm):
@@ -181,7 +216,7 @@ def wires():
         w.append((n, f"Hub J8 {pin}", "LED unten rechts", sig, col, rgb, lambda pin=pin: led_feed_route(pin), WIRE_D,
                   ("hub", "LED 4")))
         n += 1
-    for a, b, la, lb in (("BR", "BL", "LED 4", "LED 3"), ("BL", "TL", "LED 3", "LED 1"), ("TL", "TR", "LED 1", "LED 2")):
+    for a, b, la, lb in (("BR", "TR", "LED 4", "LED 2"), ("TR", "TL", "LED 2", "LED 1"), ("TL", "BL", "LED 1", "LED 3")):
         for pin, sig, col, rgb in (("DATA", "LED-Daten", "gelb-grün", (0.6, 0.85, 0.1)), ("5V", "5 V LEDs", "rot", (0.85, 0.1, 0.1)),
                                    ("GND", "GND LEDs", "schwarz", (0.05, 0.05, 0.05))):
             w.append((n, f"LED {a}", f"LED {b}", sig, col, rgb, lambda a=a, b=b, pin=pin: led_hop_route(a, b, pin), WIRE_D,
