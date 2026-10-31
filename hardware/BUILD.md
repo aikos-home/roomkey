@@ -86,3 +86,8 @@ for f in make_key_module make_front make_kit make_plug; do
 Each run prints its checks: 0 collisions, the key "CAPTIVE", the wiring with 0 hits (PCB build), G2's way in "free".
 `python3 hardware/cad/insert_params.py` must show 0 errors, `tools/insert_wallcheck.py` reports the thinnest walls.
 `python tools/bambu_kit.py pcb|discrete` rebuilds the Bambu files of the kit (Windows, Bambu Studio installed).
+
+The PCB build reads the hub PCB as a KiCad STEP (`pcb/roomkey-hub/output/roomkey-hub.step`). That file comes with
+hub PCB rev D and is not in this repository yet. Until then, `ROOMKEY_BUILD=discrete` runs `make_kit` for the
+self-wired build without it; `make_plug` builds both and needs `ROOMKEY_HUB_STEP` pointing at a hub STEP. The print
+files in `models/` and `print/` are complete either way.
