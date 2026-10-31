@@ -159,25 +159,6 @@ def kit_refs_discrete():
     return refs
 
 
-def tray_webs(bc):
-    """thinnest material between the tray's outline and each opening (window, pin holes), in a section through its
-    plate — what the slicer sees. Below ~0.8 (2 lines of a 0.4 nozzle) the slicer drops the web."""
-    import Part
-    c0, c1 = P.KIT_CARRIER_D
-    wires = bc.slice(V(0, 0, 1), -(c0 + c1) / 2)
-    outer = max(wires, key=lambda w: abs(Part.Face(w).Area))
-    inner = [w for w in wires if w is not outer]
-    webs = {}
-    for w in inner:
-        c = w.BoundBox.Center
-        nm = "window" if w.BoundBox.XLength > 5 else f"hole ({c.x:+.1f}, {c.y:+.1f})"
-        webs[nm + " ↔ edge"] = round(w.distToShape(outer)[0], 2)
-        others = [w2 for w2 in inner if w2 is not w]
-        if others:
-            webs[nm + " ↔ next opening"] = round(min(w.distToShape(w2)[0] for w2 in others), 2)
-    return webs
-
-
 HUB_MX_HOLES = ((5.08, 15.0, 1.75), (2.54, 20.08, 3.0), (0.0, 15.0, 4.0), (-3.81, 17.54, 3.0), (-5.08, 15.0, 1.75),
                 (-5.08, -13.0, 1.75), (-2.54, -18.08, 3.0), (0.0, -13.0, 4.0), (3.81, -15.54, 3.0), (5.08, -13.0, 1.75))
 # [KiCad] the hub's SW1/SW2 (Kailh hot-swap) holes (x, y, drill): kept open through the socket blocks of the dummy, so

@@ -176,9 +176,9 @@ first hardware run showed 140 ms frames.
 2. Speaker, amp and touch board on the bench as they arrive.
 3. Wi-Fi + Home Assistant on the real device.
 4. Intercom with Klingelbox: a minimal SIP client is the likely path (see the handoff doc).
-5. The wall: the insert itself is safety extra-low voltage only (12 V); mains parts (supply, impulse relay)
-   sit in certified devices elsewhere, placed by an electrician. Draft and open questions:
-   [hardware/docs/insert-design.md](hardware/docs/insert-design.md).
+5. The housing: RoomKey is built as a plug-in device only (decided 31.10.): a 64 × 64 housing on a SCHUKO
+   socket, 5 V safety extra-low voltage from an unmodified, certified USB charger inside it; no mains wiring.
+   Draft and open questions: [hardware/docs/plug-in-housing.md](hardware/docs/plug-in-housing.md).
 6. Later (decided 30.09.): voice identification, so the family members are told apart even when they
    don't say their name. Local speaker embeddings on the transcriber host, enrolled with ~1 min of speech
    per person through the key's mic. Display only, never for opening doors or disarming. Needs everyone's

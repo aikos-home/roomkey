@@ -196,18 +196,15 @@ def rh_route(nm):
 
 
 def supply_route(pin):
-    """v0.12: 2 × 0.5 mm² from the slim USB-A plug's solder cups (plug_cups) down below the plug body, across to J1
-    (side-entry, the lead comes in from below) and up into it. 5 V (left cup) runs one wire lower, to J1's right pin: the
-    two never cross."""
+    """v0.12: 2 × AWG 24 from the slim USB-A plug's solder cups (plug_cups; they face the room) forward to just behind the
+    hub, then along the lane the hub keeps free of parts (y −6 … −0.5) into J1's mouth on its −x side (side-entry PH, rev
+    D; 5 V on the upper pin). The left cup (5 V) rises to the upper level, the right one (GND) stays low: they never cross."""
     dp = P.plug_depths("pcb")
     cx, cy = P.plug_cups()[pin]
-    _, py = P.plug_port()
-    jx, jy, jw, jh, jt = P.PLUG_J1
-    xj = jx + (1.0 if pin == "5V" else -1.0)
-    lvl = py - P.PLUG_USB[3] / 2 - P.PLUG_WIRE / 2 - 0.3 - (P.PLUG_WIRE + 0.3 if pin == "5V" else 0.0)
-    dz = dp["usb0"] + P.PLUG_WIRE / 2 + 0.1
-    je = HUB_BACK + jt / 2
-    return [(cx, cy, dp["usb0"] + 1.0), (cx, lvl, dz), (xj, lvl, dz), (xj, lvl, je), (xj, jy - jh / 2 + 1.0, je)]
+    jx, jy, jl, jw, jt, _ = P.PLUG_J1
+    yp = jy + (1.0 if pin == "5V" else -1.0)
+    de = HUB_BACK + jt / 2
+    return [(cx, cy, dp["usb0"] + 1.0), (cx, cy, de + 0.8), (cx + 1.5, yp, de), (jx - jl / 2 + 1.0, yp, de)]
 
 
 # (no, label from, label to, signal, colour, rgb, route builder, diameter, exempt bodies)

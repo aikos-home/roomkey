@@ -91,9 +91,10 @@ def skin_holes():
 
 def skin():
     """G1 SKIN (resin; PETG for a first fit, printed front down): the front border round the plate (1.0 proud of it, a
-    45° edge outside) and the 4 side walls back to the housing's back face. Cast in one open mould: nothing hangs from
-    the border's underside, the inner faces open by the draft towards the back, the back edge is the free casting face,
-    no inserts."""
+    45° edge outside) and the 4 side walls back to the housing's back face. Cast in an open cup + a loose core pulled out
+    to the back (resin thread, mould roomkey-form-gehaeuse-v1; one mould for both builds: the PCB skin is the self-wired
+    one poured to 47.4): nothing hangs from the border's underside, the inner faces open by the draft towards the back,
+    the back edge is the free casting face, no inserts."""
     t, w, a = P.PLUG_SKIN
     f0, f1, b = P.PLUG_FRONT_D, P.PLUG_FRONT_D + t, DP["back"]
     e = P.PLUG_EDGE
@@ -244,9 +245,11 @@ def usb_plug():
 
 
 def j1_ref():
-    """PCB build: hub J1 as asked of rev D — a side-entry JST PH with its plug, the lead coming in from below."""
-    jx, jy, jw, jh, jt = P.PLUG_J1
-    return box(jx - jw / 2, jx + jw / 2, jy - jh / 2, jy + jh / 2, W.HUB_BACK, W.HUB_BACK + jt)
+    """PCB build: hub J1 of rev D — a side-entry JST PH, its mouth towards −x (the lead comes along the lane), and its pins'
+    tails on the hub's front (≤ 1.0)."""
+    jx, jy, jl, jw, jt, px = P.PLUG_J1
+    tails = [box(px - 0.4, px + 0.4, y - 0.4, y + 0.4, P.HUB_PCB_D0 - 1.0, P.HUB_PCB_D0) for y in (-1.5, -3.5)]
+    return fuse([box(jx - jl / 2, jx + jl / 2, jy - jw / 2, jy + jw / 2, W.HUB_BACK, W.HUB_BACK + jt)] + tails)
 
 
 def socket_ref():

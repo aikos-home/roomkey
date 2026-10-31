@@ -1,54 +1,20 @@
-"""RoomKey wall insert v0.8 (DRAFT / WIP, AI-assisted, not certified) — every dimension of the in-wall part, both variants.
+"""RoomKey front stack + plug-in housing (WIP, AI-assisted, not certified) — every dimension of the RoomKey.
 
-    python3 hardware/cad/insert_params.py          # validate L and S
-    python3 hardware/cad/insert_params.py L        # one variant
+    python3 hardware/cad/insert_params.py          # validate
     python3 hardware/cad/insert_params.py --tbd    # every [TBD] value and what to measure
 
-v0.2 (after review round 1): SELV-only insert; floating plate on 4 tactile switches; light-guide collar; mic carrier;
-    cable U-loop; horizontal hub; installation topologies T1–T4 / S1–S3.
-v0.3 (after review round 2, see hardware/reviews/insert-v0-review-log.md):
-  * No foam gaskets: the mic carrier is bonded to the plate (moves with it); the speaker path is sealed at the speaker
-    (face gasket + plenum floor), the plate–deck gap is part of the front volume. Three small soft pads preload the plate.
-  * Glow ring = a translucent rim of the plate around the key opening (co-printed, natural PETG), lit from the collar
-    behind it → visible from every angle. LEDs centred on the collar's thick (2.6) corners.
-  * Nub-gap chain from the flange datum (carrier rests on the flange), explicit tolerance list, per-switch shims.
-  * Key: the MX stems are the guide; the key skirt is on the long sides only (free pitch for edge presses), the collar
-    limits roll.
-  * Frame rims on all four sides; stainless load plates under the box screws; speaker snap hooks; island ribs.
-  * Topologies: switch-box inventory first, TN-C precondition, core table, "new cable" outcome, T4 needs its own 12 V,
-    power-limited SELV source, labelling, ES75/Kaiser facts corrected.
-  * validate(): INFO lines for assumptions (never counted as OK), fit-critical [TBD] rules are hard.
-v0.4 (after review round 3):
-  * Plate switches: SMD Omron B3FS-1002P (3.1 ± 0.2) on flat-backed carriers (no solder under the datum); 1.4 mm more
-    front-zone depth (works down to 7.6 mm rocker-to-wall).
-  * Key: MX at (0, +15) / (0, −13) (overhang 8.4 / 10.4 like a keycap edge); no stop bosses, no pitch model (it was not
-    physical); end presses are a desk-rig test with a stabiliser fallback.
-  * Hub: 250 V entry fuse, eFuse on the hub branch (a hub short no longer collapses the 12 V of the light path), FMEA.
-  * Terminal zone = 5 modelled WAGO 221-412; speaker preloaded onto its face gasket; key-back cable channel.
-  * CAD checks the key + stems wobbled ±1.5° without the key ↔ housing exemption; one layer height (0.10) for plate,
-    chassis and coupon; V-0 chassis mandatory.
-v0.5 (after review round 4; NOT reviewed by a fresh round — the loop stopped, see the review log):
-  * Q1 threshold derived from the retention (≥ 8.9 mm), not only from the switch stack.
-  * Misconnection: matrix per conductor (the entry fuse protects only one case), verification + RCD as preconditions.
-  * Hub: RELAY_DRIVE pull-down + qualifier (IO5 floats at reset), eFuse checked against the summed peak with tolerance
-    (60 V class, OVLO 17 V, SMBJ24A), bleeder in L and S; SNT61 overload = Q4f.
-  * RF spring distance corrected (sign error: 8.1 mm pressed, WARN); thicker speaker hooks; mic wire well with an S-loop;
-    key channel along the real header; touch-vs-key and power-cut items with assumption, test and fallback.
-v0.6 (the owner's first print and wishes; NOT reviewed):
-  * Rocker key: both MX read separately, centre press = both (forks, stop bosses, tapered ends, rock + wobble checks).
-  * Wider middle cable slot + header slots for pins / wires straight back from the touch-board header.
-  * Real speaker dimensions, LED corner notches (WS2812B-MINI 3535, 2.0 high), push-out removal.
-  * §6 practice box and §7 kit (whole RoomKey in one box, bench supply) — prototypes only.
-v0.8 (the owner's first kit assembly, 2026-10-04: the rocker key fell out; NOT reviewed):
-  * Key catch: a rigid nub on each side skirt in a groove of the collar (open to the back, closed to the room) → the key
-    is captive; the collar is no longer glued. Stem fork gap 4.10 → 3.90 (the stem arm is ≈ 4.0: 4.10 clamped nothing).
+RoomKey is built ONLY as a plug-in device (owner 2026-10-31, "Nur Steckdose"): the front stack (key on two MX switches,
+plate 55 × 55 with its glow rim, collar, switch plate with the LED holder, chassis) and the electronics (hub PCB or
+self-wired modules) sit in a 64 × 64 housing that plugs into a SCHUKO socket. 230 V stays inside an unmodified, certified
+plug-in USB charger; RoomKey itself takes 5 V SELV. Sections: 2–4 front stack, 5 power / acoustics / RF, 7 kit
+(electronics), 8 the plug-in housing. The flush-mounted wall insert of v0.2–v0.11 (box, frame, electrician topologies)
+is gone; the git history keeps it, and the names of a few datums (WALL_D, FRAME_OPEN, "insert") come from it.
 
 Tags: [DS] datasheet / norm / vendor drawing (source in SOURCES) · [MEAS] measured on the real part ·
       [FREE] design choice · [TBD] placeholder or assumption until measured (listed by --tbd).
 Coordinates: front view, origin = plate centre on the plate FRONT face; x right, y up;
-      d = depth into the wall (+). CAD maps (x, y, d) -> (X, Y, Z = -d): +Z points into the room.
-Nothing here is certified. All 230 V work: a qualified electrician of a registered installation company (NAV §13,
-insert-design.md §9).
+      d = depth behind the plate front (+). CAD maps (x, y, d) -> (X, Y, Z = -d): +Z points into the room.
+Nothing here is certified. Nothing of the RoomKey is ever connected to 230 V.
 """
 import math
 import os
@@ -60,7 +26,7 @@ import roomkey_params as R  # noqa: E402
 
 VARIANTS = ("S",)     # v0.11: ONE RoomKey (owner 2026-10-08: "Es soll nur eine Art von RoomKey geben"). The code keeps the
                       # key "S" internally; no Variant L (light switch) any more, the plate is fixed (PLATE_FIXED)
-VERSION = "0.11"
+VERSION = "0.12"     # v0.12 (2026-10-31): plug-in only — 64 × 64 housing, flange 59.2, radar in the hub plane
 
 SOURCES = {
     "cherry":   "Cherry MX1A datasheet, datasheet.octopart.com/MX1A-11NW-Cherry-datasheet-34676.pdf",
@@ -121,49 +87,20 @@ SOURCES = {
 }
 
 # =====================================================================================================
-# 1. WALL, FRAME, BOX, FLANGE
+# 1. FRONT OPENING AND FLANGE (v0.12: the plug housing's skin border and carrier tunnel frame the plate — section 8)
 # =====================================================================================================
 PLATE = R.ROCKER_W                 # 55.0 [MEAS, FROZEN]
 HALF = PLATE / 2
-WALL_D = 9.0          # [TBD] plate front ↔ wall / box-rim plane. 55-system rockers sit ~8–11 mm proud. MEASURE (Q1).
-FRAME_OPEN = 55.6     # [TBD] frame opening (rocker 55.0 [MEAS] + ~0.3 per side). MEASURE (Q2).
-FRAME_OUT = 80.5      # [DS] Jung AS 500 1-gang frame 80.5 × 80.5 — owner's series CONFIRMED 2026-10-03 ("Jung AS500");
-                      #      vendor lists the inner size as "55 × 55" (nominal) → the real opening still to measure (Q2)
-FRAME_BACK_FREE = 3.5  # [TBD] free depth under the frame for support flange + screw heads. MEASURE (Q2).
-FRAME_TUNNEL_D = WALL_D - FRAME_BACK_FREE   # [TBD] depth of the frame's opening tunnel (5.5), the rims reach into it
-FRAME_RETENTION = None  # [TBD] "ring" (frame clips onto the support ring) or "centre" (held by the rocker). ASK/PHOTO (Q2).
-FRAME_MATERIAL = "plastic"   # [DS] Jung AS 500 = plastic program (owner 2026-10-03) → no metal near the antenna or the radar
-FRAME_TUNNEL_MARGIN = 0.1  # [FREE] min gap between any fixed part and the frame tunnel wall (the rims locate at this gap)
-
-BOX_OPEN_D = 60.0     # [DS din49073] installation opening Ø60
-BOX_OUTER_D = 68.0    # [DS din49073] outer Ø ≈ 68 = hole saw
-BOX_USABLE_D = 58.0   # [TBD] usable inside Ø at depth (walls taper, ribs) — assumption. MEASURE (Q5).
-BOX_SCREW_PITCH = 60.0  # [DS din49073]
-BOX_DOME_ANGLES = (0, 90, 180, 270)  # [DS kaiser1555] 4 screw domes (60 mm both ways)
-BOX_DOME_R_IN = 26.0  # [TBD] how far the domes reach inwards (radius). MEASURE (Q5).
-BOX_DOME_W = 7.0      # [TBD] dome width, tangential
-BOX_DOME_R_OUT = 33.0  # [FREE] modelling extent of a dome
-BOX_FLOOR_LOSS = 2.0  # [TBD] nominal depth − usable depth (floor, entries)
-BOX_DEPTH = 40.0      # [TBD] the insert is SELV-only → it must fit an old standard 40 mm box
-FIT_MARGIN = 0.5      # [FREE] min gap part ↔ box wall / dome
-SCREW_USE = "horizontal"   # [FREE] box screws at (±30, 0): steel away from the antenna at the key's bottom end
-SCREW_D = 3.2         # [TBD] German device screws ("Geräteschrauben") Ø3.2
-SCREW_HEAD_D, SCREW_HEAD_H = 6.0, 1.8   # [TBD] low pan head ≤ 1.8 (the frame's free depth is the limit)
-SCREW_L = 15.0        # [FREE]
-SCREW_TORQUE = 0.2    # [FREE] N·m, snug
-CLAMP_N = 250.0       # [FREE] clamp at 0.2 N·m, 3.2 mm self-tapping into the box dome (K ≈ 0.25) → 250 N. Nothing limits
-                      #        over-torque mechanically: snug by hand with a screwdriver, no power tool (doc §7, §11)
-LOAD_PLATE = (-4.5, 5.3, 4.4, 0.5)   # [FREE] stainless load plate under each screw head: x from..to (relative to the screw,
-                                     #        outward +), half height, thickness; in a 0.5 recess of the flange front face
-FLANGE_T = 1.2        # [FREE] printed support flange (option: the program's steel support ring, doc §7)
+WALL_D = 9.0          # [FREE] the flange's back face (d); the name stays from the flush-box design (its wall plane)
+FRAME_OPEN = 55.6     # [FREE] the opening round the plate (0.3 per side): the skin's border and the carrier's tunnel
+FRAME_TUNNEL_MARGIN = 0.1  # [FREE] min gap between any fixed part and the tunnel wall (the rims locate at this gap)
+FLANGE_T = 1.2        # [FREE] the chassis flange
 FLANGE_HALF = 29.6    # [FREE] v0.12: inside the 64 × 64 skin (its inner face 29.92 at the flange − 0.3); the
                       #        carrier's tunnel end stops it, G2's side walls press it forward
-FLANGE_SLOT_W, FLANGE_SLOT_L = 3.6, 9.0   # [FREE] screw slots 3.6 × 9 (±2.5 mm rotation adjustment)
-PETG_CREEP_MPA = 5.0  # [FREE] bearing stress limit for PETG/ASA under a permanent clamp at up to 50 °C (conservative)
-RIM_T = 1.0           # [FREE] frame locating rims: thickness
+RIM_T = 1.0           # [FREE] locating rims: thickness
 LOC_RIM_SPAN = (4.5, 15.0)   # [FREE] each rim runs |along| 4.5..15 on all four sides (8 rims)
-LOC_RIM_D0 = 3.5      # [FREE] rims stand from the flange to d 3.5: 2.0 mm inside the frame tunnel [TBD], behind the plate skin
-RIM_OUT = FRAME_OPEN / 2 - FRAME_TUNNEL_MARGIN      # rim outer face (27.7): cut to the MEASURED opening − 0.1 (Q2)
+LOC_RIM_D0 = 3.5      # [FREE] rims stand from the flange to d 3.5, inside the carrier's tunnel, behind the plate skin
+RIM_OUT = FRAME_OPEN / 2 - FRAME_TUNNEL_MARGIN      # rim outer face (27.7)
 
 
 def loc_rims():
@@ -282,6 +219,12 @@ PLATE_FACE_T = 0.6    # [TBD] ivory layer over black: 0.6 / 0.9 / 1.2 → coupon
 PLATE_CORNER_R = 2.0  # [TBD] the owner's rocker corners ("rounded") — measure (Q7)
 GLOW_RIM_W = 0.8      # [FREE] translucent rim of the plate around the key opening (natural PETG, full skin thickness,
                       #        co-printed with AMS), lit from the collar 1.6 mm behind it → the glow ring, visible at any angle
+# v0.12 SPLIT PLATE (resin thread 2026-10-31; the owner chose "gedruckt + angeklebt"): the visible FACE (d 0 … PLATE_T with the
+# perforation, the glow rim and the key opening; flat back, the speaker mesh lies flat on it) is cast in resin; all behind it
+# is a printed BACK (PETG) glued on: skirts, top lip, snap lips and rest pads joined by one glue flange. The skirts' outer
+# faces are the datum the glue jig aligns.
+PLATE_BACK = (0.6, 1.0, 2.2)   # [FREE] glue flange thickness; clearance to the perforation fields (+ mesh margin) and to
+                               # the glow rim / its light path from the collar; flange width inward from the skirts' outer face
 PLATE_SKIRT_T = 1.2   # [FREE] skirt zone: inner face at HALF − 1.2 = 26.3; the wall is 0.8, set back 0.4 from the face edge
 SKIRT_D = 4.2         # [FREE] skirts end at d 4.2: they overlap the deck edges (d 3.5..5.0) by 0.7 and LOCATE the plate
 SKIRT_GAP = (3.5, 16.0)   # [FREE] every skirt (and the top lip) is open at |along| 3.5..16 → room for the 8 frame rims
@@ -458,36 +401,6 @@ RADAR_PIN = (1.0, 2.0, 0.15)         # [FREE] Ø, length, radial play — thinne
 HUB_J5 = (-15.3, -11.7, 7.0, 14.0, 26.22)   # [STEP] the radar's plug socket on the hub back (x0, x1, y0, y1, back d):
                                      #        the tray's top end gets a notch round it
 HUB_POSTS = ((-13.2, 4.0), (13.2, 4.0), (-13.2, 20.0), (13.2, 20.0))   # [FREE] from the ledge (lower pair fused to the boss bridges)
-HUB_PARTS = {         # [TBD]/[DS] heights behind the hub PCB (mm): must stay inside HUB
-    "Traco TSR 1-2450 (SIP-3, standing)": 10.1,   # [DS traco] 11.7 × 7.5 × 10.1
-    "2 × 100 µF/25 V polymer (D-case, 7.3 × 4.3)": 3.1,   # [TBD]
-    "MAX98357A bare IC (QFN 3 × 3) + passives": 1.0,
-    "wire solder pads / JST-SH": 4.3,
-    "TVS, PTCs, FETs, AHCT buffer, eFuse": 2.3,
-    "entry fuse (SMD 250 V AC)": 3.1,
-}
-HUB_FOOTPRINTS = {    # [TBD] mm² estimates (body + pads)
-    "TSR 1-2450": 88, "2 × polymer caps": 63, "MAX98357A + 6 passives": 40, "SMBJ24A": 17, "plate PTC 1206": 10,
-    "2 × P-FET + 2 × NPN + gate Zeners (SOT-23 / SOD-323)": 34, "Schottky VBUS feed": 6, "74AHCT1G125": 9,
-    "2 × ESD arrays (SOT-23-6)": 18, "≈ 25 passives 0603": 50,
-    "wire pads: 3 pigtail + 14 cable + 8 switch + 3 LED + 2 SPK + 2 MX + 5 mic": 111,
-    "eFuse (60 V class, ILIM ≈ 0.43 A ± 7 % [TBD part], 3 × 3) + passives": 20,
-    "entry fuse 250 V AC SMD (≈ 10 × 3) + 3 mm creepage keep-out": 45, "470 µF bulk at the amp (5 V)": 40, "series Schottky + S bleeder": 10,
-}
-HUB_ROUTING = 1.3     # [FREE] layout overhead factor
-HUB_FRONT_STRIPS = ((-16.0, -8.3), (8.3, 14.8))   # [FREE] hub FRONT side usable beside the MX1 body (x ranges), height 7.7
-SELV_IN = "3 conductors: +12 V, 0 V, PLATE (L) — pigtail H05V-K 0.5 mm², joined with WAGO 221 in the box"   # [FREE]
-HUB_VIN = (10.5, 16.0)   # [FREE] accepted input (eFuse OVLO 17 V, TVS SMBJ24A, TSR 6.5–36 V, B3FS ≤ 24 V): a 12 V or 15 V SELV source
-ENTRY_FUSE = ("1 A slow-blow, 250 V AC, breaking capacity ≥ 1500 A (SMD, Schurter UMT-H class — verify), ≥ 3 mm creepage "
-              "around it and the pigtail pads")   # [TBD part] only in +12 V: PLATE and 0 V are NOT fused (doc §8.1)
-EFUSE = (0.43, 0.07, 17.0)   # [TBD part] hub-branch eFuse (60 V class): current limit (A), its tolerance (±), OVLO (V); soft-start
-PLATE_PTC = (0.050, 10.0, 30.0)   # [TBD part] PTC in the switch feed: hold (A), R (Ω), V max ≥ 30 V; fed from the pigtail
-S_BLEEDER = 4700.0    # [FREE] Ω on PLATE in BOTH variants (≈ 2.5 mA: inside the rated 1–50 mA whatever relay input is fitted)
-SW_MIN_LOAD = 10e-6   # [DS b3fs] minimum applicable load 10 µA at 1 V DC (the 1–50 mA is the rating)
-WAGO = (13.1, 8.3, 18.6)   # [DS wago221] 221-412 (w, h, d)
-WAGO_POS = ()             # v0.11: no WAGOs. Variant S (PCB thread, 2026-10-08): only the 5 V SELV pigtail from the certified
-                          # 230 V → 5 V supply in the neighbouring box enters; it is soldered to the hub (J1). (v0.10: 5 × 221-412)
-WAGO_D = (25.6, 44.2)     # [FREE] depth range of the WAGO bodies (conductors enter from the box floor side)
 IO_MAP = {            # [DS ws_sch] header pins used by the insert (firmware change pending for IO3 — WIP)
     "IO4": "SK6812 data (via AHCT buffer)", "IO7": "I²S BCLK", "IO8": "I²S WS (+10k pull-up on the hub: download mode needs IO8 = 1)",
     "IO16": "I²S DOUT → MAX98357A", "IO17": "I²S DIN ← mic", "IO5": "RELAY_DRIVE (reset-low, one-shot on the hub)",
@@ -496,54 +409,9 @@ IO_MAP = {            # [DS ws_sch] header pins used by the insert (firmware cha
 }
 
 # =====================================================================================================
-# 5. INSTALLATION TOPOLOGIES (230 V only in certified devices, never in the RoomKey chamber)
+# 5. POWER, ACOUSTICS, RF (v0.12: 5 V SELV only, from the certified plug-in charger in the housing — section 8)
 # =====================================================================================================
-TOPOLOGIES = {
-    "T0": "none possible without a new cable: the owner decides (new cable in conduit / surface duct, or no RoomKey here)",
-    "T1": "remote: relay + 12 V PSU where the switch leg ends. T1a: at the luminaire / ceiling outlet box (canopy or a surface "
-          "box); T1b: the leg ends in a wall junction box → a new or larger box (plaster work). The leg's non-PE cores become "
-          "SELV (needs ≥ 3, e.g. NYM-J 4×1.5 / 5×1.5); no N at the switch. Relay: ES75 (SELV input; needs ≤ 10 A protection; "
-          "LED rating conflicting, Q4b) or T1-LED: Finder 38.51 (DIN rail) + LED-rated ESR61NP in a 1-row surface DIN "
-          "enclosure ≥ 95 mm deep",
-    "T2": "two-chamber box at the switch (Kaiser 1068-02 or successor, box change + chiselling, front geometry of chamber 2 "
-          "Q11): SNT61 + relay in chamber 2 behind the partition; needs N at the switch; relay input must be DECLARED SELV "
-          "(ESR61NP only with Eltako's written confirmation, Q4a)",
-    "T3": "distribution board: DIN-rail PSU (safety isolating, ≤ 15 W or fused 0.5 A) + reinforced coupling relay + an impulse "
-          "relay with an LED rating; needs a spare cable board → switch (SELV) AND a switched-L path board → lamp (usually conduit)",
-    "T4": "keep the old switch (light as before) and add the RoomKey in a SEPARATE added box (2-gang frame); needs its own "
-          "12 V SELV feed: a new 2-core SELV cable from a PSU elsewhere, or N + a PSU in a partitioned chamber; the added "
-          "box must not be coupled openly to the 230 V box",
-}
-TOPOLOGIES_S = {
-    "S1": "two-chamber box at the socket position (Kaiser 1068-02 or successor, box change): SNT61 + WAGO through-terminals "
-          "for an onward feed (L, N, PE) in chamber 2; the RoomKey chamber carries only the 12 V pigtail",
-    "S2": "remote 12 V: SELV from a PSU elsewhere over a cable of its own; the 230 V cable to this box is disconnected at BOTH "
-          "ends, or rerouted if it fed further sockets — never left in the RoomKey chamber",
-    "S3": "keep the socket: RoomKey in a SEPARATE added box (not coupled openly to the socket box), 2-gang frame, 12 V per S2",
-}
-SWITCH_LEG_CORES = {  # usable non-PE cores in the switch leg → what is possible (T2 additionally needs N IN the box)
-    2: "NYM-J 3×1.5 (the common case): T1 impossible (needs 3 SELV cores) → T2 (if N in the box), T3 (spare cable), T4, or T0",
-    3: "NYM-J 4×1.5: T1 possible (+12 V, 0 V, PLATE)",
-    4: "NYM-J 5×1.5: T1 + a 4th SELV core for light-state feedback (option)",
-}
-SOCKET_H_CM = 30.0      # [DS din18015] default socket height (installation zone); switch height 105 cm
-S_MIN_USE_H_CM = 70.0   # [FREE] S only makes sense where the key is readable/reachable: ≥ 70 cm (bedside, desk, worktop)
-RELAY_T1 = "Eltako ES75-12..24V UC"   # [DS es75]
-RELAY_T1_SIZE = (85.0, 40.0, 28.0)    # [DS es75]
-T1_LED_ENCLOSURE = (120.0, 100.0, 100.0)  # [FREE] 1-row surface DIN enclosure: Finder 38.51 is 6.2 × 87.8 × 75.6 + ESR61NP and SNT61
-                                         #        (flush-box devices) on a mounting plate — ≥ 95 deep
-FINDER38_SIZE = (6.2, 87.8, 75.6)        # [DS finder38]
-PSU_REMOTE = "Eltako SNT61-230V/12V DC-0,5A"   # [DS snt61] 45 × 45 × 33, 6 W, Class II, terminals
-PSU_W = 6.0           # [DS snt61]
-PSU_EFF = 0.81        # [DS snt61] efficiency at full load (lower at light load → standby is a floor)
-PSU_V_TOL = 0.01      # [DS snt61] 'Stabilisierte Ausgangsspannung ±1 %' 
-SELV_SOURCE_MAX_W = 15.0   # [FREE] SELV source must be ≤ 15 W or fused ≤ 0.5 A at the source (limits fault energy in the wall)
-RELAY_CTRL = (12.0, 10.0)   # [DS es75] external control 12–24 V UC, 10 mA at 24 V
-RELAY_PULSE_MS = (100, 400)  # [FREE] ESP relay pulse (hardware one-shot) / firmware lock-out (ES75: 20 / 300 ms [DS])
-KEY_ARBITRATION_MS = 250     # [FREE] firmware: a key action on Home waits 250 ms and is cancelled by a plate press (palm)
-T2_STACK = 33.0 + 18.0      # [DS] SNT61 33 + ESR61NP 18 in chamber 2
-T2_DEPTH = 67.0             # [DS kaiser1068]
-T2_WIRING = 10.0            # [FREE] depth reserved in chamber 2 for WAGOs and conductor bends
+CHARGER_A = 2.1       # [DS pearl] revolt PX-8884: 5 V, 2.1 A
 LOADS_W = {             # [TBD]/[DS] estimates at the 5 V rail — measure on the bench (avg, peak)
     "ESP32-C6 + LCD + touch, Wi-Fi on, no power-save (avg)": (0.65, 1.95),   # peak = TX 354 mA [DS esp32c6] + backlight
     "MAX98357A + speaker (chime, volume-capped to 1.1 W, seconds)": (0.05, 1.10),
@@ -551,50 +419,18 @@ LOADS_W = {             # [TBD]/[DS] estimates at the 5 V rail — measure on th
     "buffers, pull-ups, misc": (0.01, 0.02),
 }
 AVG_NO_PS_W = 0.65      # [TBD] ESP average with Wi-Fi power-save off — the current firmware sets power_save_mode: none
-BUCK_EFF = 0.85         # [TBD] TSR 1-2450 at ~15 % load (94 % only near full load [DS traco])
 KEY_AREA_CM2 = 24.0     # [FREE] exposed key surface (front 12.6 + sides 11.8)
 H_CONV = 10.0           # [TBD] W/m²K natural convection + radiation, estimate
 
 # acoustics / RF
 SPK_SENS_RANGE = (82.0, 88.0)   # [TBD] 2030 sensitivity dB @ 1 W / 10 cm — not published; typical micro-speaker range
 SPL_TARGET = (70.0, 75.0)   # [FREE] at 1 m
-HALF_SPACE_DB = 3.0         # [FREE] flush in a wall → radiation into half space
+HALF_SPACE_DB = 3.0         # [FREE] flat against a wall → radiation into half space
 C_SOUND = 343000.0          # mm/s
 RF_MIN_METAL = 10.0         # [FREE] want ≥ 10 mm chip ↔ significant metal (spring, screws, frame); brass standoffs are given
 
 # optional sensors — deferred to v1 (see doc §6.5)
 SENSORS_DEFERRED = ("VEML7700", "SHT31-D", "LD2410C/B")
-
-
-# =====================================================================================================
-# 6. DESK REPLICA (owner 2026-10-03, prototype only): two coupled flush boxes + 2-gang frame, top = the RoomKey
-#    insert, bottom = a sensor cover with the real breakouts. Powered by USB 5 V, NEVER in a wall, never on 230 V.
-#    Coordinates: top box centre (0, 0), bottom box centre (0, −DESK_PITCH); d as everywhere (wall plane = WALL_D).
-# =====================================================================================================
-DESK_PITCH = 71.0       # [DS] German multi-gang spacing (switch above socket)
-DESK_CUP_IN = 59.0      # [FREE] box replica inner Ø (≥ BOX_USABLE_D 58, which the insert is checked against)
-DESK_CUP_WALL = 1.6     # [FREE]
-DESK_DEPTH = 47.0       # [FREE] box depth behind the wall plane (the planning default); the back is OPEN (wiring access)
-DESK_PLATE = (92.0, 165.0, 2.4, 6.0)   # [FREE] "wall" plate W, H, T, corner R, centred between the boxes
-DESK_DOME_R_OUT = 32.6  # [FREE] the 2 screw domes (0°, 180°) bulge out of the cup wall around the screw hole (r 30)
-DESK_SCREW_PILOT = (2.7, 20.0)   # [FREE] pilot Ø / depth for 3.2 device screws or M3 self-tapping
-DESK_LINK = (9.0, 19.0, WALL_D + 10.0, WALL_D + 20.0)   # [FREE] wire channel between the boxes: x0, x1, d0, d1 (off-centre:
-                                                        # the frame screw is reached from behind at x 0)
-DESK_FRAME_T = (2.0, 1.6, 1.6)   # [FREE] 2-gang frame: face thickness, opening-tunnel wall, outer skirt (to the wall plane)
-DESK_FRAME_R = 4.0      # [FREE] frame outer corner radius
-DESK_FRAME_PROFILE = (10.0, 6.0, 1.5)   # Jung AS 500 face profile, heights above the wall plane: at the inner rim [DS: AS 581
-                        # depth 10 mm], at the outer edge [TBD est.], width of the flat rim round each opening [TBD est.].
-                        # The owner: "the inner side of the frame is a bit higher than the outer side" (2026-10-03)
-DESK_FRAME_SCREWS = ((-37.4, 37.4), (37.4, 37.4), (-37.4, -DESK_PITCH - 37.4), (37.4, -DESK_PITCH - 37.4))   # [FREE] 4 × M3
-                        # from behind into frame corner posts, outside both 71 × 71 flanges (they meet at y −35.5)
-DESK_FRAME_POST = (4.6, 2.6, 3.4)   # [FREE] frame post Ø, its pilot Ø, wall-plate hole Ø
-# SHT31-D IN THE FRAME (owner 2026-10-03; practice frame, bottom border): the board lies flat under the bottom border,
-# chip side forward (3 × 3 Ø1.0 vents over the chip, 3 air inlets in the bottom skirt); wires under the frame's tunnel
-# wall and through a Ø2.5 hole in the chassis flange at (0, −27.0) (rim gap, inside the box opening) into the box.
-# The owner (2026-10-04): the vents must sit on the frame's centre line → the board is shifted so its chip is at x = 0.
-FRAME_RH = (-(R.RH_W / 2 - R.RH_CHIP_C[1]), 0.6, 0.6, 1.3)   # [FREE] board centre x (chip centred), face recess,
-                                                               # skirt left there, chip-pocket depth
-FRAME_RH_HOLE = (0.0, -27.0, 2.5) # [FREE] wire hole in the kit chassis flange: x, y, Ø (bottom rim gap |x| < 4.5)
 
 
 # =====================================================================================================
@@ -709,10 +545,13 @@ PLUG_LIGHT = (-1.0, 2.0)  # [FREE → resin thread] light window through the ski
                     # wall, filled clear by the resin thread) at the chip's d: x, Ø. The sensor tail's VEML6030 sits over it
 PLUG_SOCKET = (10.0, 39.5, 55.0)   # [TBD] reference Jung AS 500 SCHUKO socket: face ↔ wall (the frame's inner rim height),
                     # recess Ø [DS CEE 7/3 ≈ 39–40], central plate; recess depth = body − out (16.3 in the owner's socket)
-PLUG_WIRE = 1.6     # [FREE] 2 × 0.5 mm² silicone, USB plug → hub J1 / the carrier's splice points (5V, GND)
-PLUG_J1 = (11.0, -2.75, 6.0, 7.6, 6.0)   # [→ PCB rev D] J1 as a SIDE-entry JST PH (e.g. S2B-PH-K-S), the plug going in
-                    # from below (−y): centre x, y, footprint w (the 2 pins), h (the plug's way), height behind the board. With the charger face at d 31
-                    # a top-entry PH + plug (≈ 13 deep) does not fit inside the charger's circle
+PLUG_WIRE = 1.2     # [DS JST PH: AWG 32–24] 2 × AWG 24 (Ø ≈ 1.2), USB plug → hub J1's PHR plug / the carrier's splice points
+PLUG_J1 = (10.3, -2.5, 7.6, 5.9, 4.8, 12.75)   # [PCB rev D 2026-10-31] J1 = S2B-PH-K-S, a SIDE-entry JST PH, its mouth
+                    # towards −x at x 6.5: centre x, y, length along x (the plug's way), width along y, height behind the
+                    # board [DS ≈ 4.8], the THT pins' x (pin 2 = +5 V at y −1.5, pin 1 = GND at y −3.5; tails on the
+                    # front ≤ 1.0). Clear of H3's screw head (y ≤ −5.9) and the speaker foam (x 14.6); the lead comes
+                    # along a lane the hub keeps free of parts (x −4.5 … 6.5, y −6.0 … −0.5). With the charger face at
+                    # d 31 a top-entry PH + plug (≈ 13 deep) would not fit inside the charger's circle
 PLUG_MOMENT_MAX = 0.25   # [DS IEC 60950-1 §4.3.6 / IEC 62368-1 §4.7: direct plug-in equipment ≤ 0.25 N·m on the socket]
 PLUG_MASS_G = {"touch board": 9.0, "hub": 7.0, "MAX98357A": 2.0, "INMP441": 1.0, "speaker 2030": 4.0, "LD2410C": 2.0,
                "MX switch 1": 3.5, "MX switch 2": 3.5, "USB plug": 2.0, "charger": 39.0}
@@ -820,10 +659,6 @@ def gap_tol():
     return rss, worst
 
 
-def box_floor(v=None):
-    return WALL_D + BOX_DEPTH - BOX_FLOOR_LOSS
-
-
 def mouth():
     c0, c1 = cols_span()
     r0, r1 = rows_span()
@@ -910,8 +745,6 @@ def layout(v):
     # v0.11: the hub PCB is checked as its real STEP in the CAD (insert_lib.hub_pcb), not as an envelope here
     lx0, lx1, ly0, ly1, ld0, ld1 = loop_up()
     E.append(B("cable loop", lx0, lx1, ly0, ly1, ld0, ld1, note="key wires: hub slot, rolling loop behind the hub, UP to J4"))
-    for i, (x0, x1, y0, y1) in enumerate(WAGO_POS):
-        E.append(B(f"WAGO {i+1}", x0, x1, y0, y1, WAGO_D[0], WAGO_D[1], tag="[DS]", note="WAGO 221-412 standing"))
     E.append(B("speaker back foam", SPK_X0 - SPK_BACK_FOAM[1], SPK_X0, SPK_Y[0] + 2, SPK_Y[1] - 2, SPK_D0 + 2, SPK_D0 + R.SPK_W - 2,
                note="foam strip, compressed"))
     return E
@@ -922,14 +755,6 @@ def layout(v):
 # =====================================================================================================
 def _corners(e):
     return [(e["x0"], e["y0"]), (e["x1"], e["y0"]), (e["x1"], e["y1"]), (e["x0"], e["y1"])]
-
-
-def max_radius(e):
-    if e["kind"] == "cyl":
-        return math.hypot(e["cx"], e["cy"]) + e["r"]
-    if e["kind"] == "rrect":     # centred rounded rectangle: farthest point lies on a corner arc
-        return math.hypot(e["x1"] - e["r"], e["y1"] - e["r"]) + e["r"]
-    return max(math.hypot(x, y) for x, y in _corners(e))
 
 
 def gap2d(a, b):
@@ -948,20 +773,6 @@ def gap2d(a, b):
     if dx < 0 and dy < 0:
         return max(dx, dy)
     return math.hypot(max(dx, 0), max(dy, 0))
-
-
-def dome_gap(e):
-    g = 1e9
-    for ang in BOX_DOME_ANGLES:
-        a = math.radians(ang)
-        ca, sa = round(math.cos(a)), round(math.sin(a))
-        r0, r1, w = BOX_DOME_R_IN, BOX_DOME_R_OUT, BOX_DOME_W / 2
-        if ca:
-            dome = dict(kind="box", x0=min(ca * r0, ca * r1), x1=max(ca * r0, ca * r1), y0=-w, y1=w)
-        else:
-            dome = dict(kind="box", x0=-w, x1=w, y0=min(sa * r0, sa * r1), y1=max(sa * r0, sa * r1))
-        g = min(g, gap2d(e, dome))
-    return g
 
 
 def rrect_inside(px, py, hx, hy, r):
@@ -1268,13 +1079,12 @@ def validate(v, verbose=True):
         ws_in = all(abs(wire_slot(x, y)[0]) - CARRIER_WIRE_SLOT[0] / 2 >= abs(x) - (CARRIER[0] / 2 + 0.2) + 0.1 - 1e-9 and
                     abs(wire_slot(x, y)[1]) - CARRIER_WIRE_SLOT[1] / 2 >= abs(y) - (CARRIER[1] / 2 + 0.2) + 0.1 - 1e-9
                     for (x, y) in SW_POS)
-        rule(ws_in and ws_r <= BOX_USABLE_D / 2 - 0.8, f"switch wires: the flange slots stay ≥ 0.1 inside the carrier pockets and reach r {ws_r:.1f} ≤ box inside "
-             f"{BOX_USABLE_D / 2:.1f} − 0.8 [TBD Q5] → the wires drop into the box, not onto its rim; the carrier rests on the flange "
-             f"around the slot (no solder under the datum)")
+        rule(ws_in and ws_r <= plug_in_half() - 0.8, f"switch wires: the flange slots stay ≥ 0.1 inside the carrier pockets "
+             f"and reach r {ws_r:.1f} ≤ the housing's interior − 0.8; the carrier rests on the flange round the slot")
     wx0, wx1, wy0, wy1 = mic_well()
-    rule(math.hypot(abs(wx0) + 0.8, abs(wy1)) <= BOX_USABLE_D / 2 - 0.8 and DECK_HALF_X - (abs(wx0) + 0.8) >= 0.8,
+    rule(max(abs(wx0) + 0.8, abs(wy1)) <= plug_in_half() - 0.8 and DECK_HALF_X - (abs(wx0) + 0.8) >= 0.8,
          f"mic wire well {MIC_WELL:.0f} × {MIC_WELL:.0f} beside the pocket (x {wx0:.1f}..{wx1:.1f}, y {wy0:.1f}..{wy1:.1f}), walled "
-         f"to the flange: {DECK_HALF_X - abs(wx0) - 0.8:.1f} to the deck edge, inside the box; the wires leave the carrier "
+         f"to the flange: {DECK_HALF_X - abs(wx0) - 0.8:.1f} to the deck edge, inside the housing; the wires leave the carrier "
          f"sideways in an S-loop (no wire between the carrier and a floor); removable foam plug")
     warn("skirt ↔ deck edge on the PIVOT side: 0.10 at rest, ≈ 0.03 at the RSS stop (CAD 'plate without lips ↔ chassis'); "
          "with ±0.1 print tolerance the skirt may touch the deck edge there, where the relative motion is ≤ 0.1 mm → friction "
@@ -1352,11 +1162,9 @@ def validate(v, verbose=True):
     rule(LOC_RIM_SPAN[0] - SKIRT_GAP[0] >= 0.5 and SKIRT_GAP[1] - LOC_RIM_SPAN[1] >= 0.5,
          f"8 frame rims (|along| {LOC_RIM_SPAN[0]}..{LOC_RIM_SPAN[1]}) sit in the skirt/lip gaps (|{SKIRT_GAP[0]}..{SKIRT_GAP[1]}|) "
          f"with ≥ 0.5 to the skirt ends")
-    info(f"rim outer faces are made at ±{RIM_OUT:.2f} = frame opening/2 − {FRAME_TUNNEL_MARGIN} [TBD] → recut to the MEASURED "
-         f"opening (Q2)")
-    eng = FRAME_TUNNEL_D - LOC_RIM_D0
-    rule(eng >= 1.0, f"rims reach {eng:.1f} mm into the frame's opening tunnel (depth {FRAME_TUNNEL_D:.1f} [TBD]) → frame located "
-         f"±{FRAME_TUNNEL_MARGIN} in x and y; they do NOT hold it forward (FRAME_RETENTION [TBD], Q2)")
+    eng = PLUG_STOP_D - LOC_RIM_D0
+    rule(eng >= 1.0, f"rims (outer faces ±{RIM_OUT:.2f}) reach {eng:.1f} mm into the carrier's tunnel (to d {PLUG_STOP_D}) → "
+         f"the insert is located ±{FRAME_TUNNEL_MARGIN} in x and y")
     fg = (FRAME_OPEN - PLATE) / 2
     th_edge = t_edge / (HALF + DECK_HALF_Y)                # plate tilt at the stop (band press, pivot at the far lip)
     shift = th_edge * SNAP_D0                              # the pressed edge's front moves outward (pivot ≈ 6.5 behind it)
@@ -1398,149 +1206,39 @@ def validate(v, verbose=True):
          "(strip holes 41 mm², shadow gap ≈ 140 mm², frame gap) and, through small slots (key/collar 0.25, switch-plate cable slot, "
          "the foam-plugged mic wire well), to the box; the speaker's back is its own sealed cavity, so the box leak costs little — measure")
 
-    # --- D. box zone ----------------------------------------------------------------------------------
-    r_allow = BOX_USABLE_D / 2 - FIT_MARGIN
+    # --- D. plug-in housing (v0.12: RoomKey is built only as the plug-in device, owner 2026-10-31) -------------------
+    h_in = plug_in_half()
     for e in E:
         if e["d1"] <= WALL_D or e["move"]:
             continue
-        rmax = max_radius(e)
-        rule(rmax <= r_allow, f"{e['name']}: r max {rmax:.2f} inside the box (usable Ø{BOX_USABLE_D} [TBD] − margin → {r_allow:.2f})")
-        dg = dome_gap(e)
-        rule(dg >= FIT_MARGIN, f"{e['name']}: {dg:.2f} mm from the screw domes [TBD r_in {BOX_DOME_R_IN}]")
-    info("box fallback (Q5): if the measured box is up to 1 mm tighter, narrow the duct channel (3.1 → 2.1) and the hub "
-         "(2 mm); if tighter still, this box type needs replacing (electrician)")
+        rmax = max(abs(e["x0"]), abs(e["x1"]), abs(e["y0"]), abs(e["y1"]))
+        rule(rmax <= h_in, f"{e['name']}: |x|, |y| ≤ {rmax:.2f} inside the housing's interior behind the flange (±{h_in:.2f})")
     info(f"v0.11 hub: the real PCB (hardware/pcb/roomkey-hub, routed, DRC 0) at d {HUB_PCB_D0:.1f}–{HUB_PCB_BACK:.1f}, "
          f"screwed (M2) to 2 chassis posts + 1 switch-plate post; parts and outline are checked in the CAD as its STEP")
-    back = max(e["d1"] for e in E)
-    need = back - WALL_D + BOX_FLOOR_LOSS
-    rule(need <= BOX_DEPTH, f"insert depth (v0.11: hub PCB, no WAGOs): parts to d {back:.1f} → "
-         f"needs a box ≥ {need:.1f} mm; standard {BOX_DEPTH:.0f} mm box: {BOX_DEPTH - need:.1f} mm left")
-    warn(f"conductors (v0.11, Variant S): only the 5 V SELV pigtail (0.5 mm², J1 on the hub) comes in from the neighbouring box; "
-         f"{BOX_DEPTH - need:.1f} mm stay free behind the parts for its bend — check on the wall-fit prototype")
-    lx0, lx1, lhy, lp_t = LOAD_PLATE
-    stack = FLANGE_T + SCREW_HEAD_H
-    rule(stack <= FRAME_BACK_FREE and lp_t <= FLANGE_T - 0.5, f"flange {FLANGE_T} (stainless load plate {lp_t} recessed in it) + "
-         f"screw head {SCREW_HEAD_H} = {stack:.1f} under the frame (free {FRAME_BACK_FREE} [TBD Q2])")
-    bearing = (lx1 - lx0) * 2 * lhy - FLANGE_SLOT_W * min(FLANGE_SLOT_L, 2 * lhy)
-    rule(CLAMP_N / bearing <= PETG_CREEP_MPA, f"box-screw clamp ≤ {CLAMP_N:.0f} N on the load plate ({lx1 - lx0:.1f}×{2*lhy:.1f}) → "
-         f"{CLAMP_N / bearing:.1f} MPa on the flange (≤ {PETG_CREEP_MPA} for permanent load)")
-    duct_x = DUCT_X1 + DUCT_WALL
-    rule(BOX_SCREW_PITCH / 2 + lx0 - 0.1 >= duct_x + 0.2 and BOX_SCREW_PITCH / 2 + lx1 + 0.1 <= FLANGE_HALF - 0.1,
-         f"load plate x {BOX_SCREW_PITCH/2 + lx0:.1f}..{BOX_SCREW_PITCH/2 + lx1:.1f} between the duct wall ({duct_x:.2f}) and the "
-         f"flange edge ({FLANGE_HALF}); the screw head (Ø{SCREW_HEAD_D}) stays clear of the rims (|y| ≥ {LOC_RIM_SPAN[0]})")
+    sk = plug_skin_in(WALL_D - FLANGE_T)
+    rule(FLANGE_HALF <= sk - 0.25 and FLANGE_HALF - FRAME_OPEN / 2 >= 1.5,
+         f"flange ±{FLANGE_HALF}: inside the skin (±{sk:.2f} there) and on the tunnel's back end over "
+         f"{FLANGE_HALF - FRAME_OPEN / 2:.1f} mm all round")
+    for b_ in ("pcb", "discrete"):
+        dp = plug_depths(b_)
+        info(f"{b_} build: glass → socket {dp['socket'] - KS['glass']:.1f} mm, the device {PLUG_OFFSET} mm above the "
+             f"socket centre, outline {2 * PLUG_HALF:.0f} × {2 * PLUG_HALF:.0f}")
 
-    # --- E. electrical: SELV-only insert, topologies ------------------------------------------------
-    warn("v0.11: the rules below still check the SUPERSEDED v0.10 power concept (12 V SELV, PLATE line, relay, eFuse); "
-         "RoomKey now takes only 5 V SELV from a certified supply in the neighbouring box (hub J1) — to be rewritten")
-    info("insert is SELV-only (class III): no 230 V part in the RoomKey chamber, no barrier, no DIY power supply")
-    info(f"spec: hub input {HUB_VIN[0]}–{HUB_VIN[1]} V (12 V or 15 V SELV source; 24 V not allowed: B3FS max {SW_RATING[1]:.0f} V)")
-    i_pk = sum(p for _, p in LOADS_W.values()) / BUCK_EFF / 12.0
-    i_lo, i_hi = EFUSE[0] * (1 - EFUSE[1]), EFUSE[0] * (1 + EFUSE[1])
-    rule(i_lo >= i_pk, f"eFuse limit {EFUSE[0]} A ± {100*EFUSE[1]:.0f} % → {i_lo:.2f}..{i_hi:.2f} A ≥ the hub's summed peak "
-         f"{i_pk:.2f} A at 12 V (chime + strobe + Wi-Fi TX at once) [TBD part: 60 V class, OVLO {EFUSE[2]:.0f} V]")
-    if v == "L":
-        warn(f"light path vs hub short (BLOCKED-ON-DATA): assumption — the SNT61 keeps its 12 V at {i_hi:.2f} A (eFuse max) + "
-             f"{RELAY_CTRL[1]:.0f} mA PLATE, i.e. {100*(i_hi + 0.01)/0.5:.0f} % of its 0.5 A rating (its shut-off threshold is not "
-             f"published, Q4f); test — hard short on the hub rail, the plate must still toggle the relay 20 ×; fallback — firmware "
-             f"never runs chime and strobe at full power together (peak ≈ 0.30 A) and ILIM 0.35 A, or the 10 W SNT61 (0.83 A)")
-    info(f"entry: {ENTRY_FUSE} in the pigtail +12 V only. A 230 V misconnection opens it ONLY if L meets +12 V with a "
-         f"low-impedance return; L on PLATE or 0 V, L with the lamp as the return (0.02–0.3 A) or L with no return do NOT open "
-         f"it — then the whole SELV side, the key cable included, can sit at line potential (doc §8.1 matrix). Protection = "
-         f"marking + the verification before connecting (voltage and insulation tests, §9.1) + an RCD on the circuit")
-    info(f"light path (L) = pigtail → entry fuse → PTC ({1000*PLATE_PTC[0]:.0f} mA hold, V max ≥ {PLATE_PTC[2]:.0f} V [TBD part]) → 4 "
-         f"B3FS → PLATE, plus in parallel the PLATE TVS and the RELAY_DRIVE P-FET (via a series Schottky). FMEA (doc §8.2): a "
-         f"short in the TVS or the FET, or an open entry fuse/PTC, stops the light — like any electronic push-button; nothing "
-         f"behind the eFuse can. A PLATE short drives the source current through one pressed switch for the PTC trip time (≤ 1 s) "
-         f"— contact wear, not a hazard")
-    rule(RELAY_CTRL[0] / S_BLEEDER >= SW_RATING[2] >= SW_MIN_LOAD, f"{S_BLEEDER/1000:.1f} kΩ bleeder on PLATE (L and S) → "
-         f"{1000*RELAY_CTRL[0]/S_BLEEDER:.1f} mA through the contacts: inside the rated {1000*SW_RATING[2]:.0f}–"
-         f"{1000*SW_RATING[3]:.0f} mA whatever relay input is fitted (minimum applicable load {1e6*SW_MIN_LOAD:.0f} µA [DS])")
-    rule(PSU_W <= SELV_SOURCE_MAX_W, f"SELV source power: SNT61 {PSU_W:.0f} W (the 10 W variant, now the catalogue part, also ≤ {SELV_SOURCE_MAX_W:.0f} W); any "
-         f"other source must be ≤ {SELV_SOURCE_MAX_W:.0f} W or fused ≤ 0.5 A at the source (T3 DIN-rail PSUs)")
-    warn("marking (0100-510): every cable converted to SELV is labelled 'SELV 12 V DC — kein 230 V' at both ends and in the "
-         "circuit documentation; class III symbol + '12 V DC SELV only, max 15 V' on the insert flange and on the pigtail")
-    if v == "L":
-        warn("topology per position (doc §9): FIRST inventory the switch box (other circuits / junctions / coupled neighbour boxes "
-             "→ move them out, T2, or no RoomKey), TN-C → rewire first; where does the switch leg end (lamp / ceiling box → T1a, "
-             "wall junction box → T1b with a new box); usable cores (2 = the common NYM-J 3×1.5 → T1 impossible)")
-        warn(f"T1 relay {RELAY_T1} is {RELAY_T1_SIZE[0]:.0f} × {RELAY_T1_SIZE[1]:.0f} × {RELAY_T1_SIZE[2]:.0f} ('für "
-             f"Leuchteneinbau', SELV side on a STOCKO plug → adapter leads; −20..+50 °C at the mounting place [DS]) and needs ≤ 10 A "
-             f"protection → the usual B16 lighting MCB becomes B10, or a fuse is added. Mounting in a luminaire canopy modifies the "
-             f"luminaire (installer's responsibility). LED rating: data sheet none, distributors 200 W → Q4b")
-        info(f"T1-LED (arithmetic only, the electrician decides): Finder 38.51 ({FINDER38_SIZE[0]} × {FINDER38_SIZE[1]} × "
-             f"{FINDER38_SIZE[2]} [DS]) + ESR61NP + SNT61 in a surface DIN enclosure ≈ {T1_LED_ENCLOSURE[0]:.0f} × "
-             f"{T1_LED_ENCLOSURE[1]:.0f} × {T1_LED_ENCLOSURE[2]:.0f} (≥ {FINDER38_SIZE[2] + 15:.0f} deep) at the lamp or ceiling")
-        info(f"T2 chamber 2 (depth arithmetic only; layout and cover open, Q11): SNT61 33 + ESR61NP 18 + {T2_WIRING:.0f} wiring = "
-             f"{T2_STACK + T2_WIRING:.0f} mm in a {T2_DEPTH:.0f} mm box [DS] (solid wall; hollow-wall variant Q5)")
-        warn("T2: ESR61NP A1/A2 (6 mm / 4000 V, 'galvanisch getrennt' [DS]) is NOT declared SELV → Eltako's written confirmation "
-             "(Q4a); Kaiser 1068-02 is an 'Auslaufprodukt'; chamber 2 must stay accessible (0100-520); its front / cover, the "
-             "partition passage and the side-by-side layout of SNT61 + relay + WAGOs are unverified (Q11)")
-        warn("SPD type 2/3 as required by Eltako's data sheets [DS]; RCD 30 mA for new/modified lighting circuits (0100-410 "
-             "411.3.4) — older homes may need both retrofitted; registered installation company (NAV §13); test record (0100-600)")
-        v_ctrl = RELAY_CTRL[0] * (1 - PSU_V_TOL) - PLATE_PTC[1] * RELAY_CTRL[1] / 1000
-        warn(f"ES75 control voltage at the relay ≈ {v_ctrl:.1f} V (SNT61 12 V −{100*PSU_V_TOL:.0f} % [DS], PTC drop) vs its "
-             f"12..24 V UC range → Q4d minimum. Fallbacks: (a) T1-LED (coupling relay, 12 V coil); (b) a 15 V DIN-rail "
-             f"safety-isolating PSU (T3 only — no flush-mount 15 V part is named); (c) the ES75's internal control voltage needs a "
-             f"hub redesign (isolated switches, opto input) — not in v0.4")
-        rule(RELAY_PULSE_MS[0] >= 20 and RELAY_PULSE_MS[1] >= 300, f"relay command: ESP one-shot {RELAY_PULSE_MS[0]} ms ≥ 20 ms "
-             f"minimum, lock-out {RELAY_PULSE_MS[1]} ms ≥ 300 ms pause [DS es75]")
-        warn("RELAY_DRIVE on IO5 = MTDI, which FLOATS at reset, in the bootloader and in a boot loop [DS esp32c6] (IMU INT1 is "
-             "high-Z too) → on the hub: 100 k pull-down at the drive input + a 20 ms qualifying RC ahead of the one-shot, so only a "
-             "deliberate level fires it; desk-rig test R12: 100 power cycles, 100 resets, a forced boot loop, the board missing — "
-             "no relay pulse. Fallback: arm the one-shot from a second line (needs a 15th wire)")
-        rule(RELAY_CTRL[0] <= SW_RATING[1] and RELAY_CTRL[1] / 1000 <= SW_RATING[3], f"plate line: 12 V SELV, ≤ "
-             f"{RELAY_CTRL[1]:.0f} mA into the ES75 control input (a DC coupling relay: ≈ 15 mA, free-wheel diode in the module) "
-             f"— within the B3FS rating")
-        warn("light state is not known to the ESP (no relay feedback) → Home cannot show it, 'all lights off' must not include it "
-             "(a toggle could switch it on), firmware offers 'toggle' only; a 4th SELV core (NYM-J 5×1.5) keeps a feedback option (Q3c)")
-        sb = 1.0 + 0.1 + (sum(a for a, _ in LOADS_W.values()) / BUCK_EFF) / PSU_EFF
-        warn(f"standby per room ≈ {sb:.1f} W (ES75 1 W [DS] + SNT61 0.1 W [DS] + insert {sum(a for a, _ in LOADS_W.values()) / BUCK_EFF:.2f} "
-             f"W through the SNT61 at {100*PSU_EFF:.0f} % [DS]); the light depends on the 12 V supply")
-        warn("power cut (Q4e, BLOCKED-ON-DATA): assumption — the ES75 (bistable) keeps its state or comes up off; it is never "
-             "switched ON by the power return, because no PLATE/RELAY_DRIVE pulse occurs at power-up (pull-down + qualifier, test "
-             "R12). Pass: 20 power cuts with the light off → it stays off. Fallback: T1-LED/T3 with an impulse relay whose data sheet "
-             "states its state after a power cut")
-        warn("touch vs key (north star: a tap never acts on Home): the key actuates at ≈ 1.1 N (2 × 0.56 N ± 0.2 [no-name MX]), "
-             "swipes on a touchscreen reach 0.8–1.2 N (published study) → a swipe or firm tap may fire the key (Ringing: answer "
-             "instead of silence). Desk-rig test R13: 3 people, 100 swipes from each end and the centre, 100 taps → 0 key-downs. "
-             "Fallbacks: heavier switches (≥ 1 N each; recheck R1), firmware: a touch that moved > 2 mm suppresses key-down, "
-             "Ringing answers on key-up after a still press (WIP, firmware not changed here)")
-        info(f"key vs plate (firmware, WIP): a key action on Home waits {KEY_ARBITRATION_MS} ms and is dropped if PLATE_SENSE fires "
-             f"(palm/elbow presses hit both — desk-rig test with a flat hand); the ESP never pulses the relay within 1 s after a "
-             f"plate press and masks PLATE_SENSE during its own pulse")
-    else:
-        warn("S: the socket is lost (S1/S2) — check the DIN 18015-2 minimum socket count of the room; supply per position "
-             "(doc §9.3): S1 two-chamber box (box change), S2 12 V over a cable of its own (new, or the old one converted to SELV "
-             "and marked), S3 keep the socket and add a separate box; onward feeds need S1 or rerouting; socket circuits need an "
-             "RCD (0100-410 411.3.3); the socket's centre plate often clamps the frame → frame retention fallback (§7)")
-        info("S: no PE connection needed — the insert is SELV/class III; the PE of any 230 V cable stays with that cable, "
-             "never cut short or left loose")
-        warn(f"S: standard socket height {SOCKET_H_CM:.0f} cm (DIN 18015-3) is too low for the key → only sockets ≥ "
-             f"{S_MIN_USE_H_CM:.0f} cm (bedside, desk, worktop) qualify (Q3b)")
-        warn("S: the plate goes to the ESP only (PLATE_SENSE) → firmware maps it to the room light via HA; S_PLATE_FIXED=True "
-             "makes it a fixed plate instead")
-        info(f"S1 chamber 2 (depth arithmetic only; layout open, Q11): SNT61 33 mm + WAGO 221 through-terminals + {T2_WIRING:.0f} wiring "
-             f"in a {T2_DEPTH:.0f} mm box [DS]")
-    warn("12 V source: SNT61 is class II to EN 60950 [DS] but its data sheet does not say 'SELV' in the sense of VDE 0100-410 "
-         "414.3 — confirm with Eltako (Q4c), or use a PSU marked for IEC 61558-2-16 (safety isolating)")
+    # --- E. electrical: 5 V SELV only ------------------------------------------------------------------------------
+    info("RoomKey takes only 5 V SELV from an unmodified, certified plug-in USB charger (class II) held in the housing; no "
+         "230 V part is designed, modified or wired by this project, nothing of the RoomKey touches 230 V")
     avg5 = sum(a for a, _ in LOADS_W.values())
     pk5 = sum(p for _, p in LOADS_W.values())
-    avg12, pk12 = avg5 / BUCK_EFF, pk5 / BUCK_EFF
-    rule(pk12 <= 0.8 * PSU_W, f"power {avg12:.2f} W avg / {pk12:.2f} W peak at 12 V (buck {100*BUCK_EFF:.0f} % [TBD]) vs "
-         f"{PSU_W:.0f} W {PSU_REMOTE}")
-    warn("start-up: the SNT61 switches off on overload and restarts [DS]; the hub eFuse soft-starts its 2 × 100 µF + TSR load "
-         "(assumption: the SNT61 starts into the eFuse limit) → bench-test cold start; fallback: slower dV/dt or less bulk capacitance")
+    rule(pk5 / 5.0 <= 0.8 * CHARGER_A, f"power {avg5:.2f} W avg / {pk5:.2f} W peak at 5 V → {pk5 / 5.0:.2f} A ≤ 80 % of the "
+         f"charger's {CHARGER_A} A")
     key_heat = AVG_NO_PS_W
     dT = key_heat / (H_CONV * KEY_AREA_CM2 * 1e-4)
     warn(f"key self-heating: ≈ {key_heat:.2f} W in the key (the firmware runs Wi-Fi without power-save) → ΔT ≤ {dT:.0f} K on the "
          f"key surface (upper bound, no conduction into the chassis); mitigation: backlight dimming (and power-save if the "
          f"intercom allows it) — measure (thermocouple, 1 h)")
-    info("firmware requirements (WIP, not changed here): never enable the IMU's INT1 (it shares IO5 = RELAY_DRIVE); never insert a "
-         "microSD card (IO3/IO4 are the TF slot's lines); expose the glow ring to HA with its 45 % cap only; mic L/R no longer "
-         "on IO3. Hub: MAX98357A SD_MODE via a resistor from 5 V (its internal 100 k pull-down would keep it off); GPIO16 "
-         "carries the boot log into DIN, but BCLK/WS are idle then and the amp needs them to play [DS, verify on the rig]")
-    heat_box = avg12 * (1 - BUCK_EFF) + 0.05 + LOADS_W["glow ring 4 × SK6812 MINI (firmware 45 %, strobe 100 % red)"][0]
-    info(f"heat in the box ≈ {heat_box:.2f} W (buck loss, amp idle, glow LEDs); PSU/relay losses are outside the chamber")
+    warn(f"the charger warms the housing (≈ {0.25 * avg5:.2f} W loss at {avg5:.2f} W): the humidity sensor sits at the front of "
+         f"the bottom wall, as far from it as the housing allows, its vents draw room air from below — compare against a "
+         f"reference sensor for a day")
 
     # --- F. acoustics, RF, sensors -------------------------------------------------------------------
     n_holes = PERF_COLS * PERF_ROWS
@@ -1599,51 +1297,22 @@ def validate(v, verbose=True):
 
 
 TBD_LIST = [
-    ("WALL_D", WALL_D, "Q1 plate front ↔ wall at the existing switch (rocker surface to wall)"),
-    ("FRAME_OPEN", FRAME_OPEN, "Q2 frame opening (inner) — calipers; the rims are cut to it − 0.1"),
-    ("FRAME_BACK_FREE", FRAME_BACK_FREE, "Q2 depth free under the frame for flange + screw heads"),
-    ("FRAME_TUNNEL_D", FRAME_TUNNEL_D, "Q2 depth of the frame's opening tunnel (the rims reach into it)"),
-    ("FRAME_RETENTION", FRAME_RETENTION, "Q2 frame loose once the rocker is off? photo of frame back + old rocker back"),
-    ("FRAME_MATERIAL", FRAME_MATERIAL, "Q2 plastic or metal frame? brand/series/colour"),
-    ("topology", "?", "Q3 per L position (electrician): other circuits in the box? TN-S? where does the switch leg end? cores?"),
-    ("light feedback", "?", "Q3c reserve a 4th SELV core for light-state feedback?"),
-    ("Eltako", "?", "Q4a ESR61NP A1/A2 SELV? Q4b ES75 with LED loads? Q4c SNT61 output SELV? Q4d ES75 min control voltage? "
-                    "Q4e ES75 state after a power cut?"),
-    ("end presses", "?", "desk rig: press the printed key every 5 mm along its length (1000 × at each end) → stabiliser if it binds"),
+    ("end presses", "?", "desk rig: press the printed key every 5 mm along its length (1000 × at each end) → stabiliser?"),
     ("KEY_WOBBLE_DEG", KEY_WOBBLE_DEG, "desk rig: tilt of the key on its stems under an edge press"),
     ("touch vs key", "?", "desk rig R13: swipes / taps must not fire the key (0 key-downs in 300 gestures)"),
-    ("RELAY_DRIVE at reset", "?", "desk rig R12: 100 power cycles / resets / boot loop → no relay pulse"),
-    ("SNT61 overload", "?", "Q4f Eltako: SNT61 behaviour at a sustained 0.46 A (eFuse max) — does it keep 12 V? bench: hub short test"),
-    ("Q1b box rim", "?", "electrician (circuit isolated): box rim offset / flatness vs the wall, box type (domes or claws)"),
-    ("BOX_FLOOR_LOSS", BOX_FLOOR_LOSS, "Q5 floor and entries of the real box (sets the conductor room behind the WAGOs)"),
-    ("SCREW_HEAD_H", SCREW_HEAD_H, "Q2 low-head device screws ≤ 1.8 under the frame (stack 3.0 vs 3.5 free)"),
-    ("BOX_DOME_W", BOX_DOME_W, "Q5 dome width"),
     ("TB_ANT size", R.TB_ANT[2:], "Q8 chip antenna size (drawing gives the position only)"),
-    ("V-0 filament", "?", "Q10 a UL94 V-0 grade rated at ≤ 0.8 mm; its E / σy for the tongues; coupon row D bases in it"),
-    ("SELV pigtail", "?", "wall-fit prototype: the 5 V pigtail from the neighbouring box to J1 on the hub (v0.11, no WAGOs)"),
     ("mic path", "?", "desk rig: tools/mic_check.py through a printed plate coupon"),
-    ("S positions", "?", "Q3b per S position: height, onward feed, room for a two-chamber box, socket count of the room"),
-    ("BOX_USABLE_D", BOX_USABLE_D, "Q5 usable Ø inside the boxes at 20 and 35 mm depth; solid or hollow wall"),
-    ("BOX_DOME_R_IN", BOX_DOME_R_IN, "Q5 how far the screw domes (or hollow-wall claws) stick in"),
-    ("BOX_DEPTH", BOX_DEPTH, "Q5 actual box depth at the planned positions"),
     ("SPK sensitivity", SPK_SENS_RANGE, "Q6 SPL through the printed duct at 1 m — and is ~65–70 dB acceptable?"),
     ("PLATE_CORNER_R", PLATE_CORNER_R, "Q7 rocker corner radius; rocker flat or curved?"),
-    ("PLATE_FACE_T", PLATE_FACE_T, "coupon v1 row H: ivory thickness over black next to the real frame"),
-    ("AMP size", (R.AMP_W, R.AMP_H), "Q8 MAX98357A clone outline (only for the desk rig; the hub uses the bare IC)"),
     ("TB standoffs", R.TB_STANDOFF_THREAD, "Q8 brass standoffs female M2? (else M2 nuts / glue-in inserts)"),
     ("KEY_BOARD_BACK_H", KEY_BOARD_BACK_H, "Q8 component height on the board back; board without pre-soldered headers"),
-    ("MX_POST_D / MX_WINDOW", (R.MX_POST_D, R.MX_WINDOW), "coupon v1 row E"),
-    ("NUB_GAP / SW_TRAVEL_TOTAL / SW_MAX_FORCE", (NUB_GAP, SW_TRAVEL_TOTAL, SW_MAX_FORCE), "coupon v1 row D (real carriers)"),
-    ("MAT_E / MAT_SIGMA_Y", (MAT_E, MAT_SIGMA_Y), "snap tongues: filament data / coupon v1 row D"),
-    ("PAD_CLD40", PAD_CLD40, "preload pad foam data sheet (CLD at 40 %)"),
-    ("ENTRY_FUSE / PLATE_PTC", "parts", "Q10: pick a 250 V AC SMD fuse and a ≥ 30 V PTC for the hub"),
-    ("MIC_CARRIER", R.MIC_CARRIER, "Q10 8 × 8 mic carrier PCB (INMP441 / ICS-43434 / SPH0645, whichever is available)"),
-    ("hub", HUB, "Q10 hub PCB (area check is an estimate)"),
-    ("Kaiser 1068-02", "?", "Q11 front geometry of chamber 2 (stays accessible), cover, partition passage for SELV leads, "
-                            "side-by-side room for SNT61 + relay + WAGOs, successor product"),
-    ("glow look", "?", "Q12 desk rig: glowing gap (as built) or dark gap + lit rim (mask the collar's inner 0.75)? LEDs on/off"),
-    ("S front / frame", "?", "Q1-S / Q2-S: socket central-plate height and how the frame is held at a socket (centre screw?)"),
-    ("SNT61 start-up", "?", "bench: cold start into the hub (eFuse soft-start), 20 ×"),
+    ("MX_POST_D / MX_WINDOW", (R.MX_POST_D, R.MX_WINDOW), "coupon: stem posts in the MX housing window"),
+    ("glow look", "?", "Q12 desk rig: glowing gap (as built) or dark gap + lit rim (mask the collar's inner 0.75)?"),
+    ("PLUG_GRIP inter", PLUG_GRIP["inter"], "grip-ring coupons 1/2/3 on the real charger: which holds it without forcing"),
+    ("PLUG_USB", PLUG_USB, "the bare solder-type USB-A plug bought: shell, cups, which cup is VBUS"),
+    ("PLUG_INSERT", PLUG_INSERT, "the M3 heat-set inserts bought: hole Ø and depth"),
+    ("PLUG_SKIN", PLUG_SKIN, "resin thread: wall thickness and draft the mould and the resin need"),
+    ("PLUG_J1", PLUG_J1, "PCB rev D: J1 side-entry part and place; sensor tail outline"),
 ]
 
 

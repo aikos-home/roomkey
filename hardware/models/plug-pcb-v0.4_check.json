@@ -14,20 +14,20 @@
  "gaps": {
   "USB plug ↔ cable loop": 2.25,
   "charger ↔ cable loop": 0.2,
-  "wire 5V ↔ wire GND": 0.3,
-  "wire 5V ↔ cable loop": 5.537,
-  "wire GND ↔ cable loop": 5.532,
+  "wire 5V ↔ wire GND": 0.8,
+  "wire 5V ↔ cable loop": 1.1,
+  "wire GND ↔ cable loop": 3.1,
   "USB plug ↔ hub": 1.026,
-  "USB plug ↔ J1 (rev D)": 0.844,
+  "USB plug ↔ J1 (rev D)": 1.4,
   "charger ↔ hub": 3.115,
-  "charger ↔ J1 (rev D)": 3.2,
+  "charger ↔ J1 (rev D)": 4.4,
   "charger ↔ LD2410C header": 7.321,
   "G2 box ↔ hub": 0.772,
   "G2 box ↔ radar cage": 0.54,
   "grip ring ↔ hub": 4.815,
   "G1 columns ↔ hub": 6.701,
   "G1 columns ↔ radar cage": 5.684,
-  "wire 5V ↔ hub": 0.85,
+  "wire 5V ↔ hub": 0.465,
   "G1 tunnel ↔ chassis (kit)": 0.1,
   "G1 tunnel ↔ plate": 0.3,
   "G1 skin ↔ plate": 0.3,
@@ -168,7 +168,7 @@
   ]
  ],
  "supply_cut_mm": {
-  "5V": 55,
-  "GND": 40
+  "5V": 40,
+  "GND": 30
  }
 }
