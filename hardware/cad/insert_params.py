@@ -656,21 +656,27 @@ KIT_RADAR_TRAY = (1.0, 0.10)      # [FIT] play/side: 0.2 just too loose (10-06);
 
 
 # =====================================================================================================
-# 8. PLUG-IN HOUSING ("Steckdosen-RoomKey", owner 2026-10-27, CONCEPT v0.2, WIP, not certified): the SAME RoomKey (kit,
-#    PCB build) in a housing of the 1-gang frame size that plugs straight into a SCHUKO socket. Front = practice frame
+# 8. PLUG-IN HOUSING ("Steckdosen-RoomKey", owner 2026-10-27, v0.3, WIP, not certified): the SAME RoomKey (kit, both
+#    builds) in a housing of the 1-gang frame size that plugs straight into a SCHUKO socket. Front = practice frame
 #    (Jung AS 500 look), plate and key, unchanged ("die Frontblende soll dieselbe sein"). 230 V stays inside an
-#    UNMODIFIED, certified plug-in USB charger: the housing only holds it, its USB-A port feeds hub J1 with 5 V SELV.
+#    UNMODIFIED, certified plug-in USB charger: the housing only holds it, its USB-A port feeds 5 V SELV to hub J1 (PCB
+#    build) or to the carrier's splice points (self-wired build).
 #    Owner: "möglichst flach an der Wand", "1-fach, Netzteil dahinter", charger "such mir eins aus".
 #    G1 SHELL = frame + side walls (one print, back down); its frame tunnel, lengthened, is the flange's front stop.
 #    G2 BOX = back plate + charger sleeve + square cup (one print, back down); the cup's front edge presses the insert's
 #    flange against G1 (no box screws); 4 × M3 countersunk through the back plate into heat-set inserts in G1 (hidden on
 #    the socket). v0.2: a TPU grip ring holds the charger in the sleeve, a TPU foot ring rests on the socket face.
+#    v0.3: the charger as measured; the grip ring flexes instead of compressing; G1 + G2 for both kit builds.
 #    Depth: the charger's front face sits behind the deepest insert part on the axis (the key wires' U-loop) + the plug.
 # =====================================================================================================
-PLUG_CHARGER = dict(d=39.0, l=32.0, out=14.0, pin=(4.8, 19.0, 19.0), port=(12.5, 5.1, 14.0))
-                    # [DS] revolt PX-8884 (Pearl, 9.99 €, EAN 4022107346085): 5 V 2.1 A USB-A, contour plug, 0.06 W no load,
-                    # "Ø 39 × 51 mm", "ragt nur 14 mm heraus" → body 32 = 51 − 19 [TBD], pins Ø4.8 × 19, 19 apart [DS CEE 7/17];
-                    # port (w, h, depth) centred on the FRONT face [TBD: the shop photo looks onto the port from above]
+PLUG_CHARGER = dict(d=39.25, d_in=36.17, cap=13.0, l=32.3, out=16.0, pin=(4.8, 19.0, 19.0), port=(14.0, 5.95, 14.0),
+                    port_c=(0.18, -0.35))
+                    # [MEAS] revolt PX-8884 (Pearl, EAN 4022107346085; 5 V 2.1 A USB-A, contour plug, class II, REV4 2024),
+                    # owner's calipers 2026-10-31 (sheet A–H): front part Ø39.25 (A), the part in the recess Ø36.17 (B),
+                    # body 32.3 (C), 16.0 out of the owner's socket (H) → 16.3 in the recess; the step between the two
+                    # sits `cap` behind the face [PHOTO ±0.5; the thin part has earth-clip grooves at 12/6 o'clock, small
+                    # rails at 3/9]; USB-A opening 14 × 5.95 (D, E) on the front face, horizontal, its centre from F 17 /
+                    # G 12.8 (= centred within what calipers read on a round rim); pins Ø4.8 × 19, 19 apart [DS CEE 7/17]
 PLUG_USB = (12.0, 4.5, 15.0, 7.5, 7.0)   # [TBD] solder-type USB-A plug: shell w, h (12 deep in the port); body w, h, length
                     # outside the charger face (2 of the 4 solder cups used: VBUS, GND)
 PLUG_CLEAR = 0.5    # [FREE] USB plug ↔ the key wires' U-loop envelope (the loop moves, the plug does not)
@@ -683,9 +689,13 @@ PLUG_CUP = (29.5, 2.7, 33.5)   # [FREE] square cup: inner half width (just outsi
                     # clamped ring on ring), inner corner R, front rim half width (backs the flange to 2 mm off its edge)
 PLUG_SLEEVE = (0.5, 2.0, 1.0)   # [FREE] charger sleeve: play per side in the back plate's hole (the step that holds the grip
                     # ring), front lip width and thickness (the charger's face rests on it)
-PLUG_GRIP = (1.0, 12, 1.0, 0.2, 0.4)   # [FREE] v0.2 TPU 95A grip ring in the sleeve (replaces the PETG crush ribs, owner
-                    # 2026-10-27 "bestellt"): wall, rib count, rib width, rib interference on the charger body [TBD → coupon
-                    # rings once the real charger is measured], set back from the charger face (the radar's plug)
+PLUG_GRIP = dict(t=1.6, n=12, w=1.5, gap=0.3, stand=1.0, play=0.1, setback=0.4, inter=0.5, coupons=(0.3, 0.5, 0.7))
+                    # [FREE] TPU 95A grip ring in the sleeve (owner 2026-10-27 "bestellt"). v0.3 = a FLEX ring: n inner ribs
+                    # press on the charger's thick front part, n outer standoffs between them carry the tube in the sleeve's
+                    # seat, so the tube wall bends between the standoffs (v0.2's ribs on a tube backed all round could only
+                    # compress: TPU 95A at 0.2 mm is far too stiff to push in by hand). Wall, rib count, rib width, wall ↔
+                    # charger, standoff height, standoff ↔ seat, set back from the charger face (the radar's plug), rib
+                    # interference [TBD → coupons: 1/2/3 notches = 0.3/0.5/0.7]
 PLUG_FOOT = (0.6, 21.0, 25.0, 1.0, 0.4)   # [FREE] v0.2: the housing's back face stands this far off the socket face (the
                     # housing never holds the charger out of the socket); TPU 95A foot ring (inner r, outer r: on any central
                     # plate, clear of the recess; thickness; groove depth → it just touches the socket face: no wobble)
@@ -694,16 +704,18 @@ PLUG_SCREW = (35.6, 3.4, 6.4, 3.2, 8.0, 11.0)   # [FREE] 4 × M3 × 10 (or × 12
 PLUG_INSERT = (4.0, 6.5)   # [TBD the inserts bought] M3 heat-set insert in each G1 boss, pressed in from the back: hole Ø,
                     # depth (Ruthex / CNC Kitchen M3 × 5.7: hole Ø4.0; +0.8 for the displaced melt)
 PLUG_SOCKET = (10.0, 39.5, 55.0)   # [TBD] reference Jung AS 500 SCHUKO socket: face ↔ wall (the frame's inner rim height),
-                    # recess Ø [DS CEE 7/3 ≈ 39–40], central plate; recess depth = body − out (18.0, Pearl's "14 mm")
-PLUG_WIRE = 1.6     # [FREE] 2 × 0.5 mm² silicone, USB plug → hub J1 (5V, GND), as the kit's pigtail
+                    # recess Ø [DS CEE 7/3 ≈ 39–40], central plate; recess depth = body − out (16.3 in the owner's socket)
+PLUG_WIRE = 1.6     # [FREE] 2 × 0.5 mm² silicone, USB plug → hub J1 / the carrier's splice points (5V, GND)
 PLUG_MOMENT_MAX = 0.25   # [DS IEC 60950-1 §4.3.6 / IEC 62368-1 §4.7: direct plug-in equipment ≤ 0.25 N·m on the socket]
-PLUG_MASS_G = {"touch board": 9.0, "hub": 7.0, "speaker 2030": 4.0, "LD2410C": 2.0, "MX switch 1": 3.5,
-               "MX switch 2": 3.5, "USB plug": 3.0, "charger": 39.0}   # [TBD] g; the charger [DS pearl]; printed parts by volume
+PLUG_MASS_G = {"touch board": 9.0, "hub": 7.0, "MAX98357A": 2.0, "INMP441": 1.0, "speaker 2030": 4.0, "LD2410C": 2.0,
+               "MX switch 1": 3.5, "MX switch 2": 3.5, "USB plug": 3.0, "charger": 39.0}
+                    # [TBD] g, those of the build present; the charger [DS pearl]; printed parts by volume
 
 
-def plug_depths():
+def plug_depths(build="pcb"):
     """the plug-in housing's depths (d) along the axis, from the deepest insert part to the socket face."""
-    loop = loop_up()[5]                                  # the key wires' U-loop: deepest thing on the axis (30.81)
+    loop = loop_up()[5] if build == "pcb" else LOOP_D1   # the key wires' U-loop: deepest thing on the axis (PCB 30.81;
+    #   self-wired 36.5: there it rolls down behind the back carrier)
     usb0 = loop + PLUG_CLEAR                             # USB plug body front
     face = usb0 + PLUG_USB[4]                            # charger front face (rests on the sleeve lip)
     sock = face + PLUG_CHARGER["out"]                    # socket face (the charger sits fully in the socket)

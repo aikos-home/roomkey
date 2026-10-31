@@ -1,10 +1,9 @@
-"""Open the RoomKey PLUG-IN HOUSING (concept v0.2, WIP) in the FreeCAD GUI: shell, box, TPU rings, charger, USB plug
-and wires,
-the unchanged kit (PCB build) and a reference SCHUKO socket in a piece of wall — named, coloured, grouped — plus a
-section through x = 0. Saves hardware/models/<TAG>_ansicht.FCStd; with PLUG_RENDER=1 it also renders the images
-to RENDER_OUT (default hardware/docs/img) and quits.
+"""Open the RoomKey PLUG-IN HOUSING (v0.3, WIP) in the FreeCAD GUI: shell, box, TPU rings, charger, USB plug and
+wires, the unchanged kit (ROOMKEY_BUILD = pcb (default) or discrete) and a reference SCHUKO socket in a piece of wall —
+named, coloured, grouped — plus a section through x = 0. Saves hardware/models/<TAG>_ansicht.FCStd; with PLUG_RENDER=1
+it also renders the images to RENDER_OUT (default hardware/docs/img) and quits.
 
-Run (opens FreeCAD):  FreeCAD hardware/cad/view_plug.py   (env ROOMKEY_HUB_STEP as for make_plug.py)
+Run (opens FreeCAD):  ROOMKEY_BUILD=discrete FreeCAD hardware/cad/view_plug.py   (env ROOMKEY_HUB_STEP as for make_plug.py)
 """
 import os
 import sys
@@ -16,21 +15,24 @@ sys.path.insert(0, HERE)
 import FreeCAD as App  # noqa: E402
 import plug_lib as G  # noqa: E402
 
-K, L, P, W = G.K, G.L, G.P, G.W
+K, L, P, W, WL = G.K, G.L, G.P, G.W, G.WL
+BUILD = os.environ.get("ROOMKEY_BUILD", "pcb")
+G.use_build(BUILD)
 IVORY, DARK, GREY, TPU = (0.95, 0.93, 0.85), (0.18, 0.18, 0.18), (0.55, 0.55, 0.55), (0.1, 0.62, 0.58)
 OUT = os.environ.get("RENDER_OUT") or os.path.join(os.path.dirname(HERE), "docs", "img")
 LOG = os.environ.get("RENDER_LOG")
 WPX, HPX = 1800, 1350
-W.supply_route = G.supply_route            # the kit's lab-supply pigtail becomes the USB plug → J1 pair
+W.supply_route = G.supply_route            # PCB build: the kit's lab-supply pigtail becomes the USB plug → J1 pair
 pbody, prim = L.plate_parts("S")
-refs = L.ref_bodies("S", "pcb")
-kr = K.kit_refs("pcb")
+refs = L.ref_bodies("S", BUILD)
+kr = K.kit_refs(BUILD)
+radar = refs if BUILD == "pcb" else kr
 _parts = {}
 
 
 def part(i):
     if "ch" not in _parts:
-        _parts["ch"] = L.chassis_parts(K.kit_chassis("pcb"), "pcb")
+        _parts["ch"] = L.chassis_parts(K.kit_chassis(BUILD), BUILD)
     return _parts["ch"][i]
 
 
@@ -46,25 +48,37 @@ ITEMS = [
     ("Platte_Leuchtrand", lambda: prim, (0.85, 0.92, 1.0), 40, "Druckteile", True),
     ("Tastenschale_starr", L.key_shell, IVORY, 0, "Druckteile", True),
     ("Leuchtring", L.collar, (0.85, 0.92, 1.0), 40, "Druckteile", True),
-    ("Schalterplatte", lambda: L.switch_plate("pcb"), GREY, 0, "Druckteile", True),
+    ("Schalterplatte", lambda: L.switch_plate(BUILD), GREY, 0, "Druckteile", True),
     ("Chassis_1_vorne", lambda: part(0), DARK, 0, "Druckteile", True),
     ("Chassis_2_Flansch", lambda: part(1), (0.3, 0.33, 0.45), 0, "Druckteile", True),
     ("Chassis_3_hinten", lambda: part(2), (0.42, 0.25, 0.22), 0, "Druckteile", True),
-    ("Radar_Wanne", L.radar_tray, (0.75, 0.75, 0.8), 0, "Druckteile", True),
     ("Touch_Board", lambda: refs["touch board"], (0.05, 0.05, 0.05), 0, "Bauteile", True),
-    ("Hub_Platine", lambda: refs["hub"], (0.1, 0.45, 0.2), 0, "Bauteile", True),
     ("MX_oben", lambda: refs["MX switch 1"], (0.45, 0.3, 0.2), 0, "Bauteile", True),
     ("MX_unten", lambda: refs["MX switch 2"], (0.45, 0.3, 0.2), 0, "Bauteile", True),
     ("Lautsprecher", lambda: refs["speaker 2030"], (0.1, 0.1, 0.1), 0, "Bauteile", True),
-    ("Radar_LD2410C", lambda: refs["LD2410C"], (0.1, 0.25, 0.75), 0, "Bauteile", True),
-    ("Radar_Stiftleiste", lambda: refs["LD2410C header"], (0.05, 0.05, 0.05), 0, "Bauteile", True),
+    ("Radar_LD2410C", lambda: radar["LD2410C"], (0.1, 0.25, 0.75), 0, "Bauteile", True),
+    ("Radar_Stiftleiste", lambda: radar["LD2410C header"], (0.05, 0.05, 0.05), 0, "Bauteile", True),
     ("Feuchtesensor_SHT31D_im_Rahmen", lambda: kr["SHT31-D"], (0.55, 0.2, 0.6), 0, "Bauteile", True),
     ("Kabelbogen_Taste", lambda: refs["cable loop"], (0.9, 0.4, 0.1), 50, "Bauteile", True),
     ("Steckdose_JungAS500_Referenz", G.socket_ref, (0.99, 0.99, 0.97), 0, "Wand", True),
     ("Wand_Referenz", G.wall_ref, (0.82, 0.8, 0.76), 60, "Wand", False),
 ]
-for no, a, b, sig, col, rgb, rt, dia, _ in W.wires():
-    ITEMS.append((f"Draht_{no:02d}", (lambda rt=rt, dia=dia: W.wire_solid(rt(), dia)), rgb, 0, "Verkabelung", False))
+if BUILD == "pcb":
+    ITEMS += [("Radar_Wanne", L.radar_tray, (0.75, 0.75, 0.8), 0, "Druckteile", True),
+              ("Hub_Platine", lambda: refs["hub"], (0.1, 0.45, 0.2), 0, "Bauteile", True)]
+    for no, a, b, sig, col, rgb, rt, dia, _ in W.wires():
+        ITEMS.append((f"Draht_{no:02d}", (lambda rt=rt, dia=dia: W.wire_solid(rt(), dia)), rgb, 0, "Verkabelung", False))
+else:
+    ITEMS += [("Technik_Traeger", K.back_carrier, (0.75, 0.75, 0.8), 0, "Druckteile", True),
+              ("Verstaerker_MAX98357A", lambda: kr["MAX98357A"], (0.5, 0.15, 0.6), 0, "Bauteile", True),
+              ("Mikrofon_INMP441", lambda: kr["INMP441"], (0.15, 0.6, 0.2), 0, "Bauteile", True)]
+    for no, a, b, sig, col, rgb in WL.WIRES:      # every wire of the self-wired kit; the USB plug replaces the lab supply
+        if a != "lab supply":
+            ITEMS.append((f"Draht_{no:02d}", (lambda no=no, a=a, b=b: WL.wire_solid(WL.route(no, a, b))), rgb, 0,
+                          "Verkabelung", False))
+    for pin, rgb in (("5V", (0.85, 0.1, 0.1)), ("GND", (0.05, 0.05, 0.05))):
+        ITEMS.append((f"Draht_Netzteil_{pin}", (lambda pin=pin: W.wire_solid(G.supply_route(pin), P.PLUG_WIRE)), rgb, 0,
+                      "Verkabelung", False))
 
 
 def log(*a):
@@ -74,7 +88,7 @@ def log(*a):
             f.write(" ".join(str(x) for x in a) + "\n")
 
 
-doc = App.newDocument("RoomKey_Steckdose_" + G.TAG.split("-")[1].replace(".", "_"))
+doc = App.newDocument(f"RoomKey_Steckdose_{BUILD}_v" + G.VERSION.replace(".", "_"))
 groups = {}
 for g in ("Gehäuse", "Netzteil", "Druckteile", "Bauteile", "Verkabelung", "Wand", "Schnitt"):
     groups[g] = doc.addObject("App::DocumentObjectGroup", g.replace("ä", "ae"))
@@ -192,7 +206,7 @@ if App.GuiUp:
         shot(f"{G.TAG}_offen.png")
         # 7 exploded: shell forward, box and charger back (assembly from behind)
         show(("Explo_", "Platte", "Tastenschale", "Leuchtring", "Schalterplatte", "Chassis_", "Radar_", "Touch_",
-              "Hub_", "MX_", "Lautsprecher", "Feuchtesensor"))
+              "Hub_", "Technik_", "Verstaerker_", "Mikrofon_", "MX_", "Lautsprecher", "Feuchtesensor"))
         cam((-1, 0.35, 0.5))
         shot(f"{G.TAG}_explosion.png")
 

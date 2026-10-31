@@ -1,34 +1,36 @@
 {
+ "build": "pcb",
  "depths": {
   "loop": 30.810000000000002,
   "usb0": 31.310000000000002,
   "face": 38.31,
-  "socket": 52.31,
-  "back": 51.71,
-  "back0": 49.71,
-  "wall": 62.31,
-  "recess": 18.0
+  "socket": 54.31,
+  "back": 53.71,
+  "back0": 51.71,
+  "wall": 64.31,
+  "recess": 16.299999999999997
  },
  "collisions": [],
  "gaps": {
   "USB plug ↔ cable loop": 0.5,
-  "USB plug ↔ radar tray": 1.15,
-  "USB plug ↔ hub": 7.359,
-  "USB plug ↔ LD2410C header": 12.2,
   "charger ↔ cable loop": 7.5,
-  "charger ↔ hub": 11.715,
-  "charger ↔ LD2410C header": 0.262,
-  "wire 5V ↔ wire GND": 1.953,
+  "wire 5V ↔ wire GND": 1.93,
   "wire 5V ↔ cable loop": 0.8,
   "wire GND ↔ cable loop": 0.8,
-  "wire 5V ↔ radar tray": 5.383,
+  "USB plug ↔ radar tray": 1.15,
+  "USB plug ↔ hub": 7.623,
+  "USB plug ↔ LD2410C header": 12.38,
+  "charger ↔ hub": 11.715,
+  "charger ↔ LD2410C header": 0.186,
+  "wire 5V ↔ radar tray": 5.303,
   "wire GND ↔ LD2410C header": 10.4,
-  "G1 shell ↔ chassis (kit)": 0.1,
-  "G2 box ↔ chassis (kit)": 0.0,
   "G2 box ↔ hub": 1.833,
   "G2 box ↔ radar tray": 3.7,
-  "G2 box ↔ speaker 2030": 9.505,
   "G2 box ↔ LD2410C header": 0.5,
+  "grip ring ↔ LD2410C header": 0.57,
+  "G1 shell ↔ chassis (kit)": 0.1,
+  "G2 box ↔ chassis (kit)": 0.0,
+  "G2 box ↔ speaker 2030": 9.505,
   "G1 shell ↔ G2 box": 0.0,
   "G1 shell ↔ plate": 0.3,
   "G1 shell ↔ SHT31-D": 0.2,
@@ -36,43 +38,42 @@
   "charger ↔ socket (ref)": 0.0,
   "charger ↔ G2 box": 0.01,
   "grip ring ↔ G2 box": 0.0,
-  "grip ring ↔ LD2410C header": 0.57,
   "foot ring ↔ G2 box": 0.0,
   "foot ring ↔ socket (ref)": 0.0,
-  "foot ring ↔ charger": 1.5
+  "foot ring ↔ charger": 2.427
  },
- "press_fit_mm3": 26.1,
+ "press_fit_mm3": 99.3,
  "dims": {
   "outline": "80.5 × 80.5",
-  "glass → socket face": 60.31,
-  "glass → back face": 59.71,
-  "frame rim → back face": 52.71,
-  "glass → wall (Jung AS 500 socket)": 70.31,
-  "mass g": 177,
-  "centre of mass in front of the socket face": 20.9,
-  "moment on the socket N·m": 0.036,
+  "glass → socket face": 62.31,
+  "glass → back face": 61.71,
+  "frame rim → back face": 54.71,
+  "glass → wall (Jung AS 500 socket)": 72.31,
+  "mass g": 182,
+  "centre of mass in front of the socket face": 22.2,
+  "moment on the socket N·m": 0.04,
   "moment limit N·m": 0.25
  },
  "mass_rows": [
   [
    "G1 shell",
-   41.6,
-   21.1
+   42.8,
+   22.1
   ],
   [
    "G2 box",
-   38.8,
-   36.6
+   40.9,
+   37.8
   ],
   [
    "grip ring",
-   1.8,
-   44.2
+   3.8,
+   45.2
   ],
   [
    "foot ring",
    0.7,
-   51.8
+   53.8
   ],
   [
    "key shell",
@@ -142,7 +143,11 @@
   [
    "charger",
    39.0,
-   63.8
+   64.0
   ]
- ]
+ ],
+ "supply_cut_mm": {
+  "5V": 65,
+  "GND": 55
+ }
 }
