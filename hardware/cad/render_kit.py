@@ -125,6 +125,13 @@ def shots():
     show(None, hide=("Uebungsdose", "Rahmen_", "Platte", "Leuchtring", "Tastenschale", "Touch_Board", "Antenne"))
     cam((-0.35, 0.3, 1))
     shot(f"{TAG}_wiring-front.png")
+    # 4c the LED holder in the switch plate (v0.11): plate, MX, LEDs and the glow wires, front and back
+    leds = ("Schalterplatte", "MX_", "LED_") + tuple(f"Draht_{n:02d}" for n in range(17, 29))
+    show(leds)
+    cam((-0.45, 0.35, 1))
+    shot(f"{TAG}_led-holder-front.png")
+    cam((0.45, 0.35, -1))
+    shot(f"{TAG}_led-holder-back.png")
     # 5 the frame from behind and below: humidity sensor flat under its bottom border
     show(("Rahmen_JungAS500", "Feuchtesensor"))
     cam((0.35, -0.55, -1))
