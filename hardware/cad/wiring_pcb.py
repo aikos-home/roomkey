@@ -56,13 +56,16 @@ def header_pin(name):
     return -R.TB_HEADER_PITCH_X / 2, y0 - 2.54 * EVEN.index(name)
 
 
-LED_CHAIN = ("BR", "TR", "TL", "BL")   # v0.11 corner boards: the firmware order (hub schematic) in both builds; with the
-# boards' rotations DOUT and the next DIN sit on the same side (PCB thread, 2026-10-12)
+LED_NAMES = {"BR": P.LED_POS[3], "BL": P.LED_POS[2], "TL": P.LED_POS[0], "TR": P.LED_POS[1]}   # chain order (v0.11:
+# BR → BL → TL → TR, clockwise from the front; the speaker side has no room for a hop: its hooks bridge x 20.3–24.9)
+LED_PAD = {"DIN": (-0.9, 0.0), "DOUT": (0.9, 0.0), "5V": (0.0, 0.9), "GND": (0.0, -0.9)}    # pads on the LED's back
+LED_BACK = P.LED_D0 + P.LED_T                                                           # 14.6
 
 
 def led_pad(name, pin):
-    """a corner board's back pad (its solder joint, d 15.5); DIN/DOUT/5V/GND (5V and GND take 2 wires each)."""
-    return P.led_board_pad(name, pin)
+    x, y = LED_NAMES[name]
+    ox, oy = LED_PAD[pin]
+    return (x + ox, y + oy, LED_BACK)
 
 
 def radar_pin(nm):
@@ -91,39 +94,39 @@ def key_route(no):
 
 
 def led_feed_route(pin):
-    """J8 (3 holes beside the bottom-right board, wires from the hub's front) → forward beside the collar wall → across
-    the board's back (d 16, in the corner window / switch-plate notch) → its pad."""
+    """J8 (front side of the hub) → out past the collar wall → the BR LED's pad."""
+    hole = {"DATA": "DIN", "5V": "5V", "GND": "GND"}[pin]
     jx, jy = J8[pin]
-    px, py, pd = led_pad("BR", {"DATA": "DIN", "5V": "5V", "GND": "GND"}[pin])
-    return [(jx, jy, HUB_BACK + 0.5), (jx, jy, 16.0), (px, py, 16.0), (px, py, pd)]
+    off = {"DATA": -0.7, "5V": 0.0, "GND": 0.7}[pin]
+    px, py, pd = led_pad("BR", hole)
+    return [(jx, jy, HUB_BACK + 0.5), (jx, jy, 19.6), (15.9 + off * 0.3, -23.4 + off, 19.0),
+            (15.9 + off * 0.3, -23.4 + off, 15.2), (px, py, pd + 0.6), (px, py, pd)]
 
 
-LED_LANE_D = {"DATA": 18.3, "5V": 18.9, "GND": 19.5}   # [FREE] hop depths: behind the switch plate and the ledge (17.8),
-                                                       # in front of the hub (20.3)
-LED_IN = (10.6, 20.3)          # [FREE] |x|, |y| where the hop wires pass the switch-plate notch, inside the ledge
-LED_SIDE = [(10.4, 17.5), (10.4, -4.8), (13.0, -5.5), (13.0, -10.3), (10.4, -11.0)]   # [FREE] side lane top → bottom,
-#        |x| between the MX housings (7.8) and the hub posts at (13.2, 4/20); the jog passes the switch-plate post
-#        (10.5, −7.9) on its outside (pcb r 2.0, discrete anchor post r 1.2)
-LED_TOP_Y = 25.3               # [FREE] the top hop runs outside the collar wall (MX1 fills the well up to y 22.8)
+LED_LANE_D = {"DATA": 18.0, "5V": 18.7, "GND": 19.4}   # [FREE] the hop wires lie outside the collar wall in front of
+                                                       # the hub (hub front d 20.3; the collar-wall ring ends at d 17.8)
+LED_EXIT = (14.6, 24.0)       # [FREE] |x|, |y| just outside the collar wall at a corner (window side), r 28.1
+LED_LANES = {"bottom": [(13.0, -25.2), (-13.0, -25.2)],                # below the collar wall, r ≤ 28.3
+             "left": [(-22.4, -12.0), (-22.4, 3.0), (-25.0, 5.5), (-25.0, 12.5)],   # inside the box's side dome and the
+                                                                        # radar blade, then outside the mic tube
+             "top": [(-13.0, 25.2), (13.0, 25.2)]}                      # above the collar wall
+
+
+def led_exit(name):
+    x, y = LED_NAMES[name]
+    return (math.copysign(LED_EXIT[0], x), math.copysign(LED_EXIT[1], y))
 
 
 def led_hop_route(a, b, pin):
-    """LED board a → board b (DOUT → DIN, 5V → 5V, GND → GND). Right and left: in through the notch, along the side
-    lane behind the switch plate. Top: out of the window, round the collar wall."""
+    """LED a → LED b (DOUT → DIN, 5V → 5V, GND → GND): out of the corner window, round the collar wall, into the next."""
     pa = led_pad(a, "DOUT" if pin == "DATA" else pin)
     pb = led_pad(b, "DIN" if pin == "DATA" else pin)
     dd = LED_LANE_D[pin]
-    sx = 1 if pa[0] > 0 else -1
-    if a[0] == "T" and b[0] == "T":                                 # TR → TL over the top
-        return [pa, (pa[0], pa[1], 16.0), (pa[0], LED_TOP_Y, 16.0), (pa[0], LED_TOP_Y, dd), (pb[0], LED_TOP_Y, dd),
-                (pb[0], LED_TOP_Y, 16.0), (pb[0], pb[1], 16.0), pb]
-    ya, yb = (1 if pa[1] > 0 else -1), (1 if pb[1] > 0 else -1)
-    lane = [(sx * x, y) for (x, y) in LED_SIDE]
-    if ya < 0:                                                      # bottom → top: walk the lane upwards
-        lane = lane[::-1]
-    ia, ib = (sx * LED_IN[0], ya * LED_IN[1]), (sx * LED_IN[0], yb * LED_IN[1])
-    return ([pa, (pa[0], pa[1], 16.0), (ia[0], ia[1], 16.0), (ia[0], ia[1], dd)] + [(x, y, dd) for (x, y) in lane] +
-            [(ib[0], ib[1], dd), (ib[0], ib[1], 16.0), (pb[0], pb[1], 16.0), pb])
+    ea, eb = led_exit(a), led_exit(b)
+    lane = {("BR", "BL"): "bottom", ("BL", "TL"): "left", ("TL", "TR"): "top"}[(a, b)]
+    mid = [(x, y, dd) for (x, y) in LED_LANES[lane]]
+    return ([pa, (pa[0], pa[1], pa[2] + 0.6), (ea[0], ea[1], 15.2), (ea[0], ea[1], dd)] + mid +
+            [(eb[0], eb[1], dd), (eb[0], eb[1], 15.2), (pb[0], pb[1], pb[2] + 0.6), pb])
 
 
 def radar_route(nm):
@@ -178,7 +181,7 @@ def wires():
         w.append((n, f"Hub J8 {pin}", "LED unten rechts", sig, col, rgb, lambda pin=pin: led_feed_route(pin), WIRE_D,
                   ("hub", "LED 4")))
         n += 1
-    for a, b, la, lb in (("BR", "TR", "LED 4", "LED 2"), ("TR", "TL", "LED 2", "LED 1"), ("TL", "BL", "LED 1", "LED 3")):
+    for a, b, la, lb in (("BR", "BL", "LED 4", "LED 3"), ("BL", "TL", "LED 3", "LED 1"), ("TL", "TR", "LED 1", "LED 2")):
         for pin, sig, col, rgb in (("DATA", "LED-Daten", "gelb-grün", (0.6, 0.85, 0.1)), ("5V", "5 V LEDs", "rot", (0.85, 0.1, 0.1)),
                                    ("GND", "GND LEDs", "schwarz", (0.05, 0.05, 0.05))):
             w.append((n, f"LED {a}", f"LED {b}", sig, col, rgb, lambda a=a, b=b, pin=pin: led_hop_route(a, b, pin), WIRE_D,

@@ -15,7 +15,7 @@
   "switch plate": {
    "valid": true,
    "solids": 1,
-   "volume_cm3": 1.19,
+   "volume_cm3": 1.21,
    "size": [
     26.95,
     46.9,
@@ -55,7 +55,7 @@
   "chassis": {
    "valid": true,
    "solids": 1,
-   "volume_cm3": 8.11,
+   "volume_cm3": 8.2,
    "size": [
     71.0,
     71.0,
@@ -97,10 +97,10 @@
   "speaker ↔ chassis (rest; front edge on the plenum floor = 0 by design)": 0.0,
   "antenna chip ↔ MX switch 2 (rest)": 9.0,
   "antenna chip ↔ MX switch 2 (key pressed)": 5.6,
-  "antenna chip ↔ LED 3 (rest)": 15.944,
-  "antenna chip ↔ LED 3 (key pressed)": 13.312,
-  "antenna chip ↔ LED 4 (rest)": 15.944,
-  "antenna chip ↔ LED 4 (key pressed)": 13.312,
+  "antenna chip ↔ LED 3 (rest)": 15.813,
+  "antenna chip ↔ LED 3 (key pressed)": 13.187,
+  "antenna chip ↔ LED 4 (rest)": 15.813,
+  "antenna chip ↔ LED 4 (key pressed)": 13.187,
   "antenna chip ↔ speaker 2030 (rest)": 15.719,
   "antenna chip ↔ speaker 2030 (key pressed)": 14.783,
   "antenna chip ↔ hub (rest)": 20.6,

@@ -247,8 +247,6 @@ def switch_plate(build="pcb"):
     for (x, y) in P.LED_POS:          # v0.6: corner notches for the glow LEDs (WS2812B-MINI 3535 is 2.0 tall + joints/carrier)
         h = P.LED_W / 2 + 0.4
         tools.append(box(x - h, x + h, y - h, y + h, s["plate_front"] - 1, s["plate_back"] + 1))
-        x0, x1, y0, y1 = P.led_board_xy(x, y)   # v0.11: + the corner board's keep-in (its back pads' wires go through)
-        tools.append(box(x0 - 0.3, x1 + 0.3, y0 - 0.3, y1 + 0.3, s["plate_front"] - 1, s["plate_back"] + 1))
     if build == "discrete":     # v0.10: the cable-loop anchor (posts + bar) stands on the switch plate's back
         ax0, ax1, ay0, ay1, ad0, ad1 = P.ANCHOR
         anchor = [cyl(x, y, 1.2, s["plate_back"] - EPS, ad1) for (x, y) in P.ANCHOR_POSTS] + [box(ax0, ax1, ay0, ay1, ad0, ad1)]
@@ -403,26 +401,6 @@ def hub_pcb():
         s.translate(V(P.HUB_PCB_STEP_XY[0], P.HUB_PCB_STEP_XY[1], -(P.HUB_PCB_D0 + P.HUB_PCB_STEP_TOP)))
         _HUB["s"] = s
     return _HUB["s"].copy()
-
-
-_GLOW = {}
-
-
-def glow_board(corner):
-    """v0.11: the PCB thread's glow corner board (its STEP: board + LED), placed and rotated at a corner; None if the STEP
-    is not there (then the refs use the LED_BOARD envelope)."""
-    if "s" not in _GLOW:
-        p = os.environ.get("ROOMKEY_GLOW_STEP") or os.path.join(os.path.dirname(os.path.dirname(HERE)), *P.LED_BOARD_STEP)
-        _GLOW["s"] = Part.read(p) if os.path.exists(p) else None
-    if _GLOW["s"] is None:
-        return None
-    s = _GLOW["s"].copy()
-    (ux, uy), (vx, vy) = P.LED_BOARD_ROT[corner]
-    m = App.Matrix(ux, vx, 0, 0, uy, vy, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
-    s.transformShape(m)
-    ox, oy = P.led_board_origin(corner)
-    s.translate(V(ox, oy, -(P.LED_D0 + P.LED_T + P.LED_BOARD_T)))
-    return s
 
 
 def radar_tray():
@@ -667,8 +645,7 @@ def chassis(v, build="pcb"):
         for sy in (-1, 1):
             xx0, xx1 = sorted((sx * ax0, sx * (P.COLLAR_OUT_X + 1.0)))
             yy0, yy1 = sorted((sy * ay0, sy * (P.COLLAR_OUT_Y + 1.0)))
-            win_d1 = max(P.LED_D0 + P.LED_T + P.LED_CARRIER_T + 0.35, P.LED_D0 + P.LED_T + P.LED_BOARD_T + P.LED_BOARD_WIRES)
-            tools.append(box(xx0, xx1, yy0, yy1, P.COLLAR_D1 - EPS, win_d1))                # v0.11: + corner-board wires
+            tools.append(box(xx0, xx1, yy0, yy1, P.COLLAR_D1 - EPS, P.LED_D0 + P.LED_T + P.LED_CARRIER_T + 0.35))
     for (x, y) in P.SWP_SCREWS:
         tools.append(cyl(x, y, 0.85, ledge0 - 1, ledge0 + P.SWP_BOSS_H - 0.8))
     # bottom tongues: slot inboard of each tongue (through deck + rib, round root end) and a lead-in on the front-outer edge
@@ -718,21 +695,10 @@ def ref_bodies(v, build="pcb"):
             box(x - R.MX_STEM_ARM_W / 2, x + R.MX_STEM_ARM_W / 2, y - R.MX_STEM_ARM_L / 2, y + R.MX_STEM_ARM_L / 2,
                 s["stem_top"], s["mx_top"] - 0.1))
     # v0.11: no mic carrier on the plate (the mic is on the hub PCB; a sound tube in the chassis)
-    corners = {v: k for k, v in P.LED_CORNER.items()}
-    for i, (x, y) in enumerate(P.LED_POS):             # v0.11: the LED on its corner board (the board's full keep-in)
-        gb = glow_board(corners[i])
-        if gb is not None:                             # the real board (its STEP)
-            refs[f"LED {i+1}"] = gb
-            continue
-        x0, x1, y0, y1 = P.led_board_xy(x, y)
-        bd0 = P.LED_D0 + P.LED_T
-        board = box(x0, x1, y0, y1, bd0 - EPS, bd0 + P.LED_BOARD_T)
-        cx, cy = (x1 if x > 0 else x0), (y1 if y > 0 else y0)          # the outward corner → 45° chamfer
-        c = P.LED_BOARD_CHAMFER
-        cham = Part.makePolygon([V(cx, cy, -bd0 + 1), V(cx - math.copysign(c, x), cy, -bd0 + 1),
-                                 V(cx, cy - math.copysign(c, y), -bd0 + 1), V(cx, cy, -bd0 + 1)])
-        board = board.cut(Part.Face(cham).extrude(V(0, 0, -(P.LED_BOARD_T + 2))))
-        refs[f"LED {i+1}"] = fuse([box(x - P.LED_W / 2, x + P.LED_W / 2, y - P.LED_W / 2, y + P.LED_W / 2, P.LED_D0, bd0), board])
+    for i, (x, y) in enumerate(P.LED_POS):
+        refs[f"LED {i+1}"] = fuse([box(x - P.LED_W / 2, x + P.LED_W / 2, y - P.LED_W / 2, y + P.LED_W / 2, P.LED_D0, P.LED_D0 + P.LED_T),
+                                   box(x - P.LED_W / 2, x + P.LED_W / 2, y - P.LED_W / 2, y + P.LED_W / 2,
+                                       P.LED_D0 + P.LED_T - EPS, P.LED_D0 + P.LED_T + P.LED_CARRIER_T)])
     tip, front, back, cback = P.sw_depths()
     for (x, y) in P.SW_POS:
         nm = ("T" if y > 0 else "B") + ("L" if x < 0 else "R")

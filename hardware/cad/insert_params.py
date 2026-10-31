@@ -385,53 +385,6 @@ LED_W, LED_T, LED_CARRIER_T = 3.5, 2.0, 0.8    # [DS] owner ordered 50 × WS2812
                                                 #      2.0 (vendor; the SK6812 MINI was 1.45) / [FREE] carrier (v1; the kit
                                                 #      prototype solders wires straight to the pads, ≈ 0.4)
 LED_D0 = COLLAR_D1 + 0.1
-# v0.11 corner boards (owner 2026-10-12: the loose 3535 LEDs are too small to wire by hand → "mach die eckplatinen mit dem
-# pcb thread"): each LED on its own small PCB with its 100 nF; LED on the front (into the collar), wire pads on the back.
-# The board lies in the corner window right behind the LED, in front of the switch plate (which gets a matching notch).
-LED_BOARD = (2.67, 2.13)   # [FREE] ONE square board for all 4 corners (rotated by 90°): it reaches 2.67 inwards and 2.13
-                           #        outwards from the LED centre in x and y → 4.8 × 4.8. Inwards the pressed key's stop bosses
-                           #        (y ≤ 19.5) and MX (|x| ≤ 7.8) set the limit, outwards the box wall
-LED_BOARD_CHAMFER = 1.0    # [FREE] 45° chamfer on the outward corner: keeps it inside r 28.4 (box Ø58 − margin)
-LED_BOARD_T = 0.6          # [FREE] FR4 0.6 (a JLCPCB option): back face d 15.2 (the switch plate front is at 15.3)
-LED_BOARD_WIRES = 1.6      # [FREE] room behind the board for its 4 back pads' wires: the corner windows reach d 16.8 (the
-                           #        switch plate's back = the ledge top: no thin layer is left), the wires leave outwards there
-
-
-def led_board_xy(x, y):
-    """the corner board's square (x0, x1, y0, y1) under the LED at (x, y); its outward corner is chamfered."""
-    a_in, a_out = LED_BOARD
-    sx, sy = (1 if x > 0 else -1), (1 if y > 0 else -1)
-    xs, ys = sorted((x - sx * a_in, x + sx * a_out)), sorted((y - sy * a_in, y + sy * a_out))
-    return xs[0], xs[1], ys[0], ys[1]
-
-
-# the PCB thread's glow corner board (KiCad, 2026-10-12): its STEP has the origin at the board's INNER corner, X/Y along
-# the inner edges, Z 0 = back face. One design, rotated per corner (u, v = board X, Y → kit x, y):
-LED_BOARD_STEP = ("hardware", "pcb", "roomkey-hub", "output", "roomkey-glow-corner.step")
-LED_BOARD_ROT = {"TR": ((1, 0), (0, 1)), "TL": ((0, 1), (-1, 0)), "BR": ((0, -1), (1, 0)), "BL": ((-1, 0), (0, -1))}
-#                 corner: (direction of u, direction of v) in kit x, y
-LED_BOARD_PADS = {"DIN": (3.9, 2.5), "GND": (3.9, 0.9), "5V": (2.325, 3.9), "DOUT": (0.8, 3.9)}   # [KiCad] back-pad centres
-LED_CORNER = {"TL": 0, "TR": 1, "BL": 2, "BR": 3}           # corner → index in LED_POS
-
-
-def led_board_origin(corner):
-    """the board's inner corner (kit x, y) at a corner name."""
-    x, y = LED_POS[LED_CORNER[corner]]
-    a_in = LED_BOARD[0]
-    return x - math.copysign(a_in, x), y - math.copysign(a_in, y)
-
-
-def led_board_uv(corner, u, v, dz=0.0):
-    """board coordinates (u, v; dz in front of its back face) → kit (x, y, d)."""
-    ox, oy = led_board_origin(corner)
-    (ux, uy), (vx, vy) = LED_BOARD_ROT[corner]
-    return (ox + u * ux + v * vx, oy + u * uy + v * vy, LED_D0 + LED_T + LED_BOARD_T - dz)
-
-
-def led_board_pad(corner, pin, dz=-0.3):
-    """kit (x, y, d) of a back pad; dz −0.3 = the solder joint behind the board."""
-    u, v = LED_BOARD_PADS[pin]
-    return led_board_uv(corner, u, v, dz)
 
 SPK_X0 = COLLAR_OUT_X + 0.55    # [FREE] speaker on its edge right of the collar, grille faces +x into the duct
 SPK_Y = (-15.0, 15.0)           # [FREE]

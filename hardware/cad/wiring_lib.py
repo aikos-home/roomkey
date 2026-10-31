@@ -71,10 +71,11 @@ def targets():
     # SHT31-D in the frame's bottom border (pins on its back)
     for nm, pt in K.D.rh_pins().items():
         t[f"RH {nm}"] = pt
-    # glow LEDs on their corner boards (v0.11): the 4 pads on each board's back (5V and GND take 2 wires each)
-    for nm in LED_NAMES:
-        for pin in ("DIN", "DOUT", "5V", "GND"):
-            t[f"LED {nm} {pin}"] = P.led_board_pad(nm, pin)
+    # glow LEDs (WS2812B-MINI 3535) in the rear-wall windows at the collar corners; pads on their back
+    d_led = P.LED_D0 + P.LED_T
+    for nm, (x, y) in LED_NAMES.items():
+        for pin, (ox, oy) in {"DIN": (-0.9, 0.0), "DOUT": (0.9, 0.0), "5V": (0.0, 0.9), "GND": (0.0, -0.9)}.items():
+            t[f"LED {nm} {pin}"] = (x + ox, y + oy, d_led)
     return t
 
 
@@ -176,11 +177,6 @@ def route(no, a, b):
                     (tx, ty, max(35.5, td + 1.5)), (tx, ty, td)]
     else:
         p0, p1 = t[a], t[b]
-        if a.startswith("LED") and b.startswith("LED"):     # v0.11 corner boards: the same hops as the PCB build
-            import wiring_pcb as WP
-            _, na, pa_ = a.split()
-            _, nb_, _ = b.split()
-            return WP.led_hop_route(na, nb_, "DATA" if pa_ == "DOUT" else pa_)
         if b.startswith("LED"):                               # LED chain / bus: back from the corner, round, forward
             _, nb, pb = b.split()
             e1 = _led_exit(nb, pb)
